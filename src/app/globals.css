@@ -1,0 +1,125 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/*
+ * Docketly Indigo design tokens — Docs/ui_design_guide.md §7.
+ * Light theme only (§1) — there is deliberately no .dark block.
+ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-light: var(--brand-light);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+:root {
+  /* Brand + neutrals — Docs/ui_design_guide.md §7 */
+  --brand: #6366f1;
+  --brand-hover: #4f46e5;
+  --brand-light: #e0e7ff;
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border-light: #e2e8f0;
+  --border-heavy: #cbd5e1;
+
+  /* Status tokens (invoice lifecycle only — §7/§11), for use once StatusBadge lands (M6/M7) */
+  --status-draft-bg: #f1f5f9;
+  --status-draft-text: #475569;
+  --status-sent-bg: #fffbeb;
+  --status-sent-text: #b45309;
+  --status-paid-bg: #ecfdf5;
+  --status-paid-text: #047857;
+  --status-void-bg: #fff1f2;
+  --status-void-text: #be123c;
+  --status-overdue-bg: #fef2f2;
+  --status-overdue-text: #b91c1c;
+
+  /* Semantic (validation/alert) tokens — §7 */
+  --alert-info-bg: #f8fafc;
+  --alert-warning-bg: #fffbeb;
+  --alert-warning-border: #fde68a;
+  --alert-warning-text: #92400e;
+  --alert-error-bg: #fef2f2;
+  --alert-error-border: #fecaca;
+  --alert-error-text: #b91c1c;
+  --alert-success-bg: #ecfdf5;
+  --alert-success-border: #a7f3d0;
+  --alert-success-text: #047857;
+
+  /* shadcn semantic mapping onto the tokens above, so primitives render on-brand out of the box */
+  --background: var(--bg-main);
+  --foreground: var(--text-primary);
+  --card: var(--bg-card);
+  --card-foreground: var(--text-primary);
+  --popover: var(--bg-card);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--brand);
+  --primary-foreground: #ffffff;
+  --secondary: var(--bg-card);
+  --secondary-foreground: var(--text-secondary);
+  --muted: #f1f5f9;
+  --muted-foreground: var(--text-muted);
+  --accent: var(--brand-light);
+  --accent-foreground: var(--brand);
+  --destructive: var(--alert-error-text);
+  --border: var(--border-light);
+  --input: var(--border-heavy);
+  --ring: var(--brand);
+  --radius: 0.625rem;
+  --sidebar: var(--bg-card);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--brand-light);
+  --sidebar-accent-foreground: var(--brand);
+  --sidebar-border: var(--border-light);
+  --sidebar-ring: var(--brand);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}

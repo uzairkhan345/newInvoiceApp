@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Production build artifacts
+build/
+dist/
+
+# Environment variables (never commit real secrets)
+.env
+.env.local
+.env.*.local
+
+# Prisma
+prisma/generated/
+
+# Testing
+coverage/
+
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor/OS
+.DS_Store
+*.pem
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Vercel
+.vercel
+
+/src/generated/prisma

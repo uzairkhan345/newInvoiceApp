@@ -1,0 +1,9 @@
+node_modules
+.next
+src/generated
+pnpm-lock.yaml
+
+# Hand-authored planning docs — not reformatted by this project's tooling
+Docs/
+ai_context/
+CLAUDE.md

@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16
+    container_name: newinvoice-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: newinvoice
+      POSTGRES_PASSWORD: newinvoice
+      POSTGRES_DB: newinvoice
+    ports:
+      - "5432:5432"
+    volumes:
+      - newinvoice-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U newinvoice -d newinvoice"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  newinvoice-db-data:
