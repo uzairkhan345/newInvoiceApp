@@ -1,0 +1,23 @@
+import { notFound } from "next/navigation";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PaymentMethodForm } from "@/components/payment-method/PaymentMethodForm";
+import { partyService } from "@/services/partyService";
+
+export default async function NewPaymentMethodPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const party = await partyService.getById(id);
+  if (!party) {
+    notFound();
+  }
+
+  return (
+    <>
+      <PageHeader title="Add Payment Method" subtitle={`For ${party.name}.`} />
+      <PaymentMethodForm mode="create" partyId={party.id} />
+    </>
+  );
+}
