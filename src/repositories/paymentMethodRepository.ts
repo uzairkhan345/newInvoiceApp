@@ -84,9 +84,11 @@ function unsetDefaultForParty(
 }
 
 /**
- * Real (not stubbed) live-reference check, same pattern as
- * partyRepository.isReferencedByAnyProject — queries Project directly since
- * projectRepository doesn't exist until M4 (Docs/execution_plan.md §16 M3).
+ * Live-reference check, same pattern as
+ * partyRepository.isReferencedByAnyProject — queries Project directly. Was
+ * already fully live as of M3 (before projectRepository existed); stays a
+ * direct query now that it does, for the same reason (Docs/execution_plan.md
+ * §16 M4).
  */
 function isReferencedAsPreferredPaymentMethod(
   paymentMethodId: string,

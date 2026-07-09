@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users } from "lucide-react";
+import { LayoutDashboard, Users, Briefcase } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
  * App shell sidebar — Docs/ui_design_guide.md §3.
- * Nav items are added alongside their pages as milestones land — only
- * Dashboard (M0) and Parties (M2) exist so far.
+ * Nav items are added alongside their pages as milestones land — Dashboard
+ * (M0), Parties (M2), and Projects (M4) exist so far.
  */
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/parties", label: "Parties", icon: Users },
+  { href: "/projects", label: "Projects", icon: Briefcase },
 ];
 
 export function Sidebar() {

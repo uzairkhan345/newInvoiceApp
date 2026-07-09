@@ -41,11 +41,12 @@ function deleteById(id: string): Promise<Party> {
 }
 
 /**
- * Real (not stubbed) live-reference check for Docs/implementation_decisions.md
- * §18: a Party is deletable only while not set as any Project's contractor or
- * client. Queries the Project table directly rather than going through a
- * projectRepository — that module doesn't exist until M4, and this is a
- * simple enough query not to warrant inventing one early or faking the check.
+ * Live-reference check for Docs/implementation_decisions.md §18: a Party is
+ * deletable only while not set as any Project's contractor or client. Queries
+ * the Project table directly rather than going through projectRepository —
+ * this was already fully live as of M2 (before projectRepository existed) and
+ * stays a direct query now that it does, since it's a simple enough count not
+ * to warrant a repository-to-repository dependency.
  */
 function isReferencedByAnyProject(partyId: string): Promise<boolean> {
   return prisma.project
