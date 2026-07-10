@@ -46,7 +46,12 @@ export default async function InvoiceDetailPage({
           subtitle={invoice.project.name}
           action={headerAction}
         />
-        <InvoiceDocument data={data} />
+        {/* Docs/invoice_design_guidelines.md §15 — the A4 page has fixed
+            physical dimensions; on narrow viewports it scrolls horizontally
+            rather than reflowing. */}
+        <div className="overflow-x-auto">
+          <InvoiceDocument data={data} />
+        </div>
       </>
     );
   }

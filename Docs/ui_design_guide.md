@@ -250,36 +250,19 @@ A persistent right-hand panel (`1fr` slot in the three-panel layout, §2) alongs
 
 ---
 
-## 15. Invoice Preview Layout — **rewritten 2026-07-10, letterhead redesign + reference color/font match**
+## 15. Invoice Preview Layout — **superseded 2026-07-10 by `Docs/invoice_design_guidelines.md`**
 
-Superseded the original abstract "2×2 address grid" version below (built for M7) after reviewing real reference invoices in `ai_context/03_document_generation_reference/` (the sample PDFs, `screenshots/`, and `generate_invoice.py`) — the on-screen preview/PDF is now deliberately restyled to closely resemble that reference's letterhead-style layout. This also brings the preview/PDF's structure into alignment with §11's Excel plan (contractor letterhead, BILL TO/DETAILS/PAYMENT, item table with Qty/Rate columns), which the old M7 version had drifted from.
+The invoice document's layout/typography/color spec now lives entirely in **`Docs/invoice_design_guidelines.md`** — read that file, not this section, before touching `InvoiceDocument.tsx` or its CSS module. Summary of what changed and why, for continuity:
 
-**Color and font now match the reference exactly, by explicit request (same day, second pass) — this is a deliberate, scoped exception to the rest of the app's Docketly Indigo/Inter+mono system, not a change to it.** `InvoiceDocument` sets `font-family: Arial, Helvetica, sans-serif` on itself (Arial throughout, no JetBrains Mono anywhere in this component — every other page in the app keeps Inter/mono as normal); the separator bar is the reference's exact slate `#566473` (not `--brand`); the invoice number is plain bold black (`text-foreground`), not brand-colored. **The one color the document keeps that the reference doesn't have at all**: `StatusBadge`'s 5 lifecycle colors (DRAFT/SENT/PAID/VOID/OVERDUE) — this is real state information with no reference equivalent, unlike the separator bar/invoice-number color, which were purely decorative brand echoes.
+This section originally described (M7) an abstract "2×2 address grid" card look, then (same day) a letterhead redesign matching reference invoices while keeping the app's Docketly Indigo/Inter+mono system, then a further pass matching the reference's exact color/Arial font too. All of that is now superseded by a full print-first reproduction pass done directly against `Docs/invoice_design_guidelines.md` (a detailed mm/pt spec written against the reference invoice images) — the invoice document is a **fixed A4 page** (`210mm × 297mm`, `15mm` padding) using `mm`/`pt` units throughout via `src/components/invoice/InvoiceDocument.module.css`, not Tailwind's px-based utility system. There is no bordered/rounded "card" framing in either context anymore (no `framed` prop) — the in-app preview at `/invoices/[id]` and the bare `/invoices/[id]/print` route (the literal future PDF page, M9) render the exact same component with the exact same styling, per that guideline's explicit "preview and PDF must be visually identical" requirement.
 
-Centered white document, `48px` padding (→ `20px` mobile), `max-width: 800px`. **Two framing modes** (`InvoiceDocument`'s `framed` prop, added 2026-07-10): `framed` (default, used at `/invoices/[id]`'s in-app preview) adds a `1px` border-light + `8px` radius (flatter than the `14px` used on dashboard cards — a document reads more official with sharper corners) so the document reads as a distinct card against the app's page background; **unframed** (used at `/invoices/[id]/print`) has no border/radius at all — a plain, full-bleed white page. This distinction matters because `/print` is the literal markup M9's PDF adapter will screenshot, and a real exported PDF has no visible card chrome floating on a gray canvas — it's just the page.
+Key structural notes still relevant:
+- The status indicator is a small, subtle marker in the metadata block (not a colored pill beside the "Invoice" title) — rendered locally in `InvoiceDocument.tsx` via `deriveDisplayStatus`, not the shared `StatusBadge` component (which is unchanged and still used as-is in the invoice list/page header).
+- The payment section heading is the reference's literal copy, "Payment to be made to:", not "Payment Details".
+- Still no schema fields for the reference's optional per-invoice description/work-period note — intentionally omitted, same reasoning as before (would be a schema decision, not a layout one).
+- `LockedBanner` (unchanged, see below) still renders above the A4 page for `SENT`/`PAID`/`VOID`.
 
-- **Letterhead row**: contractor identity on the left — name (`15px`/`700`/text-primary), then address lines (`13px`/text-secondary), one per line, sourced from `FromPartySnapshot`. Right-aligned: `INVOICE #` (`11px`/`700`/uppercase/text-muted label) over the invoice number (`18px`/`800`/plain black, no mono — a reference-code treatment), then `Issued` + the issue date (`13px`/text-secondary) beneath it.
-- **Separator bar**: a full-width `4px` solid `#566473` (the reference's own slate color, not `--brand`) rule directly beneath the letterhead row, `20px` margin above and below.
-- **Title row**: "Invoice" (`28px`/`800`/tight tracking/text-primary) on the left; the `StatusBadge` (§11) vertically centered on the right — the one colored, and one structural, element the reference has no equivalent for, since it has no lifecycle concept.
-- **3-column meta grid** (`grid-cols-1 sm:grid-cols-3`, `24px` gap): each column has an `11px`/`700`/uppercase/text-muted label, then `13px` content.
-  - `BILL TO` — client name (`700`) + address lines, from `ToPartySnapshot`.
-  - `DETAILS` — the project name (there is no separate free-text "service description" field on `Invoice`/`Project`; the project name serves the same "what this invoice is for" purpose the reference's `DETAILS` column carries — see the note below).
-  - `PAYMENT` — `Due: {DueDate}` only. (The actual payment method fields render in their own section further down, matching the reference's own separation between this mini-column and its bottom "Payment to be made to:" block.)
-- **Line items table**: `DESCRIPTION | QTY | RATE | AMOUNT` — **not** description-and-amount-only as the superseded version had it; every reference sample shows quantity/rate, so they render here too, right-aligned, plain (no mono). Header row `11px`/`700`/uppercase/text-muted with a bottom hairline; a hairline separates each row.
-- **Totals block** — unchanged in structure from the superseded version, no tax row, no mono:
-  ```
-  Subtotal ......................... $X,XXX.XX
-  Total ............................ $X,XXX.XX   (bold, 18px — always equals Subtotal)
-  ─────────────────────────────────────────────
-  Converted Total (AUD/GBP) ........ A$X,XXX.XX  (only if project.DisplayCurrency ≠ USD;
-                                                    13px, text-secondary — visually secondary
-                                                    to the USD total above it)
-  ```
-- **Payment details section**: `PAYMENT DETAILS` label, then `label`/`value` rows rendered from `PaymentDetailsSnapshot` — customer-facing `label`, never the `key`.
-
-**Deliberately not carried over from the reference**: the reference's optional italic per-invoice description line and its separate "Note: work done from X to Y" line (see `generate_invoice.py`'s `description`/`start_date`/`end_date` handling) have no corresponding field anywhere in the `Invoice`/`Project` schema — adding them would be a schema decision, not a layout one, so they're intentionally left out of this pass rather than silently invented. Revisit as an explicitly-scoped schema addition if wanted.
-
-**Locked state**: when status is `SENT`, `PAID`, or `VOID`, render a read-only banner above the document's letterhead:
+**Locked state**: when status is `SENT`, `PAID`, or `VOID`, render a read-only banner above the document:
 
 ```
 .doc-lock-banner { display:flex; align-items:center; gap:8px; background: var(--bg-main); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 10px 16px; font-size: 11px; color: var(--text-secondary); margin-bottom: 16px; }

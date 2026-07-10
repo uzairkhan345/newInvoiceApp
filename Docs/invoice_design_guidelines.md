@@ -1,0 +1,383 @@
+# Invoice Design Guidelines
+
+## 1. Design intent
+
+The invoice must look like a compact, professional, print-first business document—not a modern SaaS dashboard or marketing page.
+
+Use the supplied invoice references as the visual source of truth. Do not reinterpret them into cards, panels, oversized typography, decorative badges, gradients, rounded containers, or large whitespace.
+
+## 2. Page format
+
+- Target: A4 portrait
+- Print size: 210 mm × 297 mm
+- Primary page container: `width: 210mm; min-height: 297mm`
+- Internal horizontal padding: 14–16 mm
+- Top padding: 14–18 mm
+- Bottom padding: 14–18 mm
+- White background
+- All invoice information should occupy approximately the upper 45–55% of the page for a normal 1–4 item invoice.
+- Do not vertically center content.
+- Avoid excessive gaps between sections.
+
+Recommended print CSS:
+
+```css
+@page {
+  size: A4;
+  margin: 0;
+}
+
+.invoice-page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 15mm;
+  box-sizing: border-box;
+  background: #fff;
+  color: #111827;
+}
+```
+
+## 3. Visual character
+
+- Dense, restrained, formal, and highly legible
+- Primarily black text on white
+- One dark slate accent line
+- Minimal use of muted blue-grey for secondary labels
+- No shadows
+- No rounded cards
+- No gradient
+- No decorative background blocks
+- No large status pill beside the title unless explicitly required
+- No oversized logo
+- No large empty area between the heading and invoice details
+
+## 4. Colour palette
+
+Use these values unless the invoice owner has a brand colour:
+
+```css
+--invoice-text: #111111;
+--invoice-secondary: #5f6b78;
+--invoice-muted: #8a97a8;
+--invoice-rule: #596674;
+--invoice-light-rule: #cfd5dc;
+--invoice-background: #ffffff;
+```
+
+For the [redacted] logo only:
+
+```css
+--redacted-red: #ef3340;
+--redacted-black: #111111;
+```
+
+Do not apply the red brand colour to headings, table borders, totals, or body text.
+
+## 5. Typography
+
+Use a neutral sans-serif with metrics close to Arial/Helvetica.
+
+Preferred stack:
+
+```css
+font-family: Arial, Helvetica, sans-serif;
+```
+
+Do not use a display font.
+
+Suggested sizes:
+
+| Element | Size | Weight | Line height |
+|---|---:|---:|---:|
+| Sender/company name | 8.5–9.5 pt | 700 | 1.2 |
+| Sender address | 8–9 pt | 400 | 1.25 |
+| Invoice metadata | 8–9 pt | 600 | 1.25 |
+| Main “Invoice” heading | 18–21 pt | 400–500 | 1.1 |
+| Section labels | 8–9 pt | 700 | 1.2 |
+| Section content | 8.5–9.5 pt | 400 | 1.3 |
+| Table headers | 8–9 pt | 700 | 1.2 |
+| Table content | 8.5–9.5 pt | 400 | 1.3 |
+| Totals | 8.5–10 pt | 400–700 | 1.25 |
+| Notes/payment details | 8–9 pt | 400 | 1.3 |
+
+Avoid 14–16 px body text. The references are closer to compact print typography.
+
+## 6. Header layout
+
+Use a two-column header:
+
+- Left: sender name and address
+- Right: invoice number and issue date
+- Right column text aligned left inside its own block or right-aligned as a block
+- Header height should remain compact
+- Place a dark slate horizontal rule immediately below the header
+- Rule thickness: 1.5–2.5 mm in the rendered A4 document
+- Rule should span the full content width
+
+Approximate structure:
+
+```text
+Sender/company details                         Invoice #
+                                               Issue date
+────────────────────────────────────────────────────────
+Invoice
+```
+
+The main heading should sit 5–8 mm below the rule.
+
+## 7. Logo handling
+
+When a logo is present:
+
+- Place it near the upper-right portion of the title area
+- Maximum visual height: approximately 8–10 mm
+- Do not allow it to dominate the page
+- Keep the logo horizontally aligned with the “Invoice” heading
+- Preserve clear space around the logo
+- Prefer a transparent SVG or PNG
+
+When there is no logo, do not insert an empty placeholder.
+
+## 8. Summary information row
+
+Use a three-column layout:
+
+1. Bill To
+2. Details
+3. Payment
+
+Recommended proportions:
+
+```css
+grid-template-columns: 1.1fr 0.65fr 0.75fr;
+column-gap: 10mm;
+```
+
+Section labels must be uppercase, compact, and bold.
+
+Example:
+
+```text
+BILL TO                  DETAILS                 PAYMENT
+Client name              Software Development    Due date: 16 July 2026
+Address                   Services
+```
+
+Spacing rules:
+
+- 11–15 mm between the Invoice title and this row
+- 3–5 mm between section label and content
+- 12–18 mm between this row and the item table
+- Do not place each column inside a card
+- Optional short top rules above each column may be used, as in one reference
+
+## 9. Item table
+
+The table is the primary visual structure and should be compact.
+
+Recommended columns:
+
+```text
+DESCRIPTION / ITEM     QTY or UNIT     RATE     AMOUNT (CURRENCY)
+```
+
+Suggested widths:
+
+- Description: 58–66%
+- Quantity/unit: 8–12%
+- Rate: 12–15%
+- Amount: 15–18%
+
+Rules:
+
+- Header labels are bold and compact
+- Numeric columns are right-aligned
+- Description is left-aligned
+- Use horizontal rules only
+- Do not use full cell borders
+- No zebra striping
+- No rounded table container
+- Row height: approximately 7–9 mm
+- Use a stronger rule under the header and after the final item row
+- Keep currency formatting consistent
+
+Example CSS:
+
+```css
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.invoice-table th {
+  padding: 0 0 3mm;
+  border-bottom: 1px solid #596674;
+  text-align: left;
+}
+
+.invoice-table td {
+  padding: 3mm 0;
+  border-bottom: 0.5px solid #cfd5dc;
+  vertical-align: top;
+}
+
+.invoice-table .number {
+  text-align: right;
+  white-space: nowrap;
+}
+```
+
+## 10. Secondary line under an item
+
+For work-period text or supporting descriptions:
+
+- Place directly beneath the item title
+- Use 7.5–8.5 pt
+- Use muted grey or italic
+- Keep the text within the description column
+- Do not create a separate card or callout
+
+Example:
+
+```text
+Software Automation Services
+Work done 16 June 2026 – 30 June 2026
+```
+
+## 11. Totals
+
+Reference invoices use understated totals rather than oversized summary cards.
+
+- Position totals directly beneath the table
+- Align labels toward the left or near the amount column, depending on the selected template
+- Align values with the table amount column
+- Use a thin separator above the totals area where appropriate
+- Subtotal: regular weight
+- Final total: bold
+- Avoid very large total typography
+- Avoid coloured boxes or shaded total panels
+- Do not separate totals from the table with large whitespace
+
+For multi-currency invoices:
+
+```text
+Total Due                 USD 3,200
+Total in AUD              AUD 4,458.00
+```
+
+Keep the conversion label and converted amount visually subordinate to the primary amount unless the business requirement says otherwise.
+
+## 12. Notes and payment details
+
+Place below the totals with compact spacing.
+
+- Section heading: bold, 8–9 pt
+- Use a two-column label/value structure
+- Labels should be short and aligned
+- Avoid large boxes
+- Avoid icons
+- Keep sensitive account details selectable as text
+- Do not truncate account numbers in the PDF unless explicitly required
+
+Example:
+
+```text
+Payment to be made to:
+Bank Name           Example Bank
+Bank Address        [redacted address]
+Branch Code         000000
+Account No.         00000000
+Beneficiary Name    Jordan Freelancer
+```
+
+## 13. Spacing scale
+
+Use a small print-oriented spacing scale:
+
+```css
+--space-1: 1.5mm;
+--space-2: 3mm;
+--space-3: 5mm;
+--space-4: 8mm;
+--space-5: 12mm;
+--space-6: 16mm;
+```
+
+Do not use web-dashboard spacing such as 32–64 px between every section.
+
+## 14. Status display
+
+The references do not require a prominent status badge.
+
+If status must be shown:
+
+- Use small uppercase text near invoice metadata
+- Or use a subtle 7–8 pt pill
+- Maximum height: 5–6 mm
+- Do not place a large green badge beside the Invoice heading
+- Hide status entirely on exported invoices when it is an internal workflow field
+
+## 15. Responsive behaviour
+
+The invoice is print-first.
+
+- The A4 layout remains fixed for PDF generation
+- On small screens, scale the full page preview rather than reflowing the invoice into cards
+- Use an outer preview wrapper for horizontal scrolling
+- Do not change table columns or stack the Bill To / Details / Payment row in the exported PDF
+
+## 16. PDF generation requirements
+
+- Use the same React component for preview and PDF output
+- Generate the PDF using browser rendering, preferably Playwright or Puppeteer
+- Wait for fonts and logo assets before capturing
+- Enable print backgrounds
+- Use exact A4 dimensions
+- Prevent table rows and payment sections from splitting unexpectedly
+- Repeat table headers when an invoice spans multiple pages
+- Keep totals together
+
+Suggested CSS:
+
+```css
+.invoice-table tr,
+.invoice-totals,
+.payment-details {
+  break-inside: avoid;
+}
+
+thead {
+  display: table-header-group;
+}
+```
+
+## 17. Implementation constraints for Claude Code
+
+Claude must:
+
+1. Treat the supplied reference images as the visual source of truth.
+2. Reproduce their information density, typography scale, section placement, and line treatment.
+3. Make no stylistic improvements unless explicitly requested.
+4. Avoid default SaaS/dashboard patterns.
+5. Use CSS measurements in `mm`, `pt`, or carefully calculated pixels for print-critical elements.
+6. Implement shared design tokens rather than scattered values.
+7. Preserve the current invoice data model.
+8. Keep preview and generated PDF visually identical.
+9. Render a sample invoice and compare it against the references after every material layout change.
+10. Change one visual category at a time: page geometry, typography, header, summary row, table, totals, payment details.
+
+## 18. Acceptance criteria
+
+The implementation is acceptable when:
+
+- The invoice reads as a compact printed business document at first glance.
+- The top header, horizontal rule, Invoice heading, three-column summary, item table, totals, and payment details appear in the same vertical sequence as the references.
+- Body text is compact and close to Arial/Helvetica.
+- The document does not resemble a SaaS invoice template.
+- The main content begins near the top and normal invoices remain concentrated in the upper half of the page.
+- Table amounts align vertically.
+- Horizontal rules are visually consistent.
+- There are no cards, shadows, gradients, oversized status badges, or excessive empty gaps.
+- Browser preview and exported PDF match closely.
+- A screenshot comparison at the same A4 scale shows only minor differences in text content and branding.

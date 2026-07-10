@@ -1,126 +1,101 @@
-import type { ReactNode } from "react";
-import { StatusBadge } from "@/components/invoice/StatusBadge";
 import { LockedBanner } from "@/components/invoice/LockedBanner";
 import { formatCurrency } from "@/lib/currency";
 import { formatDisplayDate } from "@/lib/dates";
-import { cn } from "@/lib/utils";
+import { deriveDisplayStatus } from "@/lib/invoiceStatus";
 import type {
   InvoiceDocumentData,
   PartySnapshotData,
 } from "@/services/documentService";
+import styles from "./InvoiceDocument.module.css";
 
 /**
- * Docs/ui_design_guide.md §15 — the single template rendered byte-identically
- * by the on-screen preview (/invoices/[id], with app chrome) and the bare
- * print route (/invoices/[id]/print) that Puppeteer will later navigate to
- * (M9). Data comes exclusively from documentService.assembleInvoiceDocumentData.
+ * Docs/invoice_design_guidelines.md — print-first A4 invoice document,
+ * rendered identically by the in-app preview (/invoices/[id]) and the bare
+ * print route (/invoices/[id]/print) that will become the literal PDF page
+ * (M9). No cards/shadows/rounded framing in either context, per the
+ * guideline — both routes render this exact component with no wrapper
+ * styling differences. Data comes exclusively from
+ * documentService.assembleInvoiceDocumentData.
  *
- * Letterhead layout AND color/type adapted from the reference invoices in
- * ai_context/03_document_generation_reference/ (screenshots + generate_invoice.py)
- * — Arial throughout (no mono face) and the reference's exact slate separator
- * bar (`#566473`)/plain-black invoice number, deliberately overriding the
- * rest of the app's Docketly Indigo/Inter+mono system for this one component
- * — see §15's 2026-07-10 rewrite + color/font-match notes. `StatusBadge`
- * keeps its lifecycle colors regardless (DRAFT/SENT/PAID/VOID/OVERDUE is a
- * real state the reference has no equivalent for, unlike the purely
- * decorative brand accents that were replaced).
- *
- * `framed` controls the bordered/rounded "document card" look: on (default)
- * for the in-app preview at /invoices/[id], off for /invoices/[id]/print —
- * that route's markup becomes the literal PDF page (M9), and a real exported
- * PDF has no visible card chrome, just a plain white page.
+ * The status indicator is rendered locally here (not the shared
+ * `StatusBadge` component used in the invoice list/page header elsewhere)
+ * as a small, subtle marker near the invoice metadata rather than a large
+ * pill beside the title, per the guideline's §14 status-display rules.
  */
-export function InvoiceDocument({
-  data,
-  framed = true,
-}: {
-  data: InvoiceDocumentData;
-  framed?: boolean;
-}) {
+export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
   const isLocked = data.status !== "DRAFT";
   const hasConvertedTotal =
     data.convertedTotal !== null && data.convertedCurrency !== null;
+  const displayStatus = deriveDisplayStatus(data.status, data.dueDate);
 
   return (
-    <div
-      className="mx-auto w-full max-w-[800px]"
-      style={{ fontFamily: "Arial, Helvetica, sans-serif" }}
-    >
+    <div>
       {isLocked ? <LockedBanner /> : null}
-      <div
-        className={cn(
-          "bg-card p-5 sm:p-12",
-          framed && "rounded-[8px] border border-border",
-        )}
-      >
-        <header className="flex items-start justify-between">
+      <div className={styles.page}>
+        <header className={styles.header}>
           <div>
-            <p className="text-[15px] font-bold text-foreground">
-              {data.contractor.name}
-            </p>
+            <p className={styles.senderName}>{data.contractor.name}</p>
             {addressLines(data.contractor).map((line) => (
-              <p key={line} className="text-[13px] text-muted-foreground">
+              <p key={line} className={styles.senderAddressLine}>
                 {line}
               </p>
             ))}
           </div>
-          <div className="text-right">
-            <p className="text-[11px] font-bold tracking-[0.05em] text-muted-foreground uppercase">
-              Invoice #
+          <div className={styles.metaBlock}>
+            <p className={styles.metaLabel}>Invoice #</p>
+            <p className={styles.invoiceNumber}>{data.invoiceNumber}</p>
+            <p className={styles.metaValue}>
+              Issue date: {formatDisplayDate(data.issueDate)}
             </p>
-            <p className="text-[18px] font-extrabold text-foreground">
-              {data.invoiceNumber}
-            </p>
-            <p className="mt-1 text-[13px] text-muted-foreground">
-              Issued {formatDisplayDate(data.issueDate)}
-            </p>
+            <span className={styles.statusLine}>{displayStatus}</span>
           </div>
         </header>
 
-        <div className="my-5 h-1 w-full bg-[#566473]" />
+        <div className={styles.rule} />
 
-        <div className="mb-8 flex items-center justify-between">
-          <h1 className="text-[28px] font-extrabold tracking-tight text-foreground">
-            Invoice
-          </h1>
-          <StatusBadge status={data.status} dueDate={data.dueDate} />
-        </div>
+        <h1 className={styles.title}>Invoice</h1>
 
-        <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
+        <div className={styles.summaryGrid}>
           <div>
-            <SectionLabel>Bill To</SectionLabel>
+            <p className={styles.summaryLabel}>Bill To</p>
             <PartyLines party={data.client} />
           </div>
           <div>
-            <SectionLabel>Details</SectionLabel>
-            <p className="text-[13px] text-foreground">{data.projectName}</p>
+            <p className={styles.summaryLabel}>Details</p>
+            <p className={styles.summaryContent}>{data.projectName}</p>
           </div>
           <div>
-            <SectionLabel>Payment</SectionLabel>
-            <p className="text-[13px] text-foreground">
-              Due: {formatDisplayDate(data.dueDate)}
+            <p className={styles.summaryLabel}>Payment</p>
+            <p className={styles.summaryContent}>
+              Due date: {formatDisplayDate(data.dueDate)}
             </p>
           </div>
         </div>
 
-        <table className="mb-8 w-full text-left text-[13px]">
+        <table className={styles.table}>
+          <colgroup>
+            <col className={styles.colDescription} />
+            <col className={styles.colQty} />
+            <col className={styles.colRate} />
+            <col className={styles.colAmount} />
+          </colgroup>
           <thead>
-            <tr className="border-b border-border text-xs font-bold tracking-[0.05em] text-muted-foreground uppercase">
-              <th className="py-2">Description</th>
-              <th className="py-2 text-right">Qty</th>
-              <th className="py-2 text-right">Rate</th>
-              <th className="py-2 text-right">Amount</th>
+            <tr>
+              <th>Description</th>
+              <th className={styles.numberCell}>Qty</th>
+              <th className={styles.numberCell}>Rate</th>
+              <th className={styles.numberCell}>Amount (USD)</th>
             </tr>
           </thead>
           <tbody>
             {data.items.map((item) => (
-              <tr key={item.id} className="border-b border-border/60">
-                <td className="py-2">{item.description}</td>
-                <td className="py-2 text-right">{item.quantity}</td>
-                <td className="py-2 text-right">
+              <tr key={item.id}>
+                <td>{item.description}</td>
+                <td className={styles.numberCell}>{item.quantity}</td>
+                <td className={styles.numberCell}>
                   {formatCurrency(item.unitPrice, "USD")}
                 </td>
-                <td className="py-2 text-right">
+                <td className={styles.numberCell}>
                   {formatCurrency(item.amount, "USD")}
                 </td>
               </tr>
@@ -128,44 +103,45 @@ export function InvoiceDocument({
           </tbody>
         </table>
 
-        <div className="mb-8 flex flex-col items-end gap-1">
-          <p className="text-[13px] text-foreground">
-            Subtotal{" "}
-            <span className="ml-4">{formatCurrency(data.subtotal, "USD")}</span>
-          </p>
-          <p className="text-lg font-extrabold text-foreground">
-            Total{" "}
-            <span className="ml-4">{formatCurrency(data.total, "USD")}</span>
-          </p>
+        <div className={styles.totals}>
+          <div className={styles.totalRow}>
+            <span>Subtotal</span>
+            <span className={styles.numberCell}>
+              {formatCurrency(data.subtotal, "USD")}
+            </span>
+          </div>
+          <div className={`${styles.totalRow} ${styles.totalRowFinal}`}>
+            <span>Total</span>
+            <span className={styles.numberCell}>
+              {formatCurrency(data.total, "USD")}
+            </span>
+          </div>
           {hasConvertedTotal ? (
             <>
-              <div className="my-1 w-56 border-t border-border" />
-              <p className="text-[13px] font-bold text-muted-foreground">
-                Converted Total ({data.convertedCurrency}){" "}
-                <span className="ml-4">
+              <div className={styles.convertedRule} />
+              <div className={styles.convertedRow}>
+                <span>Total in {data.convertedCurrency}</span>
+                <span className={styles.numberCell}>
                   {formatCurrency(
                     data.convertedTotal!,
                     data.convertedCurrency!,
                   )}
                 </span>
-              </p>
+              </div>
             </>
           ) : null}
         </div>
 
-        <div>
-          <SectionLabel>Payment Details</SectionLabel>
-          <dl className="grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2">
+        <div className={styles.paymentSection}>
+          <p className={styles.sectionHeading}>Payment to be made to:</p>
+          <div className={styles.paymentGrid}>
             {data.paymentDetails.map((field) => (
-              <div
-                key={field.key}
-                className="flex justify-between gap-2 text-[13px] sm:justify-start"
-              >
-                <dt className="text-muted-foreground">{field.label}</dt>
-                <dd>{field.value}</dd>
+              <div key={field.key} className={styles.paymentRow}>
+                <span className={styles.paymentLabel}>{field.label}</span>
+                <span className={styles.paymentValue}>{field.value}</span>
               </div>
             ))}
-          </dl>
+          </div>
         </div>
       </div>
     </div>
@@ -175,12 +151,12 @@ export function InvoiceDocument({
 function PartyLines({ party }: { party: PartySnapshotData }) {
   return (
     <>
-      <p className="text-[13px] font-bold text-foreground">{party.name}</p>
+      <p className={styles.summaryContent}>{party.name}</p>
       {party.email ? (
-        <p className="text-[13px] text-muted-foreground">{party.email}</p>
+        <p className={styles.summaryContentSecondary}>{party.email}</p>
       ) : null}
       {addressLines(party).map((line) => (
-        <p key={line} className="text-[13px] text-muted-foreground">
+        <p key={line} className={styles.summaryContentSecondary}>
           {line}
         </p>
       ))}
@@ -197,12 +173,4 @@ function addressLines(party: PartySnapshotData): string[] {
   if (cityLine) lines.push(cityLine);
   if (party.country) lines.push(party.country);
   return lines;
-}
-
-function SectionLabel({ children }: { children: ReactNode }) {
-  return (
-    <p className="mb-1 text-[11px] font-bold tracking-[0.05em] text-muted-foreground uppercase">
-      {children}
-    </p>
-  );
 }
