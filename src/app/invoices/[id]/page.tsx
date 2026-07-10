@@ -3,10 +3,10 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { InvoiceForm } from "@/components/invoice/InvoiceForm";
 import { StatusBadge } from "@/components/invoice/StatusBadge";
 import { StatusActionBar } from "@/components/invoice/StatusActionBar";
-import { Card, CardContent } from "@/components/ui/card";
+import { InvoiceDocument } from "@/components/invoice/InvoiceDocument";
 import { invoiceService } from "@/services/invoiceService";
-import { formatCurrency } from "@/lib/currency";
-import { formatDisplayDate, toDateInputValue } from "@/lib/dates";
+import { documentService } from "@/services/documentService";
+import { toDateInputValue } from "@/lib/dates";
 
 export default async function InvoiceDetailPage({
   params,
@@ -27,6 +27,7 @@ export default async function InvoiceDetailPage({
   );
 
   if (invoice.status !== "DRAFT") {
+    const data = documentService.assembleInvoiceDocumentData(invoice);
     return (
       <>
         <PageHeader
@@ -34,84 +35,7 @@ export default async function InvoiceDetailPage({
           subtitle={invoice.project.name}
           action={headerAction}
         />
-        <Card>
-          <CardContent className="space-y-6 pt-6 text-[13px]">
-            <p className="text-muted-foreground">
-              This invoice is {invoice.status.toLowerCase()} and no longer
-              editable. Line items, snapshot data, and totals are locked. (The
-              full styled document preview lands in a later milestone.)
-            </p>
-            <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <div>
-                <dt className="text-xs font-bold tracking-wide text-muted-foreground uppercase">
-                  Issue Date
-                </dt>
-                <dd>{formatDisplayDate(invoice.issueDate)}</dd>
-              </div>
-              <div>
-                <dt className="text-xs font-bold tracking-wide text-muted-foreground uppercase">
-                  Due Date
-                </dt>
-                <dd>{formatDisplayDate(invoice.dueDate)}</dd>
-              </div>
-              <div>
-                <dt className="text-xs font-bold tracking-wide text-muted-foreground uppercase">
-                  Subtotal
-                </dt>
-                <dd className="font-mono">
-                  {formatCurrency(invoice.subtotal.toString(), "USD")}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs font-bold tracking-wide text-muted-foreground uppercase">
-                  Total
-                </dt>
-                <dd className="font-mono font-semibold">
-                  {formatCurrency(invoice.total.toString(), "USD")}
-                </dd>
-              </div>
-              {invoice.convertedTotal && invoice.convertedCurrency ? (
-                <div>
-                  <dt className="text-xs font-bold tracking-wide text-muted-foreground uppercase">
-                    Converted Total
-                  </dt>
-                  <dd className="font-mono text-muted-foreground">
-                    {formatCurrency(
-                      invoice.convertedTotal.toString(),
-                      invoice.convertedCurrency,
-                    )}
-                  </dd>
-                </div>
-              ) : null}
-            </dl>
-            <table className="w-full text-left text-[13px]">
-              <thead>
-                <tr className="border-b border-border text-xs font-bold tracking-wide text-muted-foreground uppercase">
-                  <th className="py-2">Description</th>
-                  <th className="py-2 text-right">Qty</th>
-                  <th className="py-2 text-right">Unit Price</th>
-                  <th className="py-2 text-right">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoice.items.map((item) => (
-                  <tr key={item.id} className="border-b border-border/60">
-                    <td className="py-2">{item.description}</td>
-                    <td className="py-2 text-right font-mono">
-                      {item.quantity.toString()}
-                    </td>
-                    <td className="py-2 text-right font-mono">
-                      {formatCurrency(item.unitPrice.toString(), "USD")}
-                    </td>
-                    <td className="py-2 text-right font-mono">
-                      {formatCurrency(item.amount.toString(), "USD")}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
+        <InvoiceDocument data={data} />
       </>
     );
   }

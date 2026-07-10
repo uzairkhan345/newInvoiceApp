@@ -1,0 +1,108 @@
+import { describe, expect, it, vi } from "vitest";
+import { documentService } from "@/services/documentService";
+import { partyRepository } from "@/repositories/partyRepository";
+import { paymentMethodRepository } from "@/repositories/paymentMethodRepository";
+import { Prisma } from "@/generated/prisma/client";
+import type { InvoiceWithItems } from "@/repositories/invoiceRepository";
+
+function fakeInvoice(
+  overrides: Partial<InvoiceWithItems> = {},
+): InvoiceWithItems {
+  return {
+    id: "inv_1",
+    projectId: "proj_1",
+    invoiceNumber: "TQ-01",
+    status: "SENT",
+    issueDate: new Date("2026-01-01"),
+    dueDate: new Date("2026-01-15"),
+    subtotal: new Prisma.Decimal("300"),
+    total: new Prisma.Decimal("300"),
+    convertedTotal: new Prisma.Decimal("450"),
+    convertedCurrency: "AUD",
+    fromPartySnapshot: {
+      name: "Acme Robotics",
+      email: "billing@acme.example",
+      street1: "1 Main St",
+      street2: null,
+      city: "Springfield",
+      state: "IL",
+      postalCode: "62701",
+      country: "USA",
+    },
+    toPartySnapshot: {
+      name: "Client Co",
+      email: null,
+      street1: null,
+      street2: null,
+      city: null,
+      state: null,
+      postalCode: null,
+      country: null,
+    },
+    paymentDetailsSnapshot: [
+      { key: "bank_name", label: "Bank Name", value: "Test Bank" },
+    ],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    items: [
+      {
+        id: "item_1",
+        invoiceId: "inv_1",
+        description: "Consulting",
+        quantity: new Prisma.Decimal("2"),
+        unitPrice: new Prisma.Decimal("150"),
+        amount: new Prisma.Decimal("300"),
+        sortOrder: 0,
+      },
+    ],
+    project: {
+      id: "proj_1",
+      name: "Acme Ongoing Support",
+    } as InvoiceWithItems["project"],
+    ...overrides,
+  } satisfies InvoiceWithItems;
+}
+
+describe("documentService.assembleInvoiceDocumentData", () => {
+  it("maps snapshot fields and computed totals into the shared view model", () => {
+    const data = documentService.assembleInvoiceDocumentData(fakeInvoice());
+
+    expect(data.invoiceNumber).toBe("TQ-01");
+    expect(data.projectName).toBe("Acme Ongoing Support");
+    expect(data.contractor).toMatchObject({ name: "Acme Robotics" });
+    expect(data.client).toMatchObject({ name: "Client Co" });
+    expect(data.paymentDetails).toEqual([
+      { key: "bank_name", label: "Bank Name", value: "Test Bank" },
+    ]);
+    expect(data.items).toHaveLength(1);
+    expect(data.items[0]).toMatchObject({
+      description: "Consulting",
+      amount: "300",
+    });
+    expect(data.subtotal).toBe("300");
+    expect(data.total).toBe("300");
+    expect(data.convertedTotal).toBe("450");
+    expect(data.convertedCurrency).toBe("AUD");
+  });
+
+  it("returns null convertedTotal/convertedCurrency when the invoice has neither", () => {
+    const data = documentService.assembleInvoiceDocumentData(
+      fakeInvoice({ convertedTotal: null, convertedCurrency: null }),
+    );
+    expect(data.convertedTotal).toBeNull();
+    expect(data.convertedCurrency).toBeNull();
+  });
+
+  it("never queries partyRepository or paymentMethodRepository — sources exclusively from the invoice's own snapshot fields", () => {
+    const partySpy = vi.spyOn(partyRepository, "findById");
+    const paymentMethodSpy = vi.spyOn(paymentMethodRepository, "findById");
+
+    documentService.assembleInvoiceDocumentData(fakeInvoice());
+
+    expect(partySpy).not.toHaveBeenCalled();
+    expect(paymentMethodSpy).not.toHaveBeenCalled();
+
+    partySpy.mockRestore();
+    paymentMethodSpy.mockRestore();
+  });
+});

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { AppShell } from "@/components/layout/AppShell";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -30,12 +30,7 @@ export default function RootLayout({
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-background text-foreground">
-        <div className="flex min-h-screen">
-          <Sidebar />
-          <main className="flex-1 min-w-0">
-            <div className="mx-auto max-w-[1200px] p-4 md:p-10">{children}</div>
-          </main>
-        </div>
+        <AppShell>{children}</AppShell>
         <Toaster />
       </body>
     </html>
