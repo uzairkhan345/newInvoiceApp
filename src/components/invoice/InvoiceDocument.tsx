@@ -3,6 +3,7 @@ import { StatusBadge } from "@/components/invoice/StatusBadge";
 import { LockedBanner } from "@/components/invoice/LockedBanner";
 import { formatCurrency } from "@/lib/currency";
 import { formatDisplayDate } from "@/lib/dates";
+import { cn } from "@/lib/utils";
 import type {
   InvoiceDocumentData,
   PartySnapshotData,
@@ -14,20 +15,44 @@ import type {
  * print route (/invoices/[id]/print) that Puppeteer will later navigate to
  * (M9). Data comes exclusively from documentService.assembleInvoiceDocumentData.
  *
- * Letterhead layout adapted from the reference invoices in
- * ai_context/03_document_generation_reference/ (screenshots + generate_invoice.py),
- * reworked into the app's own Docketly Indigo tokens rather than copied as-is
- * — see §15's 2026-07-10 rewrite note.
+ * Letterhead layout AND color/type adapted from the reference invoices in
+ * ai_context/03_document_generation_reference/ (screenshots + generate_invoice.py)
+ * — Arial throughout (no mono face) and the reference's exact slate separator
+ * bar (`#566473`)/plain-black invoice number, deliberately overriding the
+ * rest of the app's Docketly Indigo/Inter+mono system for this one component
+ * — see §15's 2026-07-10 rewrite + color/font-match notes. `StatusBadge`
+ * keeps its lifecycle colors regardless (DRAFT/SENT/PAID/VOID/OVERDUE is a
+ * real state the reference has no equivalent for, unlike the purely
+ * decorative brand accents that were replaced).
+ *
+ * `framed` controls the bordered/rounded "document card" look: on (default)
+ * for the in-app preview at /invoices/[id], off for /invoices/[id]/print —
+ * that route's markup becomes the literal PDF page (M9), and a real exported
+ * PDF has no visible card chrome, just a plain white page.
  */
-export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
+export function InvoiceDocument({
+  data,
+  framed = true,
+}: {
+  data: InvoiceDocumentData;
+  framed?: boolean;
+}) {
   const isLocked = data.status !== "DRAFT";
   const hasConvertedTotal =
     data.convertedTotal !== null && data.convertedCurrency !== null;
 
   return (
-    <div className="mx-auto w-full max-w-[800px]">
+    <div
+      className="mx-auto w-full max-w-[800px]"
+      style={{ fontFamily: "Arial, Helvetica, sans-serif" }}
+    >
       {isLocked ? <LockedBanner /> : null}
-      <div className="rounded-[8px] border border-border bg-card p-5 sm:p-12">
+      <div
+        className={cn(
+          "bg-card p-5 sm:p-12",
+          framed && "rounded-[8px] border border-border",
+        )}
+      >
         <header className="flex items-start justify-between">
           <div>
             <p className="text-[15px] font-bold text-foreground">
@@ -43,7 +68,7 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
             <p className="text-[11px] font-bold tracking-[0.05em] text-muted-foreground uppercase">
               Invoice #
             </p>
-            <p className="font-mono text-[18px] font-extrabold text-brand">
+            <p className="text-[18px] font-extrabold text-foreground">
               {data.invoiceNumber}
             </p>
             <p className="mt-1 text-[13px] text-muted-foreground">
@@ -52,7 +77,7 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
           </div>
         </header>
 
-        <div className="my-5 h-1 w-full bg-brand" />
+        <div className="my-5 h-1 w-full bg-[#566473]" />
 
         <div className="mb-8 flex items-center justify-between">
           <h1 className="text-[28px] font-extrabold tracking-tight text-foreground">
@@ -91,13 +116,11 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
             {data.items.map((item) => (
               <tr key={item.id} className="border-b border-border/60">
                 <td className="py-2">{item.description}</td>
-                <td className="py-2 text-right font-mono">
-                  {item.quantity}
-                </td>
-                <td className="py-2 text-right font-mono">
+                <td className="py-2 text-right">{item.quantity}</td>
+                <td className="py-2 text-right">
                   {formatCurrency(item.unitPrice, "USD")}
                 </td>
-                <td className="py-2 text-right font-mono">
+                <td className="py-2 text-right">
                   {formatCurrency(item.amount, "USD")}
                 </td>
               </tr>
@@ -108,23 +131,22 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
         <div className="mb-8 flex flex-col items-end gap-1">
           <p className="text-[13px] text-foreground">
             Subtotal{" "}
-            <span className="ml-4 font-mono">
-              {formatCurrency(data.subtotal, "USD")}
-            </span>
+            <span className="ml-4">{formatCurrency(data.subtotal, "USD")}</span>
           </p>
           <p className="text-lg font-extrabold text-foreground">
             Total{" "}
-            <span className="ml-4 font-mono">
-              {formatCurrency(data.total, "USD")}
-            </span>
+            <span className="ml-4">{formatCurrency(data.total, "USD")}</span>
           </p>
           {hasConvertedTotal ? (
             <>
               <div className="my-1 w-56 border-t border-border" />
               <p className="text-[13px] font-bold text-muted-foreground">
                 Converted Total ({data.convertedCurrency}){" "}
-                <span className="ml-4 font-mono">
-                  {formatCurrency(data.convertedTotal!, data.convertedCurrency!)}
+                <span className="ml-4">
+                  {formatCurrency(
+                    data.convertedTotal!,
+                    data.convertedCurrency!,
+                  )}
                 </span>
               </p>
             </>
@@ -140,7 +162,7 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
                 className="flex justify-between gap-2 text-[13px] sm:justify-start"
               >
                 <dt className="text-muted-foreground">{field.label}</dt>
-                <dd className="font-mono">{field.value}</dd>
+                <dd>{field.value}</dd>
               </div>
             ))}
           </dl>
