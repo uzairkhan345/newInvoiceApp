@@ -263,11 +263,18 @@
   color: var(--invoice-muted);
 }
 
+/*
+ * Docs/invoice_design_guidelines.md §12 — "two-column label/value structure"
+ * means each row has a label column and a value column, NOT multiple
+ * label/value pairs side by side. Every reference sample lists payment
+ * fields as a single vertical sequence in their stored order (e.g. Bank
+ * Name, then Routing Number, then Account Number) — a 2-up grid would wrap
+ * fields out of that order the moment there's an odd number of them.
+ */
 .paymentGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  column-gap: var(--space-5);
-  row-gap: var(--space-1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .paymentRow {

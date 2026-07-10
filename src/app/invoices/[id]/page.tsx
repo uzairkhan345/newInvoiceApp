@@ -45,6 +45,8 @@ export default async function InvoiceDetailPage({
           title={invoice.invoiceNumber}
           subtitle={invoice.project.name}
           action={headerAction}
+          backHref="/invoices"
+          backLabel="Back to Invoices"
         />
         {/* Docs/invoice_design_guidelines.md §15 — the A4 page has fixed
             physical dimensions; on narrow viewports it scrolls horizontally
@@ -62,6 +64,8 @@ export default async function InvoiceDetailPage({
         title={invoice.invoiceNumber}
         subtitle={`Draft invoice for ${invoice.project.name}.`}
         action={headerAction}
+        backHref="/invoices"
+        backLabel="Back to Invoices"
       />
       <InvoiceForm
         mode="edit"

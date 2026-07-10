@@ -37,6 +37,8 @@ export default async function PartyDetailPage({
       <PageHeader
         title={party.name}
         subtitle="Edit party details and address."
+        backHref="/parties"
+        backLabel="Back to Parties"
         action={
           <PartyDeleteButton
             partyId={party.id}

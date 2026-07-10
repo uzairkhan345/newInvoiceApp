@@ -36,6 +36,8 @@ export default async function ProjectDetailPage({
       <PageHeader
         title={project.name}
         subtitle="Edit project details and invoicing configuration."
+        backHref="/projects"
+        backLabel="Back to Projects"
         action={
           <ProjectDeleteButton
             projectId={project.id}
