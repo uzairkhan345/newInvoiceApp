@@ -13,39 +13,67 @@ import type {
  * by the on-screen preview (/invoices/[id], with app chrome) and the bare
  * print route (/invoices/[id]/print) that Puppeteer will later navigate to
  * (M9). Data comes exclusively from documentService.assembleInvoiceDocumentData.
+ *
+ * Letterhead layout adapted from the reference invoices in
+ * ai_context/03_document_generation_reference/ (screenshots + generate_invoice.py),
+ * reworked into the app's own Docketly Indigo tokens rather than copied as-is
+ * — see §15's 2026-07-10 rewrite note.
  */
 export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
   const isLocked = data.status !== "DRAFT";
-  const hasConvertedTotal = data.convertedTotal !== null && data.convertedCurrency !== null;
+  const hasConvertedTotal =
+    data.convertedTotal !== null && data.convertedCurrency !== null;
 
   return (
     <div className="mx-auto w-full max-w-[800px]">
       {isLocked ? <LockedBanner /> : null}
-      <div className="rounded-[14px] border border-border bg-card p-5 sm:p-12">
-        <header className="mb-8 flex items-start justify-between">
-          <div />
+      <div className="rounded-[8px] border border-border bg-card p-5 sm:p-12">
+        <header className="flex items-start justify-between">
+          <div>
+            <p className="text-[15px] font-bold text-foreground">
+              {data.contractor.name}
+            </p>
+            {addressLines(data.contractor).map((line) => (
+              <p key={line} className="text-[13px] text-muted-foreground">
+                {line}
+              </p>
+            ))}
+          </div>
           <div className="text-right">
-            <p className="font-mono text-xl font-extrabold text-brand">
+            <p className="text-[11px] font-bold tracking-[0.05em] text-muted-foreground uppercase">
+              Invoice #
+            </p>
+            <p className="font-mono text-[18px] font-extrabold text-brand">
               {data.invoiceNumber}
             </p>
-            <div className="mt-2 flex justify-end">
-              <StatusBadge status={data.status} dueDate={data.dueDate} />
-            </div>
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              Issued {formatDisplayDate(data.issueDate)}
+            </p>
           </div>
         </header>
 
-        <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <PartyBlock title="Prepared By" party={data.contractor} />
-          <PartyBlock title="Billed To" party={data.client} />
+        <div className="my-5 h-1 w-full bg-brand" />
+
+        <div className="mb-8 flex items-center justify-between">
+          <h1 className="text-[28px] font-extrabold tracking-tight text-foreground">
+            Invoice
+          </h1>
+          <StatusBadge status={data.status} dueDate={data.dueDate} />
+        </div>
+
+        <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
           <div>
-            <SectionLabel>Project</SectionLabel>
+            <SectionLabel>Bill To</SectionLabel>
+            <PartyLines party={data.client} />
+          </div>
+          <div>
+            <SectionLabel>Details</SectionLabel>
             <p className="text-[13px] text-foreground">{data.projectName}</p>
           </div>
           <div>
-            <SectionLabel>Issue &amp; Due Dates</SectionLabel>
+            <SectionLabel>Payment</SectionLabel>
             <p className="text-[13px] text-foreground">
-              Issued {formatDisplayDate(data.issueDate)} · Due{" "}
-              {formatDisplayDate(data.dueDate)}
+              Due: {formatDisplayDate(data.dueDate)}
             </p>
           </div>
         </div>
@@ -54,13 +82,21 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
           <thead>
             <tr className="border-b border-border text-xs font-bold tracking-[0.05em] text-muted-foreground uppercase">
               <th className="py-2">Description</th>
-              <th className="py-2 text-right">Amount (USD)</th>
+              <th className="py-2 text-right">Qty</th>
+              <th className="py-2 text-right">Rate</th>
+              <th className="py-2 text-right">Amount</th>
             </tr>
           </thead>
           <tbody>
             {data.items.map((item) => (
               <tr key={item.id} className="border-b border-border/60">
                 <td className="py-2">{item.description}</td>
+                <td className="py-2 text-right font-mono">
+                  {item.quantity}
+                </td>
+                <td className="py-2 text-right font-mono">
+                  {formatCurrency(item.unitPrice, "USD")}
+                </td>
                 <td className="py-2 text-right font-mono">
                   {formatCurrency(item.amount, "USD")}
                 </td>
@@ -99,7 +135,10 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
           <SectionLabel>Payment Details</SectionLabel>
           <dl className="grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2">
             {data.paymentDetails.map((field) => (
-              <div key={field.key} className="flex justify-between gap-2 text-[13px] sm:justify-start">
+              <div
+                key={field.key}
+                className="flex justify-between gap-2 text-[13px] sm:justify-start"
+              >
                 <dt className="text-muted-foreground">{field.label}</dt>
                 <dd className="font-mono">{field.value}</dd>
               </div>
@@ -111,17 +150,10 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
   );
 }
 
-function PartyBlock({
-  title,
-  party,
-}: {
-  title: string;
-  party: PartySnapshotData;
-}) {
+function PartyLines({ party }: { party: PartySnapshotData }) {
   return (
-    <div>
-      <SectionLabel>{title}</SectionLabel>
-      <p className="text-[13px] font-semibold text-foreground">{party.name}</p>
+    <>
+      <p className="text-[13px] font-bold text-foreground">{party.name}</p>
       {party.email ? (
         <p className="text-[13px] text-muted-foreground">{party.email}</p>
       ) : null}
@@ -130,7 +162,7 @@ function PartyBlock({
           {line}
         </p>
       ))}
-    </div>
+    </>
   );
 }
 

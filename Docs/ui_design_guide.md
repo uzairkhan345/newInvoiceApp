@@ -250,14 +250,21 @@ A persistent right-hand panel (`1fr` slot in the three-panel layout, §2) alongs
 
 ---
 
-## 15. Invoice Preview Layout
+## 15. Invoice Preview Layout — **rewritten 2026-07-10, letterhead redesign**
 
-Centered white document, `1px` border, `14px` radius, `48px` padding (→ `20px` mobile), `max-width: 800px`.
+Superseded the original abstract "2×2 address grid" version below (built for M7) after reviewing real reference invoices in `ai_context/03_document_generation_reference/` (the sample PDFs, `screenshots/`, and `generate_invoice.py`) — the on-screen preview/PDF is now deliberately restyled to closely resemble that reference's letterhead-style layout, brought into the app's own Docketly Indigo tokens (never a plain Arial/black-and-white copy). This also brings the preview/PDF's structure into alignment with §11's Excel plan (contractor letterhead, BILL TO/DETAILS/PAYMENT, item table with Qty/Rate columns), which the old M7 version had drifted from.
 
-- **Header**: brand/logo-free left side (no logo support — §0.item removed entirely, nothing renders there beyond the workspace name/wordmark), invoice number (`20px` mono, brand) + status badge right.
-- **2×2 address grid**: "Prepared By" (contractor snapshot) / "Billed To" (client snapshot), then "Project" / "Issue & Due Dates".
-- **Line items table**: description + right-aligned amount column, all USD.
-- **Totals block** — **rewritten, no tax row**:
+Centered white document, `1px` border-light, `8px` radius (flatter than the `14px` used on dashboard cards — a document reads more official with sharper corners), `48px` padding (→ `20px` mobile), `max-width: 800px`.
+
+- **Letterhead row**: contractor identity on the left — name (`15px`/`700`/text-primary), then address lines (`13px`/text-secondary), one per line, sourced from `FromPartySnapshot`. Right-aligned: `INVOICE #` (`11px`/`700`/uppercase/text-muted label) over the invoice number (`18px`/`800`/mono/brand — a reference-code treatment), then `Issued` + the issue date (`13px`/text-secondary) beneath it.
+- **Separator bar**: a full-width `4px` solid `--brand` (indigo) rule directly beneath the letterhead row, `20px` margin above and below — the one deliberate color accent on the page (replaces the reference's generic slate-gray bar with the app's own brand color).
+- **Title row**: "Invoice" (`28px`/`800`/tight tracking/text-primary) on the left; the `StatusBadge` (§11) vertically centered on the right — the one element the reference has no equivalent for, since it has no lifecycle concept.
+- **3-column meta grid** (`grid-cols-1 sm:grid-cols-3`, `24px` gap): each column has an `11px`/`700`/uppercase/text-muted label, then `13px` content.
+  - `BILL TO` — client name (`700`) + address lines, from `ToPartySnapshot`.
+  - `DETAILS` — the project name (there is no separate free-text "service description" field on `Invoice`/`Project`; the project name serves the same "what this invoice is for" purpose the reference's `DETAILS` column carries — see the note below).
+  - `PAYMENT` — `Due: {DueDate}` only. (The actual payment method fields render in their own section further down, matching the reference's own separation between this mini-column and its bottom "Payment to be made to:" block.)
+- **Line items table**: `DESCRIPTION | QTY | RATE | AMOUNT` — **not** description-and-amount-only as the superseded version had it; every reference sample shows quantity/rate, so they render here too, right-aligned, mono. Header row `11px`/`700`/uppercase/text-muted with a bottom hairline; a hairline separates each row.
+- **Totals block** — unchanged from the superseded version, no tax row:
   ```
   Subtotal ......................... $X,XXX.XX
   Total ............................ $X,XXX.XX   (bold, 18px, mono — always equals Subtotal)
@@ -266,10 +273,11 @@ Centered white document, `1px` border, `14px` radius, `48px` padding (→ `20px`
                                                     13px, mono, text-secondary — visually
                                                     secondary to the USD total above it)
   ```
-  The converted-total line is visually separated (a thin rule + smaller/quieter styling) from the primary USD totals so it reads as a supplementary figure, never a second, competing "grand total."
-- **Payment details**: rendered from `PaymentDetailsSnapshot` — customer-facing `label`, never the `key`.
+- **Payment details section**: `PAYMENT DETAILS` label, then `label`/`value` rows rendered from `PaymentDetailsSnapshot` — customer-facing `label`, never the `key`.
 
-**Locked state**: when status is `SENT`, `PAID`, or `VOID`, render a read-only banner above the document header:
+**Deliberately not carried over from the reference**: the reference's optional italic per-invoice description line and its separate "Note: work done from X to Y" line (see `generate_invoice.py`'s `description`/`start_date`/`end_date` handling) have no corresponding field anywhere in the `Invoice`/`Project` schema — adding them would be a schema decision, not a layout one, so they're intentionally left out of this pass rather than silently invented. Revisit as an explicitly-scoped schema addition if wanted.
+
+**Locked state**: when status is `SENT`, `PAID`, or `VOID`, render a read-only banner above the document's letterhead:
 
 ```
 .doc-lock-banner { display:flex; align-items:center; gap:8px; background: var(--bg-main); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 10px 16px; font-size: 11px; color: var(--text-secondary); margin-bottom: 16px; }
