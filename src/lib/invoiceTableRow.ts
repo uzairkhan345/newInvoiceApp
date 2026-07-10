@@ -1,4 +1,5 @@
 import type { InvoiceListItem } from "@/repositories/invoiceRepository";
+import type { InvoiceStatus } from "@/generated/prisma/client";
 
 /**
  * Next.js Server→Client Component props must be plain-serializable — a
@@ -11,7 +12,7 @@ import type { InvoiceListItem } from "@/repositories/invoiceRepository";
 export type InvoiceTableRow = {
   id: string;
   invoiceNumber: string;
-  status: string;
+  status: InvoiceStatus;
   issueDate: Date;
   dueDate: Date;
   total: string;

@@ -4,6 +4,9 @@ import {
   invoiceService,
   InvoiceNotDraftError,
   DuplicateInvoiceNumberError,
+  InvalidTransitionError,
+  InvoiceSendValidationError,
+  InvoiceNotFoundError,
 } from "@/services/invoiceService";
 import { projectService } from "@/services/projectService";
 import { partyService } from "@/services/partyService";
@@ -320,5 +323,235 @@ describe("invoiceService.previewNextInvoiceNumber", () => {
 
     const preview = await invoiceService.previewNextInvoiceNumber(project.id);
     expect(preview).toBe("TP-06");
+  });
+});
+
+describe("invoiceService.validateForSend", () => {
+  it("rejects when there are no line items", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ items: [] }),
+    );
+    createdInvoiceIds.push(invoice.id);
+
+    await expect(
+      invoiceService.validateForSend(invoice.id),
+    ).rejects.toBeInstanceOf(InvoiceSendValidationError);
+  });
+
+  it("rejects when the due date is before the issue date", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ issueDate: "2026-02-01", dueDate: "2026-01-01" }),
+    );
+    createdInvoiceIds.push(invoice.id);
+
+    await expect(
+      invoiceService.validateForSend(invoice.id),
+    ).rejects.toBeInstanceOf(InvoiceSendValidationError);
+  });
+
+  it("rejects when the project's non-USD DisplayCurrency has no convertedTotal", async () => {
+    const { project } = await createTestProject({ displayCurrency: "AUD" });
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ convertedTotal: "" }),
+    );
+    createdInvoiceIds.push(invoice.id);
+
+    await expect(
+      invoiceService.validateForSend(invoice.id),
+    ).rejects.toBeInstanceOf(InvoiceSendValidationError);
+  });
+
+  it("resolves without throwing when every requirement is met", async () => {
+    const { project } = await createTestProject({ displayCurrency: "AUD" });
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ convertedTotal: "500" }),
+    );
+    createdInvoiceIds.push(invoice.id);
+
+    await expect(
+      invoiceService.validateForSend(invoice.id),
+    ).resolves.toBeUndefined();
+  });
+});
+
+describe("invoiceService.transitionStatus", () => {
+  it("DRAFT -> SENT succeeds and locks a final recompute of the snapshot", async () => {
+    const { project, contractor } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput(),
+    );
+    createdInvoiceIds.push(invoice.id);
+
+    // Edit the source party after the last draft save but before sending —
+    // the one final recompute at SENT (Story 6.2) should still pick this up.
+    await partyService.update(contractor.id, {
+      ...basePartyInput({ name: contractor.name }),
+      email: "final-recompute@test.example",
+    });
+
+    const sent = await invoiceService.transitionStatus(invoice.id, "SENT");
+    expect(sent.status).toBe("SENT");
+    expect(sent.fromPartySnapshot).toMatchObject({
+      email: "final-recompute@test.example",
+    });
+
+    // A later party edit must never affect the now-locked SENT snapshot.
+    await partyService.update(contractor.id, {
+      ...basePartyInput({ name: contractor.name }),
+      email: "after-sent@test.example",
+    });
+    const reFetched = await invoiceService.getById(invoice.id);
+    expect(reFetched?.fromPartySnapshot).toMatchObject({
+      email: "final-recompute@test.example",
+    });
+  });
+
+  it("DRAFT -> VOID succeeds", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput(),
+    );
+    createdInvoiceIds.push(invoice.id);
+
+    const voided = await invoiceService.transitionStatus(invoice.id, "VOID");
+    expect(voided.status).toBe("VOID");
+  });
+
+  it("SENT -> PAID succeeds", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput(),
+    );
+    createdInvoiceIds.push(invoice.id);
+    await invoiceService.transitionStatus(invoice.id, "SENT");
+
+    const paid = await invoiceService.transitionStatus(invoice.id, "PAID");
+    expect(paid.status).toBe("PAID");
+  });
+
+  it("SENT -> VOID succeeds", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput(),
+    );
+    createdInvoiceIds.push(invoice.id);
+    await invoiceService.transitionStatus(invoice.id, "SENT");
+
+    const voided = await invoiceService.transitionStatus(invoice.id, "VOID");
+    expect(voided.status).toBe("VOID");
+  });
+
+  it("rejects PAID -> VOID — a paid invoice can never be voided", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput(),
+    );
+    createdInvoiceIds.push(invoice.id);
+    await invoiceService.transitionStatus(invoice.id, "SENT");
+    await invoiceService.transitionStatus(invoice.id, "PAID");
+
+    await expect(
+      invoiceService.transitionStatus(invoice.id, "VOID"),
+    ).rejects.toBeInstanceOf(InvalidTransitionError);
+  });
+
+  it("rejects any transition back to DRAFT", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput(),
+    );
+    createdInvoiceIds.push(invoice.id);
+    await invoiceService.transitionStatus(invoice.id, "SENT");
+
+    await expect(
+      invoiceService.transitionStatus(invoice.id, "DRAFT"),
+    ).rejects.toBeInstanceOf(InvalidTransitionError);
+
+    await invoiceService.transitionStatus(invoice.id, "PAID");
+    await expect(
+      invoiceService.transitionStatus(invoice.id, "DRAFT"),
+    ).rejects.toBeInstanceOf(InvalidTransitionError);
+  });
+
+  it("rejects any transition out of VOID", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput(),
+    );
+    createdInvoiceIds.push(invoice.id);
+    await invoiceService.transitionStatus(invoice.id, "VOID");
+
+    await expect(
+      invoiceService.transitionStatus(invoice.id, "SENT"),
+    ).rejects.toBeInstanceOf(InvalidTransitionError);
+    await expect(
+      invoiceService.transitionStatus(invoice.id, "PAID"),
+    ).rejects.toBeInstanceOf(InvalidTransitionError);
+  });
+
+  it("blocks DRAFT -> SENT via validateForSend when send requirements aren't met, leaving the invoice DRAFT", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ items: [] }),
+    );
+    createdInvoiceIds.push(invoice.id);
+
+    await expect(
+      invoiceService.transitionStatus(invoice.id, "SENT"),
+    ).rejects.toBeInstanceOf(InvoiceSendValidationError);
+
+    const stillDraft = await invoiceService.getById(invoice.id);
+    expect(stillDraft?.status).toBe("DRAFT");
+  });
+});
+
+describe("invoiceService.delete", () => {
+  it("deletes a DRAFT invoice and cascades its line items", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput(),
+    );
+
+    await invoiceService.delete(invoice.id);
+
+    expect(await invoiceService.getById(invoice.id)).toBeNull();
+    const remainingItems = await prisma.invoiceItem.count({
+      where: { invoiceId: invoice.id },
+    });
+    expect(remainingItems).toBe(0);
+  });
+
+  it("deletes an invoice in any status (SENT/PAID/VOID), not just DRAFT", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput(),
+    );
+    await invoiceService.transitionStatus(invoice.id, "SENT");
+    await invoiceService.transitionStatus(invoice.id, "PAID");
+
+    await invoiceService.delete(invoice.id);
+    expect(await invoiceService.getById(invoice.id)).toBeNull();
+  });
+
+  it("throws InvoiceNotFoundError for a nonexistent id", async () => {
+    await expect(
+      invoiceService.delete("nonexistent-id"),
+    ).rejects.toBeInstanceOf(InvoiceNotFoundError);
   });
 });

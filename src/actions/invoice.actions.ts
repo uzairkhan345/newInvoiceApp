@@ -7,8 +7,11 @@ import {
   InvoiceNotFoundError,
   InvoiceNotDraftError,
   DuplicateInvoiceNumberError,
+  InvalidTransitionError,
+  InvoiceSendValidationError,
 } from "@/services/invoiceService";
 import { invoiceSchema } from "@/lib/validation/invoice";
+import type { InvoiceStatus } from "@/generated/prisma/client";
 
 export type ActionResult<T> =
   | { success: true; data: T }
@@ -19,7 +22,9 @@ function friendlyErrorOrThrow(error: unknown): string {
     error instanceof ProjectNotFoundError ||
     error instanceof InvoiceNotFoundError ||
     error instanceof InvoiceNotDraftError ||
-    error instanceof DuplicateInvoiceNumberError
+    error instanceof DuplicateInvoiceNumberError ||
+    error instanceof InvalidTransitionError ||
+    error instanceof InvoiceSendValidationError
   ) {
     return error.message;
   }
@@ -66,6 +71,32 @@ export async function updateInvoiceDraftAction(
     revalidatePath("/invoices");
     revalidatePath(`/invoices/${id}`);
     return { success: true, data: { id: invoice.id } };
+  } catch (error) {
+    return { success: false, error: friendlyErrorOrThrow(error) };
+  }
+}
+
+export async function transitionInvoiceStatusAction(
+  id: string,
+  target: InvoiceStatus,
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    const invoice = await invoiceService.transitionStatus(id, target);
+    revalidatePath("/invoices");
+    revalidatePath(`/invoices/${id}`);
+    return { success: true, data: { id: invoice.id } };
+  } catch (error) {
+    return { success: false, error: friendlyErrorOrThrow(error) };
+  }
+}
+
+export async function deleteInvoiceAction(
+  id: string,
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    await invoiceService.delete(id);
+    revalidatePath("/invoices");
+    return { success: true, data: { id } };
   } catch (error) {
     return { success: false, error: friendlyErrorOrThrow(error) };
   }

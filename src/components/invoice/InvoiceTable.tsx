@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { DataTable, type DataTableColumn } from "@/components/shared/DataTable";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/invoice/StatusBadge";
 import { formatCurrency } from "@/lib/currency";
 import { formatDisplayDate } from "@/lib/dates";
 import type { InvoiceTableRow } from "@/lib/invoiceTableRow";
@@ -31,9 +31,7 @@ export function InvoiceTable({ invoices }: { invoices: InvoiceTableRow[] }) {
     {
       header: "Status",
       cell: (invoice) => (
-        <Badge variant="secondary" className="uppercase">
-          {invoice.status}
-        </Badge>
+        <StatusBadge status={invoice.status} dueDate={invoice.dueDate} />
       ),
     },
     {

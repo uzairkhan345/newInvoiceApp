@@ -33,3 +33,14 @@ export function formatDisplayDate(date: Date): string {
     timeZone: "UTC",
   }).format(date);
 }
+
+/**
+ * Docs/execution_plan.md §8 — OVERDUE is `status === SENT && dueDate < today`,
+ * compared as UTC dates (matching how `@db.Date` columns are stored/read)
+ * rather than against the server's local wall-clock time.
+ */
+export function isOverdue(dueDate: Date): boolean {
+  const now = new Date();
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return dueDate.getTime() < today;
+}

@@ -9,8 +9,7 @@ import type { ProjectWithRelations } from "@/repositories/projectRepository";
 
 /**
  * Thin Prisma wrappers only — no validation, no business rules
- * (Docs/execution_plan.md §6). `updateStatus` is intentionally not
- * implemented here — it's stubbed/unused until M6's lifecycle work.
+ * (Docs/execution_plan.md §6).
  */
 export type InvoiceItemWriteInput = {
   description: string;
@@ -133,10 +132,42 @@ function replaceItemsAndUpdate(
   });
 }
 
+/** Fields relocked at the exact moment of a DRAFT→SENT transition (§10). */
+export type SentSnapshotUpdate = {
+  fromPartySnapshot: Prisma.InputJsonValue;
+  toPartySnapshot: Prisma.InputJsonValue;
+  paymentDetailsSnapshot: Prisma.InputJsonValue;
+  convertedTotal: Prisma.Decimal | null;
+  convertedCurrency: string | null;
+};
+
+/**
+ * `snapshotUpdate` is only ever passed for the DRAFT→SENT transition (the
+ * one moment snapshot fields are ever touched again after creation) — every
+ * other transition is a bare status change.
+ */
+function updateStatus(
+  id: string,
+  status: InvoiceStatus,
+  snapshotUpdate?: SentSnapshotUpdate,
+): Promise<Invoice> {
+  return prisma.invoice.update({
+    where: { id },
+    data: { status, ...snapshotUpdate },
+  });
+}
+
+/** Story 5.6 — deletable in any status; InvoiceItem rows cascade (schema `onDelete: Cascade`). */
+function deleteById(id: string): Promise<Invoice> {
+  return prisma.invoice.delete({ where: { id } });
+}
+
 export const invoiceRepository = {
   findMany,
   findById,
   findInvoiceNumbersForProject,
   createWithItems,
   replaceItemsAndUpdate,
+  updateStatus,
+  deleteById,
 };

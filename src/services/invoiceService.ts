@@ -10,7 +10,7 @@ import type { ProjectWithRelations } from "@/repositories/projectRepository";
 import { generateInvoiceNumber } from "@/services/invoiceNumberService";
 import type { InvoiceInput } from "@/lib/validation/invoice";
 import { Prisma } from "@/generated/prisma/client";
-import type { Invoice } from "@/generated/prisma/client";
+import type { Invoice, InvoiceStatus } from "@/generated/prisma/client";
 
 /**
  * Thrown when a projectId doesn't resolve to a real Project — createDraft is
@@ -49,6 +49,27 @@ export class DuplicateInvoiceNumberError extends Error {
       "This invoice number is already used by another invoice in this project. Choose a different number.",
     );
     this.name = "DuplicateInvoiceNumberError";
+  }
+}
+
+/**
+ * Docs/implementation_decisions.md §10 — the hardcoded transition matrix;
+ * anything not listed here is rejected regardless of what the UI sent.
+ */
+export class InvalidTransitionError extends Error {
+  constructor(from: InvoiceStatus, to: InvoiceStatus) {
+    super(`An invoice can't move from ${from} to ${to}.`);
+    this.name = "InvalidTransitionError";
+  }
+}
+
+/** Docs/mvp_user_stories.md Story 4.4 — one or more send-blocking reasons. */
+export class InvoiceSendValidationError extends Error {
+  reasons: string[];
+  constructor(reasons: string[]) {
+    super(reasons.join(" "));
+    this.name = "InvoiceSendValidationError";
+    this.reasons = reasons;
   }
 }
 
@@ -222,10 +243,111 @@ async function updateDraft(id: string, input: InvoiceInput): Promise<Invoice> {
   }
 }
 
+/**
+ * Docs/execution_plan.md §8 / Docs/implementation_decisions.md §10 — the
+ * only authoritative transition rules; enforced here regardless of what the
+ * UI sent, per Story 5.5.
+ */
+const ALLOWED_TRANSITIONS: Record<InvoiceStatus, InvoiceStatus[]> = {
+  DRAFT: ["SENT", "VOID"],
+  SENT: ["PAID", "VOID"],
+  PAID: [],
+  VOID: [],
+};
+
+/** Docs/mvp_user_stories.md Story 4.4 — the DRAFT→SENT send-validation checklist. */
+function collectSendValidationReasons(
+  existing: InvoiceWithItems,
+  project: ProjectWithRelations,
+): string[] {
+  const reasons: string[] = [];
+
+  if (existing.items.length === 0) {
+    reasons.push("Add at least one line item before sending.");
+  }
+  if (!existing.invoiceNumber.trim()) {
+    reasons.push("Invoice number is required before sending.");
+  }
+  if (!existing.issueDate) {
+    reasons.push("Issue date is required before sending.");
+  }
+  if (!existing.dueDate) {
+    reasons.push("Due date is required before sending.");
+  }
+  if (
+    existing.issueDate &&
+    existing.dueDate &&
+    existing.dueDate.getTime() < existing.issueDate.getTime()
+  ) {
+    reasons.push("Due date must be on or after the issue date.");
+  }
+  if (project.displayCurrency !== "USD" && existing.convertedTotal == null) {
+    reasons.push(
+      `Enter a converted total in ${project.displayCurrency} before sending.`,
+    );
+  }
+
+  return reasons;
+}
+
+/** Docs/mvp_user_stories.md Story 4.4 — throws with every applicable reason when incomplete. */
+async function validateForSend(id: string): Promise<void> {
+  const existing = await invoiceRepository.findById(id);
+  if (!existing) throw new InvoiceNotFoundError();
+  const project = await loadProjectOrThrow(existing.projectId);
+
+  const reasons = collectSendValidationReasons(existing, project);
+  if (reasons.length > 0) throw new InvoiceSendValidationError(reasons);
+}
+
+/**
+ * Docs/implementation_decisions.md §10/§11 — enforces the transition matrix
+ * and, only for DRAFT→SENT, performs the one final snapshot recompute
+ * (covering any live edits since the last draft save) before permanently
+ * locking. No other transition touches snapshot fields.
+ */
+async function transitionStatus(
+  id: string,
+  target: InvoiceStatus,
+): Promise<Invoice> {
+  const existing = await invoiceRepository.findById(id);
+  if (!existing) throw new InvoiceNotFoundError();
+
+  const allowed = ALLOWED_TRANSITIONS[existing.status];
+  if (!allowed.includes(target)) {
+    throw new InvalidTransitionError(existing.status, target);
+  }
+
+  if (target !== "SENT") {
+    return invoiceRepository.updateStatus(id, target);
+  }
+
+  const project = await loadProjectOrThrow(existing.projectId);
+  const reasons = collectSendValidationReasons(existing, project);
+  if (reasons.length > 0) throw new InvoiceSendValidationError(reasons);
+
+  const isNonUsd = project.displayCurrency !== "USD";
+  return invoiceRepository.updateStatus(id, "SENT", {
+    ...buildSnapshots(project),
+    convertedTotal: isNonUsd ? existing.convertedTotal : null,
+    convertedCurrency: isNonUsd ? project.displayCurrency : null,
+  });
+}
+
+/** Story 5.6 — deletable in any status; this is what unblocks Project deletion. */
+async function remove(id: string): Promise<void> {
+  const existing = await invoiceRepository.findById(id);
+  if (!existing) throw new InvoiceNotFoundError();
+  await invoiceRepository.deleteById(id);
+}
+
 export const invoiceService = {
   list,
   getById,
   previewNextInvoiceNumber,
   createDraft,
   updateDraft,
+  validateForSend,
+  transitionStatus,
+  delete: remove,
 };
