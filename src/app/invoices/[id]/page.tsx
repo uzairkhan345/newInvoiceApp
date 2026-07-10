@@ -1,9 +1,12 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Eye } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { InvoiceForm } from "@/components/invoice/InvoiceForm";
 import { StatusBadge } from "@/components/invoice/StatusBadge";
 import { StatusActionBar } from "@/components/invoice/StatusActionBar";
 import { InvoiceDocument } from "@/components/invoice/InvoiceDocument";
+import { Button } from "@/components/ui/button";
 import { invoiceService } from "@/services/invoiceService";
 import { documentService } from "@/services/documentService";
 import { toDateInputValue } from "@/lib/dates";
@@ -22,6 +25,14 @@ export default async function InvoiceDetailPage({
   const headerAction = (
     <div className="flex items-center gap-3">
       <StatusBadge status={invoice.status} dueDate={invoice.dueDate} />
+      <Button
+        variant="outline"
+        nativeButton={false}
+        render={<Link href={`/invoices/${invoice.id}/print`} target="_blank" />}
+      >
+        <Eye className="h-3.5 w-3.5" />
+        Preview
+      </Button>
       <StatusActionBar invoiceId={invoice.id} status={invoice.status} />
     </div>
   );
