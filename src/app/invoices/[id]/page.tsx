@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Eye } from "lucide-react";
+import { Eye, Download } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { InvoiceForm } from "@/components/invoice/InvoiceForm";
 import { StatusBadge } from "@/components/invoice/StatusBadge";
@@ -32,6 +32,14 @@ export default async function InvoiceDetailPage({
       >
         <Eye className="h-3.5 w-3.5" />
         Preview
+      </Button>
+      <Button
+        variant="outline"
+        nativeButton={false}
+        render={<Link href={`/api/invoices/${invoice.id}/excel`} />}
+      >
+        <Download className="h-3.5 w-3.5" />
+        Excel
       </Button>
       <StatusActionBar invoiceId={invoice.id} status={invoice.status} />
     </div>

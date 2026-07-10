@@ -2,6 +2,7 @@ import { LockedBanner } from "@/components/invoice/LockedBanner";
 import { formatCurrency } from "@/lib/currency";
 import { formatDisplayDate } from "@/lib/dates";
 import { deriveDisplayStatus } from "@/lib/invoiceStatus";
+import { addressLines } from "@/lib/partyAddress";
 import type {
   InvoiceDocumentData,
   PartySnapshotData,
@@ -162,15 +163,4 @@ function PartyLines({ party }: { party: PartySnapshotData }) {
       ))}
     </>
   );
-}
-
-function addressLines(party: PartySnapshotData): string[] {
-  const lines: string[] = [];
-  if (party.street1) lines.push(party.street1);
-  if (party.street2) lines.push(party.street2);
-  const cityState = [party.city, party.state].filter(Boolean).join(", ");
-  const cityLine = [cityState, party.postalCode].filter(Boolean).join(" ");
-  if (cityLine) lines.push(cityLine);
-  if (party.country) lines.push(party.country);
-  return lines;
 }
