@@ -188,6 +188,30 @@ function list(): Promise<InvoiceListItem[]> {
   return invoiceRepository.findMany();
 }
 
+function listByStatus(status: InvoiceStatus): Promise<InvoiceListItem[]> {
+  return invoiceRepository.findMany({ status });
+}
+
+/** Dashboard (M10) — stats row counts (Docs/ui_design_guide.md §16). */
+function countByStatus(status: InvoiceStatus): Promise<number> {
+  return invoiceRepository.countByStatus(status);
+}
+
+/** Dashboard (M10) — USD-only outstanding subtext for the Sent/Unpaid stat. */
+function sumSubtotalByStatus(status: InvoiceStatus): Promise<Prisma.Decimal> {
+  return invoiceRepository.sumSubtotalByStatus(status);
+}
+
+/** Dashboard (M10) — Needs Attention's overdue set. */
+function listOverdue(): Promise<InvoiceListItem[]> {
+  return invoiceRepository.findOverdueCandidates();
+}
+
+/** Dashboard (M10) — Recent Activity's invoice-side lifecycle events. */
+function listRecentActivity(limit: number): Promise<InvoiceListItem[]> {
+  return invoiceRepository.findRecentByStatuses(["SENT", "PAID", "VOID"], limit);
+}
+
 function getById(id: string): Promise<InvoiceWithItems | null> {
   return invoiceRepository.findById(id);
 }
@@ -343,6 +367,7 @@ async function remove(id: string): Promise<void> {
 
 export const invoiceService = {
   list,
+  listByStatus,
   getById,
   previewNextInvoiceNumber,
   createDraft,
@@ -350,4 +375,8 @@ export const invoiceService = {
   validateForSend,
   transitionStatus,
   delete: remove,
+  countByStatus,
+  sumSubtotalByStatus,
+  listOverdue,
+  listRecentActivity,
 };

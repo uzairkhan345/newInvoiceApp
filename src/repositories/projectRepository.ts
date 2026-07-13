@@ -66,12 +66,30 @@ function countInvoices(projectId: string): Promise<number> {
   return prisma.invoice.count({ where: { projectId } });
 }
 
-/** Dashboard (M10) — projects missing a preferred payment method, Story 8.3. */
+/**
+ * Dashboard (M10) — projects missing a preferred payment method, Story 8.3.
+ * Scoped to ACTIVE only: an ARCHIVED project isn't issuing new invoices, so
+ * flagging it as needing attention would just be noise on the dashboard.
+ */
 function findMissingPreferredPaymentMethod(): Promise<ProjectWithRelations[]> {
   return prisma.project.findMany({
-    where: { preferredPaymentMethodId: null },
+    where: { preferredPaymentMethodId: null, status: "ACTIVE" },
     include: { client: true, contractor: true, preferredPaymentMethod: true },
     orderBy: { name: "asc" },
+  });
+}
+
+/** Dashboard (M10) — Active Projects stat. */
+function countActive(): Promise<number> {
+  return prisma.project.count({ where: { status: "ACTIVE" } });
+}
+
+/** Dashboard (M10) — Recent Activity's "project created" events. */
+function findRecentlyCreated(limit: number): Promise<ProjectWithRelations[]> {
+  return prisma.project.findMany({
+    include: { client: true, contractor: true, preferredPaymentMethod: true },
+    orderBy: { createdAt: "desc" },
+    take: limit,
   });
 }
 
@@ -83,4 +101,6 @@ export const projectRepository = {
   delete: deleteById,
   countInvoices,
   findMissingPreferredPaymentMethod,
+  countActive,
+  findRecentlyCreated,
 };

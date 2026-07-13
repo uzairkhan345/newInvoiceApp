@@ -35,12 +35,22 @@ export function formatDisplayDate(date: Date): string {
 }
 
 /**
+ * Docs/execution_plan.md §8 — "today" as a UTC-midnight Date, matching how
+ * `@db.Date` columns are stored/read. Shared by isOverdue and, from M10, the
+ * invoiceRepository.findOverdueCandidates query so both use one definition
+ * of "past due" instead of two copies of the same date math.
+ */
+export function startOfTodayUTC(): Date {
+  const now = new Date();
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+}
+
+/**
  * Docs/execution_plan.md §8 — OVERDUE is `status === SENT && dueDate < today`,
- * compared as UTC dates (matching how `@db.Date` columns are stored/read)
- * rather than against the server's local wall-clock time.
+ * compared as UTC dates rather than against the server's local wall-clock time.
  */
 export function isOverdue(dueDate: Date): boolean {
-  const now = new Date();
-  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  return dueDate.getTime() < today;
+  return dueDate.getTime() < startOfTodayUTC().getTime();
 }

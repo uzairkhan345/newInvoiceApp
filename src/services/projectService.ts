@@ -91,6 +91,21 @@ function list(): Promise<ProjectWithRelations[]> {
   return projectRepository.findMany();
 }
 
+/** Dashboard (M10) — Active Projects stat. */
+function countActive(): Promise<number> {
+  return projectRepository.countActive();
+}
+
+/** Dashboard (M10) — Needs Attention's missing-payment-method set (Story 8.3). */
+function listMissingPreferredPaymentMethod(): Promise<ProjectWithRelations[]> {
+  return projectRepository.findMissingPreferredPaymentMethod();
+}
+
+/** Dashboard (M10) — Recent Activity's "project created" events. */
+function listRecentlyCreated(limit: number): Promise<ProjectWithRelations[]> {
+  return projectRepository.findRecentlyCreated(limit);
+}
+
 function getById(id: string): Promise<ProjectWithRelations | null> {
   return projectRepository.findById(id);
 }
@@ -133,4 +148,7 @@ export const projectService = {
   update,
   isDeletable,
   delete: deleteProject,
+  countActive,
+  listMissingPreferredPaymentMethod,
+  listRecentlyCreated,
 };
