@@ -123,3 +123,21 @@
     @apply font-sans;
   }
 }
+
+/*
+ * Docs/execution_plan.md §12 (M9) — without this, <body>'s own
+ * min-h-full/bg-background (app-canvas styling, unconditional in
+ * layout.tsx) bleeds into printed/PDF output: if the invoice's A4 page
+ * content is even fractionally taller than one physical page, the body's
+ * own forced min-height spills a near-empty, gray-filled second page.
+ * Printed output (browser print and Puppeteer's page.pdf()) should only
+ * ever show the invoice page itself.
+ */
+@media print {
+  html,
+  body {
+    height: auto;
+    min-height: 0;
+    background: #ffffff;
+  }
+}
