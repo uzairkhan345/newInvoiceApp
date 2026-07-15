@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { invoiceService } from "@/services/invoiceService";
 import { documentService } from "@/services/documentService";
 import { toDateInputValue } from "@/lib/dates";
+import { getAiAssistConfigSummary } from "@/lib/ai-providers/config";
 
 export default async function InvoiceDetailPage({
   params,
@@ -87,6 +88,7 @@ export default async function InvoiceDetailPage({
         mode="edit"
         invoiceId={invoice.id}
         projectId={invoice.projectId}
+        aiConfig={getAiAssistConfigSummary()}
         project={{
           name: invoice.project.name,
           contractorName: invoice.project.contractor.name,

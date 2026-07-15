@@ -15,6 +15,9 @@ import { FormField } from "@/components/shared/FormField";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { AIAssistPanel } from "@/components/ai-assist/AIAssistPanel";
+import { useApplySuggestion } from "@/components/ai-assist/useApplySuggestion";
+import type { AiAssistConfigSummary } from "@/lib/ai-providers/config";
 
 export type InvoiceFormProjectInfo = {
   name: string;
@@ -81,20 +84,25 @@ export function InvoiceForm({
   invoiceId,
   project,
   defaultValues,
+  aiConfig,
 }: {
   mode: "create" | "edit";
   projectId: string;
   invoiceId?: string;
   project: InvoiceFormProjectInfo;
   defaultValues?: Partial<InvoiceInput>;
+  aiConfig: AiAssistConfigSummary;
 }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { highlightedKeys, applySuggestion } = useApplySuggestion();
 
   const {
     register,
     control,
     handleSubmit,
+    reset,
+    getValues,
     formState: { errors },
   } = useForm<InvoiceInput>({
     resolver: zodResolver(invoiceSchema),
@@ -132,72 +140,93 @@ export function InvoiceForm({
   return (
     <>
       <ProjectInfoPanel project={project} />
-      <Card>
-        <CardContent className="pt-6">
-          <form onSubmit={onSubmit} noValidate>
-            <FormField
-              label="Invoice Number"
-              htmlFor="invoiceNumber"
-              required
-              error={errors.invoiceNumber?.message}
-            >
-              <Input
-                id="invoiceNumber"
-                className="font-mono"
-                {...register("invoiceNumber")}
-              />
-            </FormField>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[2fr_1fr]">
+        <Card>
+          <CardContent className="pt-6">
+            <form onSubmit={onSubmit} noValidate>
               <FormField
-                label="Issue Date"
-                htmlFor="issueDate"
+                label="Invoice Number"
+                htmlFor="invoiceNumber"
                 required
-                error={errors.issueDate?.message}
-              >
-                <Input id="issueDate" type="date" {...register("issueDate")} />
-              </FormField>
-              <FormField
-                label="Due Date"
-                htmlFor="dueDate"
-                required
-                error={errors.dueDate?.message}
-              >
-                <Input id="dueDate" type="date" {...register("dueDate")} />
-              </FormField>
-            </div>
-
-            {project.displayCurrency !== "USD" ? (
-              <FormField
-                label={`Converted Total (${project.displayCurrency})`}
-                htmlFor="convertedTotal"
-                error={errors.convertedTotal?.message}
+                error={errors.invoiceNumber?.message}
+                highlighted={highlightedKeys.has("invoiceNumber")}
               >
                 <Input
-                  id="convertedTotal"
-                  inputMode="decimal"
-                  placeholder="Manually entered — no automatic exchange-rate lookup"
-                  {...register("convertedTotal")}
+                  id="invoiceNumber"
+                  className="font-mono"
+                  {...register("invoiceNumber")}
                 />
               </FormField>
-            ) : null}
 
-            <LineItemsEditor
-              control={control}
-              register={register}
-              errors={errors}
-            />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FormField
+                  label="Issue Date"
+                  htmlFor="issueDate"
+                  required
+                  error={errors.issueDate?.message}
+                  highlighted={highlightedKeys.has("issueDate")}
+                >
+                  <Input
+                    id="issueDate"
+                    type="date"
+                    {...register("issueDate")}
+                  />
+                </FormField>
+                <FormField
+                  label="Due Date"
+                  htmlFor="dueDate"
+                  required
+                  error={errors.dueDate?.message}
+                  highlighted={highlightedKeys.has("dueDate")}
+                >
+                  <Input id="dueDate" type="date" {...register("dueDate")} />
+                </FormField>
+              </div>
 
-            <Button type="submit" disabled={isSubmitting} className="mt-2">
-              {isSubmitting
-                ? "Saving…"
-                : mode === "create"
-                  ? "Create Invoice"
-                  : "Save Changes"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              {project.displayCurrency !== "USD" ? (
+                <FormField
+                  label={`Converted Total (${project.displayCurrency})`}
+                  htmlFor="convertedTotal"
+                  error={errors.convertedTotal?.message}
+                  highlighted={highlightedKeys.has("convertedTotal")}
+                >
+                  <Input
+                    id="convertedTotal"
+                    inputMode="decimal"
+                    placeholder="Manually entered — no automatic exchange-rate lookup"
+                    {...register("convertedTotal")}
+                  />
+                </FormField>
+              ) : null}
+
+              <LineItemsEditor
+                control={control}
+                register={register}
+                errors={errors}
+                highlighted={highlightedKeys.has("items")}
+              />
+
+              <Button type="submit" disabled={isSubmitting} className="mt-2">
+                {isSubmitting
+                  ? "Saving…"
+                  : mode === "create"
+                    ? "Create Invoice"
+                    : "Save Changes"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <AIAssistPanel
+          formType="invoice"
+          aiConfig={aiConfig}
+          onApply={(suggestion) =>
+            applySuggestion(suggestion, (patch) =>
+              reset({ ...getValues(), ...patch }),
+            )
+          }
+        />
+      </div>
     </>
   );
 }

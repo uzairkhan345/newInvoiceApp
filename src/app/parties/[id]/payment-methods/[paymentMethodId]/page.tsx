@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { PaymentMethodForm } from "@/components/payment-method/PaymentMethodForm";
 import { partyService } from "@/services/partyService";
 import { paymentMethodService } from "@/services/paymentMethodService";
+import { getAiAssistConfigSummary } from "@/lib/ai-providers/config";
 import type { PaymentMethodField } from "@/repositories/paymentMethodRepository";
 
 export default async function EditPaymentMethodPage({
@@ -28,6 +29,7 @@ export default async function EditPaymentMethodPage({
         mode="edit"
         partyId={party.id}
         paymentMethodId={paymentMethod.id}
+        aiConfig={getAiAssistConfigSummary()}
         defaultValues={{
           type: paymentMethod.type,
           label: paymentMethod.label,

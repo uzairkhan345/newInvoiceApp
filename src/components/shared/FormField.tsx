@@ -12,6 +12,7 @@ export function FormField({
   htmlFor,
   required,
   error,
+  highlighted,
   children,
   className,
 }: {
@@ -19,11 +20,19 @@ export function FormField({
   htmlFor: string;
   required?: boolean;
   error?: string;
+  /** Docs/ui_design_guide.md §14 — brief brand-light flash after AI Assist populates this field. */
+  highlighted?: boolean;
   children: ReactNode;
   className?: string;
 }) {
   return (
-    <div className={cn("mb-4 flex flex-col gap-1.5", className)}>
+    <div
+      className={cn(
+        "mb-4 flex flex-col gap-1.5 rounded-md transition-colors duration-1000",
+        highlighted && "bg-brand-light/60",
+        className,
+      )}
+    >
       <label
         htmlFor={htmlFor}
         className="text-[11px] font-bold tracking-[0.05em] text-muted-foreground uppercase"

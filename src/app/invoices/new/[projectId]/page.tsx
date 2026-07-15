@@ -4,6 +4,7 @@ import { InvoiceForm } from "@/components/invoice/InvoiceForm";
 import { projectService } from "@/services/projectService";
 import { invoiceService } from "@/services/invoiceService";
 import { toDateInputValue } from "@/lib/dates";
+import { getAiAssistConfigSummary } from "@/lib/ai-providers/config";
 
 export default async function NewInvoiceForProjectPage({
   params,
@@ -29,6 +30,7 @@ export default async function NewInvoiceForProjectPage({
       <InvoiceForm
         mode="create"
         projectId={project.id}
+        aiConfig={getAiAssistConfigSummary()}
         project={{
           name: project.name,
           contractorName: project.contractor.name,

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PaymentMethodForm } from "@/components/payment-method/PaymentMethodForm";
 import { partyService } from "@/services/partyService";
+import { getAiAssistConfigSummary } from "@/lib/ai-providers/config";
 
 export default async function NewPaymentMethodPage({
   params,
@@ -17,7 +18,11 @@ export default async function NewPaymentMethodPage({
   return (
     <>
       <PageHeader title="Add Payment Method" subtitle={`For ${party.name}.`} />
-      <PaymentMethodForm mode="create" partyId={party.id} />
+      <PaymentMethodForm
+        mode="create"
+        partyId={party.id}
+        aiConfig={getAiAssistConfigSummary()}
+      />
     </>
   );
 }

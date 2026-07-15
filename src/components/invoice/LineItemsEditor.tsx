@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/shared/FormField";
 import { formatCurrency } from "@/lib/currency";
+import { cn } from "@/lib/utils";
 import type { InvoiceInput } from "@/lib/validation/invoice";
 
 /**
@@ -20,10 +21,13 @@ export function LineItemsEditor({
   control,
   register,
   errors,
+  highlighted,
 }: {
   control: Control<InvoiceInput>;
   register: UseFormRegister<InvoiceInput>;
   errors: FieldErrors<InvoiceInput>;
+  /** Docs/ui_design_guide.md §14 — brief flash after AI Assist replaces the item list. */
+  highlighted?: boolean;
 }) {
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
   const watchedItems = useWatch({ control, name: "items" });
@@ -44,7 +48,12 @@ export function LineItemsEditor({
 
   return (
     <div className="mb-4">
-      <div className="mb-2 flex items-center justify-between">
+      <div
+        className={cn(
+          "mb-2 flex items-center justify-between rounded-md transition-colors duration-1000",
+          highlighted && "bg-brand-light/60",
+        )}
+      >
         <span className="text-[11px] font-bold tracking-[0.05em] text-muted-foreground uppercase">
           Line Items <span className="text-destructive">*</span>
         </span>

@@ -2,21 +2,66 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PartyForm } from "@/components/party/PartyForm";
+import { PartyDetailCard } from "@/components/party/PartyDetailCard";
 import { PartyDeleteButton } from "@/components/party/PartyDeleteButton";
 import { PaymentMethodList } from "@/components/payment-method/PaymentMethodList";
 import { Button } from "@/components/ui/button";
 import { partyService } from "@/services/partyService";
 import { paymentMethodService } from "@/services/paymentMethodService";
+import { getAiAssistConfigSummary } from "@/lib/ai-providers/config";
 
 export default async function PartyDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ edit?: string }>;
 }) {
   const { id } = await params;
+  const { edit } = await searchParams;
+  const isEditing = edit === "1";
+
   const party = await partyService.getById(id);
   if (!party) {
     notFound();
+  }
+
+  if (isEditing) {
+    return (
+      <>
+        <PageHeader
+          title={party.name}
+          subtitle="Edit party details and address."
+          backHref="/parties"
+          backLabel="Back to Parties"
+          action={
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={<Link href={`/parties/${party.id}`} />}
+            >
+              Cancel
+            </Button>
+          }
+        />
+        <PartyForm
+          mode="edit"
+          partyId={party.id}
+          aiConfig={getAiAssistConfigSummary()}
+          defaultValues={{
+            name: party.name,
+            email: party.email ?? "",
+            type: party.type,
+            street1: party.street1 ?? "",
+            street2: party.street2 ?? "",
+            city: party.city ?? "",
+            state: party.state ?? "",
+            postalCode: party.postalCode ?? "",
+            country: party.country ?? "",
+          }}
+        />
+      </>
+    );
   }
 
   const [isDeletable, paymentMethods] = await Promise.all([
@@ -36,7 +81,7 @@ export default async function PartyDetailPage({
     <>
       <PageHeader
         title={party.name}
-        subtitle="Edit party details and address."
+        subtitle="View party details and address."
         backHref="/parties"
         backLabel="Back to Parties"
         action={
@@ -47,21 +92,7 @@ export default async function PartyDetailPage({
           />
         }
       />
-      <PartyForm
-        mode="edit"
-        partyId={party.id}
-        defaultValues={{
-          name: party.name,
-          email: party.email ?? "",
-          type: party.type,
-          street1: party.street1 ?? "",
-          street2: party.street2 ?? "",
-          city: party.city ?? "",
-          state: party.state ?? "",
-          postalCode: party.postalCode ?? "",
-          country: party.country ?? "",
-        }}
-      />
+      <PartyDetailCard party={party} editHref={`/parties/${party.id}?edit=1`} />
 
       <div className="mt-8 mb-3 flex items-center justify-between">
         <h2 className="text-[15px] font-bold text-foreground">
