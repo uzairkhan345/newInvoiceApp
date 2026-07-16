@@ -9,6 +9,7 @@ import type { PartyInput } from "@/lib/validation/party";
 
 const createdPartyIds: string[] = [];
 const createdProjectIds: string[] = [];
+const createdInvoiceIds: string[] = [];
 
 function baseInput(overrides: Partial<PartyInput> = {}): PartyInput {
   return {
@@ -26,6 +27,11 @@ function baseInput(overrides: Partial<PartyInput> = {}): PartyInput {
 }
 
 afterEach(async () => {
+  if (createdInvoiceIds.length) {
+    await prisma.invoice.deleteMany({
+      where: { id: { in: createdInvoiceIds.splice(0) } },
+    });
+  }
   if (createdProjectIds.length) {
     await prisma.project.deleteMany({
       where: { id: { in: createdProjectIds.splice(0) } },
@@ -147,5 +153,79 @@ describe("partyService", () => {
     await expect(partyService.isDeletable(contractor.id)).resolves.toBe(true);
     await expect(partyService.delete(contractor.id)).resolves.toBeUndefined();
     createdPartyIds.splice(createdPartyIds.indexOf(contractor.id), 1);
+  });
+
+  it("is never blocked by a historical invoice snapshot — only by a live Project FK", async () => {
+    const originalContractor = await partyService.create(
+      baseInput({ name: "[test] Snapshot Contractor" }),
+    );
+    const replacementContractor = await partyService.create(
+      baseInput({ name: "[test] Replacement Contractor" }),
+    );
+    const client = await partyService.create(
+      baseInput({ name: "[test] Snapshot Client" }),
+    );
+    createdPartyIds.push(
+      originalContractor.id,
+      replacementContractor.id,
+      client.id,
+    );
+
+    const project = await prisma.project.create({
+      data: {
+        name: "[test] Snapshot Project",
+        clientId: client.id,
+        contractorId: originalContractor.id,
+        invoiceNumberFormat: "{number}",
+        displayCurrency: "USD",
+        status: "ACTIVE",
+      },
+    });
+    createdProjectIds.push(project.id);
+
+    // A SENT invoice permanently snapshots the original contractor's data —
+    // this JSON copy must never act as a deletion-blocking reference
+    // (Invoice has no FK to Party). It stays in the DB, unmodified, for the
+    // rest of this test.
+    const invoice = await prisma.invoice.create({
+      data: {
+        projectId: project.id,
+        invoiceNumber: "SNAP-01",
+        status: "SENT",
+        issueDate: new Date("2026-01-01"),
+        dueDate: new Date("2026-01-15"),
+        subtotal: "100.00",
+        total: "100.00",
+        fromPartySnapshot: { name: originalContractor.name },
+        toPartySnapshot: { name: client.name },
+        paymentDetailsSnapshot: [],
+      },
+    });
+    createdInvoiceIds.push(invoice.id);
+
+    // Reassign the project to a different contractor — the original
+    // contractor no longer has any live Project FK, even though the SENT
+    // invoice above still carries their name in its snapshot.
+    await prisma.project.update({
+      where: { id: project.id },
+      data: { contractorId: replacementContractor.id },
+    });
+
+    await expect(
+      partyService.isDeletable(originalContractor.id),
+    ).resolves.toBe(true);
+    await expect(
+      partyService.delete(originalContractor.id),
+    ).resolves.toBeUndefined();
+    createdPartyIds.splice(createdPartyIds.indexOf(originalContractor.id), 1);
+
+    // The invoice (and its now-orphaned-looking snapshot) is untouched.
+    const stillThere = await prisma.invoice.findUnique({
+      where: { id: invoice.id },
+    });
+    expect(stillThere).not.toBeNull();
+    expect(
+      (stillThere!.fromPartySnapshot as { name: string }).name,
+    ).toBe("[test] Snapshot Contractor");
   });
 });

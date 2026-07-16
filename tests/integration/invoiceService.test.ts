@@ -413,6 +413,40 @@ describe("invoiceService.transitionStatus", () => {
     });
   });
 
+  it("createDraft -> updateDraft -> transitionStatus(SENT), then a source-party mutation leaves the SENT snapshot unchanged", async () => {
+    const { project, contractor } = await createTestProject();
+
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({
+        items: [{ description: "Consulting", quantity: "1", unitPrice: "100" }],
+      }),
+    );
+    createdInvoiceIds.push(invoice.id);
+
+    const updated = await invoiceService.updateDraft(
+      invoice.id,
+      baseInvoiceInput({
+        items: [{ description: "Consulting", quantity: "2", unitPrice: "100" }],
+      }),
+    );
+    expect(updated.subtotal.toString()).toBe("200");
+
+    const sent = await invoiceService.transitionStatus(invoice.id, "SENT");
+    expect(sent.status).toBe("SENT");
+    expect(sent.fromPartySnapshot).toMatchObject({ name: contractor.name });
+
+    await partyService.update(contractor.id, {
+      ...basePartyInput({ name: "Renamed After Send" }),
+    });
+
+    const reFetched = await invoiceService.getById(invoice.id);
+    expect(reFetched?.fromPartySnapshot).toMatchObject({
+      name: contractor.name,
+    });
+    expect(reFetched?.subtotal.toString()).toBe("200");
+  });
+
   it("DRAFT -> VOID succeeds", async () => {
     const { project } = await createTestProject();
     const invoice = await invoiceService.createDraft(
@@ -499,6 +533,48 @@ describe("invoiceService.transitionStatus", () => {
     ).rejects.toBeInstanceOf(InvalidTransitionError);
     await expect(
       invoiceService.transitionStatus(invoice.id, "PAID"),
+    ).rejects.toBeInstanceOf(InvalidTransitionError);
+  });
+
+  it("rejects DRAFT -> PAID directly, without passing through SENT", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput(),
+    );
+    createdInvoiceIds.push(invoice.id);
+
+    await expect(
+      invoiceService.transitionStatus(invoice.id, "PAID"),
+    ).rejects.toBeInstanceOf(InvalidTransitionError);
+  });
+
+  it("rejects PAID -> SENT — a paid invoice can never revert to sent", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput(),
+    );
+    createdInvoiceIds.push(invoice.id);
+    await invoiceService.transitionStatus(invoice.id, "SENT");
+    await invoiceService.transitionStatus(invoice.id, "PAID");
+
+    await expect(
+      invoiceService.transitionStatus(invoice.id, "SENT"),
+    ).rejects.toBeInstanceOf(InvalidTransitionError);
+  });
+
+  it("rejects VOID -> DRAFT — VOID is terminal", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput(),
+    );
+    createdInvoiceIds.push(invoice.id);
+    await invoiceService.transitionStatus(invoice.id, "VOID");
+
+    await expect(
+      invoiceService.transitionStatus(invoice.id, "DRAFT"),
     ).rejects.toBeInstanceOf(InvalidTransitionError);
   });
 

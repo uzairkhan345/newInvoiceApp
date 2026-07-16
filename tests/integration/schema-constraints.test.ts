@@ -98,3 +98,118 @@ describe("Invoice (projectId, invoiceNumber) uniqueness constraint", () => {
     await prisma.project.delete({ where: { id: otherProject.id } });
   });
 });
+
+describe("FK-restrict behavior on blocked deletes (DB-level, bypassing service pre-checks)", () => {
+  it("rejects deleting a Party that is a live Project's contractor or client", async () => {
+    const contractor = await prisma.party.create({
+      data: { name: "[test] Restrict Contractor", type: "ORGANIZATION" },
+    });
+    const client = await prisma.party.create({
+      data: { name: "[test] Restrict Client", type: "ORGANIZATION" },
+    });
+    const project = await prisma.project.create({
+      data: {
+        name: "[test] Restrict Project",
+        clientId: client.id,
+        contractorId: contractor.id,
+        invoiceNumberFormat: "{number}",
+        displayCurrency: "USD",
+        status: "ACTIVE",
+      },
+    });
+
+    await expect(
+      prisma.party.delete({ where: { id: contractor.id } }),
+    ).rejects.toThrow();
+    await expect(
+      prisma.party.delete({ where: { id: client.id } }),
+    ).rejects.toThrow();
+
+    await prisma.project.delete({ where: { id: project.id } });
+    await prisma.party.deleteMany({
+      where: { id: { in: [contractor.id, client.id] } },
+    });
+  });
+
+  it("rejects deleting a PaymentMethod that is a live Project's preferred payment method", async () => {
+    const contractor = await prisma.party.create({
+      data: { name: "[test] Restrict PM Contractor", type: "ORGANIZATION" },
+    });
+    const client = await prisma.party.create({
+      data: { name: "[test] Restrict PM Client", type: "ORGANIZATION" },
+    });
+    const method = await prisma.paymentMethod.create({
+      data: {
+        partyId: contractor.id,
+        type: "BANK_WIRE",
+        label: "[test] Restrict Method",
+        isDefault: false,
+        fields: [],
+      },
+    });
+    const project = await prisma.project.create({
+      data: {
+        name: "[test] Restrict PM Project",
+        clientId: client.id,
+        contractorId: contractor.id,
+        preferredPaymentMethodId: method.id,
+        invoiceNumberFormat: "{number}",
+        displayCurrency: "USD",
+        status: "ACTIVE",
+      },
+    });
+
+    await expect(
+      prisma.paymentMethod.delete({ where: { id: method.id } }),
+    ).rejects.toThrow();
+
+    await prisma.project.delete({ where: { id: project.id } });
+    await prisma.paymentMethod.delete({ where: { id: method.id } });
+    await prisma.party.deleteMany({
+      where: { id: { in: [contractor.id, client.id] } },
+    });
+  });
+
+  it("rejects deleting a Project that has at least one Invoice", async () => {
+    const contractor = await prisma.party.create({
+      data: { name: "[test] Restrict Proj Contractor", type: "ORGANIZATION" },
+    });
+    const client = await prisma.party.create({
+      data: { name: "[test] Restrict Proj Client", type: "ORGANIZATION" },
+    });
+    const project = await prisma.project.create({
+      data: {
+        name: "[test] Restrict Proj Project",
+        clientId: client.id,
+        contractorId: contractor.id,
+        invoiceNumberFormat: "{number}",
+        displayCurrency: "USD",
+        status: "ACTIVE",
+      },
+    });
+    const invoice = await prisma.invoice.create({
+      data: {
+        projectId: project.id,
+        invoiceNumber: "RESTRICT-01",
+        status: "DRAFT",
+        issueDate: new Date("2026-01-01"),
+        dueDate: new Date("2026-01-15"),
+        subtotal: "100.00",
+        total: "100.00",
+        fromPartySnapshot: {},
+        toPartySnapshot: {},
+        paymentDetailsSnapshot: [],
+      },
+    });
+
+    await expect(
+      prisma.project.delete({ where: { id: project.id } }),
+    ).rejects.toThrow();
+
+    await prisma.invoice.delete({ where: { id: invoice.id } });
+    await prisma.project.delete({ where: { id: project.id } });
+    await prisma.party.deleteMany({
+      where: { id: { in: [contractor.id, client.id] } },
+    });
+  });
+});
