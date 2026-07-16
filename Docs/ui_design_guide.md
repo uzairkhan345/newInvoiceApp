@@ -67,7 +67,7 @@ Unchanged from the prior version:
 - Sidebar `260px` fixed, white, `1px` right border. Header: brand icon + name + uppercase sub-label.
 - Nav items: `13px` semibold, `16px` icons, active state = brand-light background + brand text.
 - Footer: avatar + name + muted email, truncating.
-- **Setup-alert indicator**: small count badge on the Invoices/Projects nav item when overdue invoices exist or a project is missing a preferred payment method — reuses the Tag component's small circular variant (§11).
+- **Setup-alert indicator**: small count badge on the Invoices/Projects nav item when overdue invoices exist or a project is missing a preferred payment method — reuses the Tag component's small circular variant (§11). *(Not built — `Sidebar.tsx` has no such indicator as of M12. M10's dashboard covers this information via its Needs Attention panel instead; revisit as a small standalone addition if nav-level visibility is still wanted.)*
 - Mobile (`<1024px`): sidebar collapses to an overlay drawer.
 
 ---
@@ -182,7 +182,7 @@ See §13 for the error state.
 
 ## 11. Status Badges & Tags
 
-Unchanged in structure from the prior version — two distinct components, same base shape, different palettes:
+Unchanged in structure from the prior version — two distinct treatments, same base shape, different palettes. **As built**, both are the shadcn `Badge` primitive styled per the palettes below — there is no separate hand-built `Tag` component; "Status Badge" and "Tag" below describe two *stylings* of `Badge`, not two components.
 
 ### Status Badge — invoice lifecycle only
 
