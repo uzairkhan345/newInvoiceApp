@@ -165,6 +165,18 @@ As the admin, I want to create a draft invoice from a project so I can review an
 
 Unchanged from the original except **no tax**: description (required), quantity (`> 0`), unit price (`>= 0`), amount = `quantity * unitPrice` (backend-calculated, source of truth).
 
+## Story 4.5: Flat-Amount Line Items and Invoice Notes *(new — M14/M15, 2026-07-16)*
+
+As the admin, I want some line items to be a flat lump-sum amount instead of hours × rate, and to attach notes to the invoice, so I can bill retainers/arrears the same way I actually invoice clients.
+
+### Acceptance Criteria
+
+- Each line item has an Hourly/Flat toggle, independent per row — an invoice may mix Hourly and Flat items.
+- **Hourly** (default): quantity and unit price are required; amount is backend-calculated, same as Story 4.2 — never trusted from the client.
+- **Flat**: the admin enters the amount directly; quantity and unit price are not collected for that row and render as `-` on the document. This is the one narrow, deliberate exception to "amount is always backend-calculated" — there is nothing to compute a flat amount from.
+- The invoice form has two independent, optional free-text fields: an **items note** (describes the line items as a whole, rendered italic below them) and a separate **bottom note** (rendered near the end of the document, bold-labeled). Either, both, or neither may be filled in.
+- Both notes are ordinary `DRAFT`-editable, locked-once-`SENT` content — no new snapshot-timing rule, same as the invoice number and dates.
+
 ## Story 4.3: Edit Draft Invoice
 
 As the admin, I want to edit draft invoices so I can correct information before sending.

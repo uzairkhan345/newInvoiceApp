@@ -129,13 +129,30 @@ function buildSnapshots(project: ProjectWithRelations) {
   };
 }
 
-/** Docs/product_spec.md §1.5 — amount is always backend-calculated, never trusted from the client. */
+/**
+ * Docs/product_spec.md §1.5 — amount is always backend-calculated from
+ * quantity × unitPrice, never trusted from the client — for Hourly items.
+ * M14 adds one narrow, deliberate exception: a Flat item (`isFlatAmount`)
+ * has no quantity/unitPrice at all, and its `amount` IS trusted directly
+ * from the client, since there is nothing to compute it from.
+ */
 function computeItems(items: InvoiceInput["items"]): InvoiceItemWriteInput[] {
   return items.map((item, index) => {
+    if (item.isFlatAmount) {
+      return {
+        description: item.description,
+        isFlatAmount: true,
+        quantity: null,
+        unitPrice: null,
+        amount: new Prisma.Decimal(item.amount),
+        sortOrder: index,
+      };
+    }
     const quantity = new Prisma.Decimal(item.quantity);
     const unitPrice = new Prisma.Decimal(item.unitPrice);
     return {
       description: item.description,
+      isFlatAmount: false,
       quantity,
       unitPrice,
       amount: quantity.times(unitPrice),
@@ -149,6 +166,11 @@ function sumAmounts(items: InvoiceItemWriteInput[]): Prisma.Decimal {
     (sum, item) => sum.plus(item.amount),
     new Prisma.Decimal(0),
   );
+}
+
+/** M14 — plain admin-authored content, never left as `undefined`; blank means "no note". */
+function nullIfBlank(value: string | undefined): string | null {
+  return value && value.trim().length > 0 ? value.trim() : null;
 }
 
 function toWriteInput(
@@ -172,6 +194,8 @@ function toWriteInput(
         : null,
     convertedCurrency: isNonUsd ? project.displayCurrency : null,
     ...buildSnapshots(project),
+    itemsNote: nullIfBlank(input.itemsNote),
+    bottomNote: nullIfBlank(input.bottomNote),
     items,
   };
 }
@@ -209,7 +233,10 @@ function listOverdue(): Promise<InvoiceListItem[]> {
 
 /** Dashboard (M10) — Recent Activity's invoice-side lifecycle events. */
 function listRecentActivity(limit: number): Promise<InvoiceListItem[]> {
-  return invoiceRepository.findRecentByStatuses(["SENT", "PAID", "VOID"], limit);
+  return invoiceRepository.findRecentByStatuses(
+    ["SENT", "PAID", "VOID"],
+    limit,
+  );
 }
 
 function getById(id: string): Promise<InvoiceWithItems | null> {

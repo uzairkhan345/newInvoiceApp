@@ -34,21 +34,28 @@ function fakeData(
     },
     paymentDetails: [
       { key: "bank_name", label: "Bank Name", value: "Test Bank" },
-      { key: "routing_number", label: "Routing Number (ABA)", value: "021000021" },
+      {
+        key: "routing_number",
+        label: "Routing Number (ABA)",
+        value: "021000021",
+      },
     ],
     items: [
       {
         id: "item_1",
         description: "Consulting",
+        isFlatAmount: false,
         quantity: "2",
         unitPrice: "150",
         amount: "300",
       },
     ],
+    itemsNote: null,
     subtotal: "300",
     total: "300",
     convertedTotal: null,
     convertedCurrency: null,
+    bottomNote: null,
     ...overrides,
   };
 }
@@ -114,5 +121,85 @@ describe("buildInvoiceWorkbook", () => {
 
     expect(allValues.some((v) => v.includes("Total in AUD"))).toBe(true);
     expect(allValues.some((v) => /A\$450/.test(v))).toBe(true);
+  });
+
+  it("renders itemsNote and bottomNote, uses 'ITEM'/'UNIT (HRS)' headers and 'Total Due' (M14/M15)", async () => {
+    const buffer = await buildInvoiceWorkbook(
+      fakeData({
+        itemsNote: "Work done Jun 1 - Jun 30",
+        bottomNote: "Includes arrears from May",
+      }),
+    );
+    const workbook = await loadWorkbook(buffer);
+    const ws = workbook.getWorksheet("Invoice")!;
+
+    const allValues: string[] = [];
+    ws.eachRow((row) => {
+      row.eachCell((cell) => {
+        if (typeof cell.value === "string") allValues.push(cell.value);
+      });
+    });
+
+    expect(allValues.some((v) => v === "ITEM")).toBe(true);
+    expect(allValues.some((v) => v === "UNIT (HRS)")).toBe(true);
+    expect(allValues.some((v) => v === "Total Due")).toBe(true);
+    expect(allValues.some((v) => v === "Total")).toBe(false);
+    expect(allValues.some((v) => v === "Work done Jun 1 - Jun 30")).toBe(true);
+    expect(allValues.some((v) => v === "Note")).toBe(true);
+    expect(allValues.some((v) => v === "Includes arrears from May")).toBe(true);
+  });
+
+  it("omits itemsNote/bottomNote rows entirely when neither is set", async () => {
+    const buffer = await buildInvoiceWorkbook(
+      fakeData({ itemsNote: null, bottomNote: null }),
+    );
+    const workbook = await loadWorkbook(buffer);
+    const ws = workbook.getWorksheet("Invoice")!;
+
+    const allValues: string[] = [];
+    ws.eachRow((row) => {
+      row.eachCell((cell) => {
+        if (typeof cell.value === "string") allValues.push(cell.value);
+      });
+    });
+
+    expect(allValues.some((v) => v === "Note")).toBe(false);
+  });
+
+  it("renders '-' for Qty/Rate on a Flat-mode item, and the real amount", async () => {
+    const buffer = await buildInvoiceWorkbook(
+      fakeData({
+        items: [
+          {
+            id: "item_1",
+            description: "Retainer",
+            isFlatAmount: true,
+            quantity: null,
+            unitPrice: null,
+            amount: "500",
+          },
+        ],
+        subtotal: "500",
+        total: "500",
+      }),
+    );
+    const workbook = await loadWorkbook(buffer);
+    const ws = workbook.getWorksheet("Invoice")!;
+
+    const allValues: (string | number)[] = [];
+    ws.eachRow((row) => {
+      row.eachCell((cell) => {
+        if (typeof cell.value === "string" || typeof cell.value === "number") {
+          allValues.push(cell.value);
+        }
+      });
+    });
+
+    const dashCount = allValues.filter((v) => v === "-").length;
+    expect(dashCount).toBe(2);
+    expect(allValues.some((v) => v === "Retainer")).toBe(true);
+    expect(
+      allValues.some((v) => typeof v === "string" && v.includes("500")),
+    ).toBe(true);
   });
 });

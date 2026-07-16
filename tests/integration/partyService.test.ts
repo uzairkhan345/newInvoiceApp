@@ -211,9 +211,9 @@ describe("partyService", () => {
       data: { contractorId: replacementContractor.id },
     });
 
-    await expect(
-      partyService.isDeletable(originalContractor.id),
-    ).resolves.toBe(true);
+    await expect(partyService.isDeletable(originalContractor.id)).resolves.toBe(
+      true,
+    );
     await expect(
       partyService.delete(originalContractor.id),
     ).resolves.toBeUndefined();
@@ -224,8 +224,8 @@ describe("partyService", () => {
       where: { id: invoice.id },
     });
     expect(stillThere).not.toBeNull();
-    expect(
-      (stillThere!.fromPartySnapshot as { name: string }).name,
-    ).toBe("[test] Snapshot Contractor");
+    expect((stillThere!.fromPartySnapshot as { name: string }).name).toBe(
+      "[test] Snapshot Contractor",
+    );
   });
 });

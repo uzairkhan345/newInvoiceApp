@@ -102,10 +102,14 @@ export default async function InvoiceDetailPage({
           issueDate: toDateInputValue(invoice.issueDate),
           dueDate: toDateInputValue(invoice.dueDate),
           convertedTotal: invoice.convertedTotal?.toString() ?? "",
+          itemsNote: invoice.itemsNote ?? "",
+          bottomNote: invoice.bottomNote ?? "",
           items: invoice.items.map((item) => ({
             description: item.description,
-            quantity: item.quantity.toString(),
-            unitPrice: item.unitPrice.toString(),
+            isFlatAmount: item.isFlatAmount,
+            quantity: item.quantity?.toString() ?? "",
+            unitPrice: item.unitPrice?.toString() ?? "",
+            amount: item.isFlatAmount ? item.amount.toString() : "",
           })),
         }}
       />

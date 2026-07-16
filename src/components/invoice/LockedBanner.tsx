@@ -12,8 +12,8 @@
 export function LockedBanner() {
   return (
     <div className="mb-4 flex items-center gap-2 rounded-[8px] border border-border bg-muted/40 px-4 py-2.5 text-[11px] text-muted-foreground print:hidden">
-      This invoice is locked. Line items, snapshots, and totals can no longer
-      be edited.
+      This invoice is locked. Line items, snapshots, and totals can no longer be
+      edited.
     </div>
   );
 }

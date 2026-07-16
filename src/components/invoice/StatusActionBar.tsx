@@ -36,7 +36,8 @@ const TRANSITIONS: Record<
     {
       target: "PAID",
       label: "Mark as Paid",
-      description: "This marks the invoice as paid. Paid invoices are terminal and read-only.",
+      description:
+        "This marks the invoice as paid. Paid invoices are terminal and read-only.",
     },
     {
       target: "VOID",

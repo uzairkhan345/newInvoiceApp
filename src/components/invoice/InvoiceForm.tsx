@@ -13,6 +13,7 @@ import {
 import { LineItemsEditor } from "@/components/invoice/LineItemsEditor";
 import { FormField } from "@/components/shared/FormField";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AIAssistPanel } from "@/components/ai-assist/AIAssistPanel";
@@ -111,7 +112,17 @@ export function InvoiceForm({
       issueDate: "",
       dueDate: "",
       convertedTotal: "",
-      items: [{ description: "", quantity: "1", unitPrice: "0" }],
+      itemsNote: "",
+      bottomNote: "",
+      items: [
+        {
+          description: "",
+          isFlatAmount: false,
+          quantity: "1",
+          unitPrice: "0",
+          amount: "",
+        },
+      ],
       ...defaultValues,
     },
   });
@@ -205,6 +216,34 @@ export function InvoiceForm({
                 errors={errors}
                 highlighted={highlightedKeys.has("items")}
               />
+
+              <FormField
+                label="Items Note"
+                htmlFor="itemsNote"
+                error={errors.itemsNote?.message}
+                highlighted={highlightedKeys.has("itemsNote")}
+              >
+                <Textarea
+                  id="itemsNote"
+                  rows={2}
+                  placeholder="Optional — describes the line items as a whole, shown italicized below them"
+                  {...register("itemsNote")}
+                />
+              </FormField>
+
+              <FormField
+                label="Note"
+                htmlFor="bottomNote"
+                error={errors.bottomNote?.message}
+                highlighted={highlightedKeys.has("bottomNote")}
+              >
+                <Textarea
+                  id="bottomNote"
+                  rows={2}
+                  placeholder="Optional — a separate note shown near the bottom of the document"
+                  {...register("bottomNote")}
+                />
+              </FormField>
 
               <Button type="submit" disabled={isSubmitting} className="mt-2">
                 {isSubmitting

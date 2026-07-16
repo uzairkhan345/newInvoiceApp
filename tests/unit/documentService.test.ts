@@ -44,11 +44,14 @@ function fakeInvoice(
     ],
     createdAt: new Date(),
     updatedAt: new Date(),
+    itemsNote: null,
+    bottomNote: null,
     items: [
       {
         id: "item_1",
         invoiceId: "inv_1",
         description: "Consulting",
+        isFlatAmount: false,
         quantity: new Prisma.Decimal("2"),
         unitPrice: new Prisma.Decimal("150"),
         amount: new Prisma.Decimal("300"),
@@ -83,6 +86,44 @@ describe("documentService.assembleInvoiceDocumentData", () => {
     expect(data.total).toBe("300");
     expect(data.convertedTotal).toBe("450");
     expect(data.convertedCurrency).toBe("AUD");
+  });
+
+  it("exposes itemsNote/bottomNote and per-item isFlatAmount/nullable quantity-unitPrice (M14)", () => {
+    const data = documentService.assembleInvoiceDocumentData(
+      fakeInvoice({
+        itemsNote: "Work done Jun 1 - Jun 30",
+        bottomNote: "Includes arrears from May",
+        items: [
+          {
+            id: "item_1",
+            invoiceId: "inv_1",
+            description: "Retainer",
+            isFlatAmount: true,
+            quantity: null,
+            unitPrice: null,
+            amount: new Prisma.Decimal("500"),
+            sortOrder: 0,
+          },
+        ],
+      }),
+    );
+
+    expect(data.itemsNote).toBe("Work done Jun 1 - Jun 30");
+    expect(data.bottomNote).toBe("Includes arrears from May");
+    expect(data.items[0]).toMatchObject({
+      isFlatAmount: true,
+      quantity: null,
+      unitPrice: null,
+      amount: "500",
+    });
+  });
+
+  it("returns null itemsNote/bottomNote when neither is set", () => {
+    const data = documentService.assembleInvoiceDocumentData(
+      fakeInvoice({ itemsNote: null, bottomNote: null }),
+    );
+    expect(data.itemsNote).toBeNull();
+    expect(data.bottomNote).toBeNull();
   });
 
   it("returns null convertedTotal/convertedCurrency when the invoice has neither", () => {

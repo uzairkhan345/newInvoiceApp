@@ -27,9 +27,7 @@ export function StatsCard({
             {value}
           </span>
           {subtext ? (
-            <span className="text-[11px] text-muted-foreground">
-              {subtext}
-            </span>
+            <span className="text-[11px] text-muted-foreground">{subtext}</span>
           ) : null}
         </div>
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand">

@@ -194,3 +194,12 @@ Schema/behavior additions surfaced during blueprint planning (not in the origina
 - **`InvoiceItem.SortOrder`** (int) — added because Postgres rows have no inherent order; needed to preserve line-item display order, which the original spec's "ordered array" framing assumed implicitly.
 - **`PaymentMethod.IsDefault`** — the application enforces at most one default per party (setting a new default un-sets any prior one). Not stated explicitly in the original spec, but a cheap, sensible invariant for a "global fallback" flag.
 - **Invoice deletion** — not explicitly specified anywhere except implied by `Project` deletion requiring invoices be removed first (§18, Story 3.4). Default: an `Invoice` may be deleted in **any** status (with a confirmation prompt, since `PAID`/`VOID` are otherwise read-only everywhere else), cascading its `InvoiceItem` rows. Flagged as a gap-fill default, not a deeply-considered policy — revisit if a stricter rule (e.g. blocking deletion of `PAID` invoices) is actually wanted.
+
+## 23. Line Item Pricing Mode & Invoice Notes Decision — **new, M14 (2026-07-16)**
+
+Scoped via a `/grill-me` session prompted by a new canonical reference invoice (`ai_context/03_document_generation_reference/GoodRef.xlsx.pdf`) that showed content the schema had no home for. Full reasoning in `Docs/execution_plan.md` §16 M14/M15.
+
+- **`InvoiceItem.IsFlatAmount`** (boolean, default `false`) — a per-line-item toggle, mixable within a single invoice, between:
+  - **Hourly** (`false`, the only previously-supported mode): `Quantity`/`UnitPrice` required, `Amount = Quantity × UnitPrice` always backend-computed — §6's existing rule is unchanged for this mode.
+  - **Flat** (`true`): `Quantity`/`UnitPrice` are `null`; `Amount` is entered directly by the admin and trusted as submitted. **This is the one narrow, deliberate exception to "amount is always backend-calculated, never trusted from the client"** (§6, `Docs/product_spec.md` §1.5) — there is nothing to compute a flat amount from, so the client-submitted value must be the source of truth for that one field on that one row.
+- **`Invoice.ItemsNote`/`Invoice.BottomNote`** (both optional text) — two independent, plain admin-authored fields, not a snapshot of live external data. Both follow the same `DRAFT`-editable/locked-once-`SENT` rule as `InvoiceNumber` and the other plain invoice fields — no new snapshot-timing logic was needed.

@@ -95,8 +95,38 @@ function baseInvoiceInput(overrides: Partial<InvoiceInput> = {}): InvoiceInput {
     issueDate: "2026-01-01",
     dueDate: "2026-01-15",
     convertedTotal: "",
-    items: [{ description: "Consulting", quantity: "2", unitPrice: "150.00" }],
+    itemsNote: "",
+    bottomNote: "",
+    items: [
+      {
+        description: "Consulting",
+        quantity: "2",
+        unitPrice: "150.00",
+        isFlatAmount: false,
+        amount: "",
+      },
+    ],
     ...overrides,
+  };
+}
+
+function flatItem(description: string, amount: string) {
+  return {
+    description,
+    isFlatAmount: true as const,
+    quantity: "",
+    unitPrice: "",
+    amount,
+  };
+}
+
+function hourlyItem(description: string, quantity: string, unitPrice: string) {
+  return {
+    description,
+    isFlatAmount: false as const,
+    quantity,
+    unitPrice,
+    amount: "",
   };
 }
 
@@ -130,8 +160,20 @@ describe("invoiceService.createDraft", () => {
       project.id,
       baseInvoiceInput({
         items: [
-          { description: "Design", quantity: "3", unitPrice: "100.00" },
-          { description: "Development", quantity: "10", unitPrice: "50.50" },
+          {
+            description: "Design",
+            quantity: "3",
+            unitPrice: "100.00",
+            isFlatAmount: false,
+            amount: "",
+          },
+          {
+            description: "Development",
+            quantity: "10",
+            unitPrice: "50.50",
+            isFlatAmount: false,
+            amount: "",
+          },
         ],
       }),
     );
@@ -149,7 +191,15 @@ describe("invoiceService.createDraft", () => {
     // hit the service/action directly with extra bogus values.
     const tamperedInput = {
       ...baseInvoiceInput({
-        items: [{ description: "Consulting", quantity: "1", unitPrice: "10" }],
+        items: [
+          {
+            description: "Consulting",
+            quantity: "1",
+            unitPrice: "10",
+            isFlatAmount: false,
+            amount: "",
+          },
+        ],
       }),
       subtotal: "999999.99",
       total: "999999.99",
@@ -229,6 +279,142 @@ describe("invoiceService.createDraft", () => {
   });
 });
 
+describe("invoiceService.createDraft — Flat-amount items and notes (M14)", () => {
+  it("computes an Hourly item's amount from quantity × unitPrice, and trusts a Flat item's amount directly", async () => {
+    const { project } = await createTestProject();
+
+    const created = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({
+        items: [
+          hourlyItem("Hourly work", "2", "100"),
+          flatItem("Retainer", "500"),
+        ],
+      }),
+    );
+    createdInvoiceIds.push(created.id);
+    const invoice = (await invoiceService.getById(created.id))!;
+
+    expect(invoice.items).toHaveLength(2);
+    const hourly = invoice.items.find((i) => i.description === "Hourly work")!;
+    const flat = invoice.items.find((i) => i.description === "Retainer")!;
+
+    expect(hourly.isFlatAmount).toBe(false);
+    expect(hourly.quantity?.toString()).toBe("2");
+    expect(hourly.unitPrice?.toString()).toBe("100");
+    expect(hourly.amount.toString()).toBe("200");
+
+    expect(flat.isFlatAmount).toBe(true);
+    expect(flat.quantity).toBeNull();
+    expect(flat.unitPrice).toBeNull();
+    expect(flat.amount.toString()).toBe("500");
+
+    expect(invoice.subtotal.toString()).toBe("700");
+  });
+
+  it("ignores any client-submitted amount for an Hourly item — still computed from quantity × unitPrice", async () => {
+    const { project } = await createTestProject();
+
+    const tamperedItem = {
+      ...hourlyItem("Consulting", "1", "10"),
+      amount: "999999.99",
+    };
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ items: [tamperedItem] }),
+    );
+    createdInvoiceIds.push(invoice.id);
+
+    expect(invoice.subtotal.toString()).toBe("10");
+  });
+
+  it("persists itemsNote and bottomNote independently — either, both, or neither may be blank", async () => {
+    const { project } = await createTestProject();
+
+    const bothBlank = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ invoiceNumber: "TP-N1" }),
+    );
+    createdInvoiceIds.push(bothBlank.id);
+    expect(bothBlank.itemsNote).toBeNull();
+    expect(bothBlank.bottomNote).toBeNull();
+
+    const onlyItemsNote = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({
+        invoiceNumber: "TP-N2",
+        itemsNote: "Work done Jun 1 - Jun 30",
+      }),
+    );
+    createdInvoiceIds.push(onlyItemsNote.id);
+    expect(onlyItemsNote.itemsNote).toBe("Work done Jun 1 - Jun 30");
+    expect(onlyItemsNote.bottomNote).toBeNull();
+
+    const both = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({
+        invoiceNumber: "TP-N3",
+        itemsNote: "Work done Jun 1 - Jun 30",
+        bottomNote: "Includes arrears from May",
+      }),
+    );
+    createdInvoiceIds.push(both.id);
+    expect(both.itemsNote).toBe("Work done Jun 1 - Jun 30");
+    expect(both.bottomNote).toBe("Includes arrears from May");
+  });
+});
+
+describe("invoiceService.updateDraft — Flat-amount items and notes (M14)", () => {
+  it("round-trips itemsNote/bottomNote and a mode change through updateDraft while DRAFT", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({
+        items: [hourlyItem("Consulting", "1", "100")],
+      }),
+    );
+    createdInvoiceIds.push(invoice.id);
+
+    const updated = await invoiceService.updateDraft(
+      invoice.id,
+      baseInvoiceInput({
+        itemsNote: "Updated items note",
+        bottomNote: "Updated bottom note",
+        items: [flatItem("Consulting (flat this time)", "250")],
+      }),
+    );
+
+    expect(updated.itemsNote).toBe("Updated items note");
+    expect(updated.bottomNote).toBe("Updated bottom note");
+    expect(updated.subtotal.toString()).toBe("250");
+
+    const reFetched = await invoiceService.getById(invoice.id);
+    expect(reFetched?.items).toHaveLength(1);
+    expect(reFetched?.items[0]?.isFlatAmount).toBe(true);
+    expect(reFetched?.items[0]?.quantity).toBeNull();
+  });
+
+  it("is ordinary DRAFT-editable/locked-once-SENT content — itemsNote/bottomNote can't change via updateDraft once SENT", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ itemsNote: "Original note" }),
+    );
+    createdInvoiceIds.push(invoice.id);
+    await invoiceService.transitionStatus(invoice.id, "SENT");
+
+    await expect(
+      invoiceService.updateDraft(
+        invoice.id,
+        baseInvoiceInput({ itemsNote: "Attempted change after send" }),
+      ),
+    ).rejects.toBeInstanceOf(InvoiceNotDraftError);
+
+    const stillSent = await invoiceService.getById(invoice.id);
+    expect(stillSent?.itemsNote).toBe("Original note");
+  });
+});
+
 describe("invoiceService.updateDraft", () => {
   it("recomputes the snapshot from current live data on every save (Story 6.1)", async () => {
     const { project, contractor } = await createTestProject();
@@ -262,7 +448,15 @@ describe("invoiceService.updateDraft", () => {
     const invoice = await invoiceService.createDraft(
       project.id,
       baseInvoiceInput({
-        items: [{ description: "Consulting", quantity: "1", unitPrice: "100" }],
+        items: [
+          {
+            description: "Consulting",
+            quantity: "1",
+            unitPrice: "100",
+            isFlatAmount: false,
+            amount: "",
+          },
+        ],
       }),
     );
     createdInvoiceIds.push(invoice.id);
@@ -272,8 +466,20 @@ describe("invoiceService.updateDraft", () => {
       invoice.id,
       baseInvoiceInput({
         items: [
-          { description: "Consulting", quantity: "1", unitPrice: "100" },
-          { description: "Extra", quantity: "2", unitPrice: "25" },
+          {
+            description: "Consulting",
+            quantity: "1",
+            unitPrice: "100",
+            isFlatAmount: false,
+            amount: "",
+          },
+          {
+            description: "Extra",
+            quantity: "2",
+            unitPrice: "25",
+            isFlatAmount: false,
+            amount: "",
+          },
         ],
       }),
     );
@@ -419,7 +625,15 @@ describe("invoiceService.transitionStatus", () => {
     const invoice = await invoiceService.createDraft(
       project.id,
       baseInvoiceInput({
-        items: [{ description: "Consulting", quantity: "1", unitPrice: "100" }],
+        items: [
+          {
+            description: "Consulting",
+            quantity: "1",
+            unitPrice: "100",
+            isFlatAmount: false,
+            amount: "",
+          },
+        ],
       }),
     );
     createdInvoiceIds.push(invoice.id);
@@ -427,7 +641,15 @@ describe("invoiceService.transitionStatus", () => {
     const updated = await invoiceService.updateDraft(
       invoice.id,
       baseInvoiceInput({
-        items: [{ description: "Consulting", quantity: "2", unitPrice: "100" }],
+        items: [
+          {
+            description: "Consulting",
+            quantity: "2",
+            unitPrice: "100",
+            isFlatAmount: false,
+            amount: "",
+          },
+        ],
       }),
     );
     expect(updated.subtotal.toString()).toBe("200");

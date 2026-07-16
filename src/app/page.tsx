@@ -5,7 +5,10 @@ import {
   NeedsAttentionList,
   type NeedsAttentionItem,
 } from "@/components/dashboard/NeedsAttentionList";
-import { ActivityLog, type ActivityItem } from "@/components/dashboard/ActivityLog";
+import {
+  ActivityLog,
+  type ActivityItem,
+} from "@/components/dashboard/ActivityLog";
 import { invoiceService } from "@/services/invoiceService";
 import { projectService } from "@/services/projectService";
 import { formatCurrency } from "@/lib/currency";

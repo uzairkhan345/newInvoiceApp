@@ -43,7 +43,17 @@ JSON shape (all keys optional):
   "issueDate": "YYYY-MM-DD",
   "dueDate": "YYYY-MM-DD",
   "convertedTotal": string (a plain decimal number, only if the prompt gives a converted-currency amount),
-  "items": [ { "description": string, "quantity": string (plain decimal), "unitPrice": string (plain decimal, USD) }, ... ]
+  "itemsNote": string (an optional note describing the line items as a whole, only if the prompt gives one),
+  "bottomNote": string (a separate optional note shown near the bottom of the document, only if the prompt gives one),
+  "items": [
+    {
+      "description": string,
+      "isFlatAmount": boolean (true for a flat lump-sum item with no hours/rate; false, the default, for an hourly item),
+      "quantity": string (plain decimal; only for an hourly item, i.e. isFlatAmount is false),
+      "unitPrice": string (plain decimal, USD; only for an hourly item),
+      "amount": string (plain decimal, USD; only for a flat item, i.e. isFlatAmount is true — never set this for an hourly item, its amount is always computed from quantity × unitPrice)
+    }, ...
+  ]
 }`,
 };
 

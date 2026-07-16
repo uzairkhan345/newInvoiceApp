@@ -13,11 +13,13 @@ export type PartySnapshotData = {
   country: string | null;
 };
 
+/** `quantity`/`unitPrice` are null exactly when `isFlatAmount` is true (M14). */
 export type InvoiceDocumentLineItem = {
   id: string;
   description: string;
-  quantity: string;
-  unitPrice: string;
+  isFlatAmount: boolean;
+  quantity: string | null;
+  unitPrice: string | null;
   amount: string;
 };
 
@@ -31,10 +33,12 @@ export type InvoiceDocumentData = {
   client: PartySnapshotData;
   paymentDetails: PaymentMethodField[];
   items: InvoiceDocumentLineItem[];
+  itemsNote: string | null;
   subtotal: string;
   total: string;
   convertedTotal: string | null;
   convertedCurrency: string | null;
+  bottomNote: string | null;
 };
 
 /**
@@ -63,14 +67,17 @@ function assembleInvoiceDocumentData(
     items: invoice.items.map((item) => ({
       id: item.id,
       description: item.description,
-      quantity: item.quantity.toString(),
-      unitPrice: item.unitPrice.toString(),
+      isFlatAmount: item.isFlatAmount,
+      quantity: item.quantity?.toString() ?? null,
+      unitPrice: item.unitPrice?.toString() ?? null,
       amount: item.amount.toString(),
     })),
+    itemsNote: invoice.itemsNote,
     subtotal: invoice.subtotal.toString(),
     total: invoice.total.toString(),
     convertedTotal: invoice.convertedTotal?.toString() ?? null,
     convertedCurrency: invoice.convertedCurrency,
+    bottomNote: invoice.bottomNote,
   };
 }
 

@@ -34,15 +34,46 @@ describe("aiSuggestions schemas", () => {
     expect(complete.success).toBe(true);
   });
 
-  it("requires every key of an items[] entry when items is present", () => {
+  it("requires every key of an items[] entry when items is present — invoiceItemSchema isn't itself partialed", () => {
     const missingUnitPrice = invoiceSuggestionSchema.safeParse({
-      items: [{ description: "Consulting", quantity: "3" }],
+      items: [
+        {
+          description: "Consulting",
+          isFlatAmount: false,
+          quantity: "3",
+          unitPrice: "",
+          amount: "",
+        },
+      ],
     });
     expect(missingUnitPrice.success).toBe(false);
 
     const complete = invoiceSuggestionSchema.safeParse({
-      items: [{ description: "Consulting", quantity: "3", unitPrice: "150" }],
+      items: [
+        {
+          description: "Consulting",
+          isFlatAmount: false,
+          quantity: "3",
+          unitPrice: "150",
+          amount: "",
+        },
+      ],
     });
     expect(complete.success).toBe(true);
+  });
+
+  it("accepts a Flat-mode item suggestion (amount, no quantity/unitPrice)", () => {
+    const result = invoiceSuggestionSchema.safeParse({
+      items: [
+        {
+          description: "Retainer",
+          isFlatAmount: true,
+          quantity: "",
+          unitPrice: "",
+          amount: "500",
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
   });
 });

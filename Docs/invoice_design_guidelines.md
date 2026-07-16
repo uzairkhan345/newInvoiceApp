@@ -228,21 +228,28 @@ Example CSS:
 }
 ```
 
-## 10. Secondary line under an item
+### 9.1 Flat-amount items (M14/M15)
 
-For work-period text or supporting descriptions:
+A line item may be **Hourly** (Quantity/Rate populated, Amount computed) or **Flat** (a single lump-sum amount, no hours/rate). For a Flat item, render `-` in both the Quantity and Rate cells — never a blank cell, never `0`/`0.00`. This is a per-item toggle; Hourly and Flat items may appear mixed within the same table.
 
-- Place directly beneath the item title
+## 10. Notes below the item list
+
+This app's notes are **invoice-level**, not per-line-item — a single note applies to the item list as a whole, not to one specific row:
+
+- Place directly beneath the item table (above Subtotal), not beneath any individual item
 - Use 7.5–8.5 pt
 - Use muted grey or italic
-- Keep the text within the description column
+- No label/heading — the italic styling alone signals it's a note
 - Do not create a separate card or callout
 
 Example:
 
 ```text
-Software Automation Services
-Work done 16 June 2026 – 30 June 2026
+Software Development Services ([redacted-client] - March)     -   -   350
+Arrears from previous invoices                          -   -   1125
+Work done on [redacted-client] May - June 2026
+
+Subtotal                                                    1475
 ```
 
 ## 11. Totals
@@ -268,9 +275,20 @@ Total in AUD              AUD 4,458.00
 
 Keep the conversion label and converted amount visually subordinate to the primary amount unless the business requirement says otherwise.
 
-## 12. Notes and payment details
+## 12. Bottom note and payment details
 
-Place below the totals with compact spacing.
+Place below the totals with compact spacing, in this order: the bottom note (if present), then payment details.
+
+**Bottom note** — independent of the item-list note in §10 above; either, both, or neither may be present on a given invoice:
+
+- Bold `Note` label, 8.5 pt, followed by the value on the same row (a two-column label/value row, like the payment detail rows below)
+- Omit the row entirely when there's no note — never render an empty `Note` label with a blank value
+
+```text
+Note      Work done from 22 March 2026, 22 June 2026
+```
+
+**Payment details**:
 
 - Section heading: bold, 8–9 pt
 - Use a two-column label/value structure

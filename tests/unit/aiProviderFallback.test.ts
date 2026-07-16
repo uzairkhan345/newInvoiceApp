@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { resolveAiAssistSequence, getAiAssistConfigSummary } from "@/lib/ai-providers/config";
+import {
+  resolveAiAssistSequence,
+  getAiAssistConfigSummary,
+} from "@/lib/ai-providers/config";
 import { runWithFallback } from "@/lib/ai-providers/fallbackRunner";
 
 const schema = z.object({ name: z.string().optional() });
@@ -96,9 +99,7 @@ describe("runWithFallback", () => {
 
     const fetchMock = vi.fn().mockResolvedValue(
       jsonResponse({
-        candidates: [
-          { content: { parts: [{ text: '{"name":"Acme"}' }] } },
-        ],
+        candidates: [{ content: { parts: [{ text: '{"name":"Acme"}' }] } }],
       }),
     );
     vi.stubGlobal("fetch", fetchMock);

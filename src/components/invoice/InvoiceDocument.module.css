@@ -211,6 +211,19 @@
   display: table-header-group;
 }
 
+/*
+ * M14/M15 — items note: an unlabeled italic line describing the line items
+ * as a whole, sitting directly below the table. Reuses the guideline's §10
+ * "secondary line under an item" treatment (7.5-8.5pt, muted/italic), just
+ * scoped to the whole item list instead of a single row.
+ */
+.itemsNote {
+  margin: 0 0 var(--space-3);
+  font-size: 8pt;
+  font-style: italic;
+  color: var(--invoice-secondary);
+}
+
 /* ── Totals ── */
 
 .totals {
@@ -246,6 +259,29 @@
   width: 34%;
   font-size: 8.5pt;
   color: var(--invoice-secondary);
+}
+
+/*
+ * M14/M15 — bottom note: a bold "Note" label + value, independent of
+ * itemsNote above. Positioned after Totals, before the payment section,
+ * matching the reference's "Note   Work done from X, Y" row.
+ */
+.bottomNoteRow {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  font-size: 8.5pt;
+  break-inside: avoid;
+}
+
+.bottomNoteLabel {
+  min-width: 30mm;
+  font-weight: 700;
+  color: var(--invoice-text);
+}
+
+.bottomNoteValue {
+  color: var(--invoice-text);
 }
 
 /* ── Payment details ── */

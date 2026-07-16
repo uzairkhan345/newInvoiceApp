@@ -1,10 +1,11 @@
 "use client";
 
-import { useFieldArray, useWatch } from "react-hook-form";
+import { Controller, useFieldArray, useWatch } from "react-hook-form";
 import type { Control, FieldErrors, UseFormRegister } from "react-hook-form";
 import { Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { FormField } from "@/components/shared/FormField";
 import { formatCurrency } from "@/lib/currency";
 import { cn } from "@/lib/utils";
@@ -13,9 +14,11 @@ import type { InvoiceInput } from "@/lib/validation/invoice";
 /**
  * Docs/mvp_user_stories.md Story 4.1/4.2 — line items are always USD; the
  * displayed per-row/subtotal amounts here are a client-side preview only.
- * The backend always recomputes amount/subtotal/total from quantity ×
- * unitPrice itself (Docs/product_spec.md §1.5) — nothing shown here is ever
- * trusted as the submitted value.
+ * The backend recomputes amount/subtotal/total from quantity × unitPrice for
+ * an Hourly row (Docs/product_spec.md §1.5) — nothing shown here is ever
+ * trusted as the submitted value for that mode. A Flat row (M14,
+ * `isFlatAmount`) is the one narrow exception: its `amount` IS the submitted
+ * value, entered directly since there's no quantity/rate to compute it from.
  */
 export function LineItemsEditor({
   control,
@@ -34,6 +37,10 @@ export function LineItemsEditor({
 
   function rowAmount(index: number): number {
     const row = watchedItems?.[index];
+    if (row?.isFlatAmount) {
+      const amount = Number(row.amount);
+      return Number.isFinite(amount) ? amount : 0;
+    }
     const quantity = Number(row?.quantity);
     const unitPrice = Number(row?.unitPrice);
     return Number.isFinite(quantity) && Number.isFinite(unitPrice)
@@ -62,7 +69,13 @@ export function LineItemsEditor({
           variant="outline"
           className="h-7 px-2 text-[11px]"
           onClick={() =>
-            append({ description: "", quantity: "1", unitPrice: "0" })
+            append({
+              description: "",
+              isFlatAmount: false,
+              quantity: "1",
+              unitPrice: "0",
+              amount: "",
+            })
           }
         >
           <Plus className="h-3.5 w-3.5" />
@@ -108,44 +121,80 @@ export function LineItemsEditor({
                 {...register(`items.${index}.description` as const)}
               />
             </FormField>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <FormField
-                label="Quantity"
-                htmlFor={`items.${index}.quantity`}
-                error={errors.items?.[index]?.quantity?.message}
-                className="mb-0"
+
+            <div className="mb-3 flex items-center gap-2">
+              <Controller
+                name={`items.${index}.isFlatAmount` as const}
+                control={control}
+                render={({ field }) => (
+                  <Checkbox
+                    id={`items.${index}.isFlatAmount`}
+                    checked={field.value}
+                    onCheckedChange={(checked) => field.onChange(checked)}
+                  />
+                )}
+              />
+              <label
+                htmlFor={`items.${index}.isFlatAmount`}
+                className="text-[12px] font-medium text-foreground"
               >
-                <Input
-                  id={`items.${index}.quantity`}
-                  inputMode="decimal"
-                  {...register(`items.${index}.quantity` as const)}
-                />
-              </FormField>
-              <FormField
-                label="Unit Price (USD)"
-                htmlFor={`items.${index}.unitPrice`}
-                error={errors.items?.[index]?.unitPrice?.message}
-                className="mb-0"
-              >
-                <Input
-                  id={`items.${index}.unitPrice`}
-                  inputMode="decimal"
-                  {...register(`items.${index}.unitPrice` as const)}
-                />
-              </FormField>
-              <FormField
-                label="Amount"
-                htmlFor={`items.${index}.amount-preview`}
-                className="mb-0"
-              >
-                <Input
-                  id={`items.${index}.amount-preview`}
-                  value={formatCurrency(rowAmount(index), "USD")}
-                  disabled
-                  className="font-mono"
-                />
-              </FormField>
+                Flat amount (no quantity/rate)
+              </label>
             </div>
+
+            {watchedItems?.[index]?.isFlatAmount ? (
+              <FormField
+                label="Amount (USD)"
+                htmlFor={`items.${index}.amount`}
+                error={errors.items?.[index]?.amount?.message}
+                className="mb-0"
+              >
+                <Input
+                  id={`items.${index}.amount`}
+                  inputMode="decimal"
+                  {...register(`items.${index}.amount` as const)}
+                />
+              </FormField>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <FormField
+                  label="Quantity"
+                  htmlFor={`items.${index}.quantity`}
+                  error={errors.items?.[index]?.quantity?.message}
+                  className="mb-0"
+                >
+                  <Input
+                    id={`items.${index}.quantity`}
+                    inputMode="decimal"
+                    {...register(`items.${index}.quantity` as const)}
+                  />
+                </FormField>
+                <FormField
+                  label="Unit Price (USD)"
+                  htmlFor={`items.${index}.unitPrice`}
+                  error={errors.items?.[index]?.unitPrice?.message}
+                  className="mb-0"
+                >
+                  <Input
+                    id={`items.${index}.unitPrice`}
+                    inputMode="decimal"
+                    {...register(`items.${index}.unitPrice` as const)}
+                  />
+                </FormField>
+                <FormField
+                  label="Amount"
+                  htmlFor={`items.${index}.amount-preview`}
+                  className="mb-0"
+                >
+                  <Input
+                    id={`items.${index}.amount-preview`}
+                    value={formatCurrency(rowAmount(index), "USD")}
+                    disabled
+                    className="font-mono"
+                  />
+                </FormField>
+              </div>
+            )}
           </div>
         ))}
       </div>

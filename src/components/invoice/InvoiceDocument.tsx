@@ -82,8 +82,8 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
           </colgroup>
           <thead>
             <tr>
-              <th>Description</th>
-              <th className={styles.numberCell}>Qty</th>
+              <th>Item</th>
+              <th className={styles.numberCell}>Unit (hrs)</th>
               <th className={styles.numberCell}>Rate</th>
               <th className={styles.numberCell}>Amount (USD)</th>
             </tr>
@@ -92,9 +92,13 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
             {data.items.map((item) => (
               <tr key={item.id}>
                 <td>{item.description}</td>
-                <td className={styles.numberCell}>{item.quantity}</td>
                 <td className={styles.numberCell}>
-                  {formatCurrency(item.unitPrice, "USD")}
+                  {item.isFlatAmount ? "-" : item.quantity}
+                </td>
+                <td className={styles.numberCell}>
+                  {item.isFlatAmount
+                    ? "-"
+                    : formatCurrency(item.unitPrice!, "USD")}
                 </td>
                 <td className={styles.numberCell}>
                   {formatCurrency(item.amount, "USD")}
@@ -104,6 +108,10 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
           </tbody>
         </table>
 
+        {data.itemsNote ? (
+          <p className={styles.itemsNote}>{data.itemsNote}</p>
+        ) : null}
+
         <div className={styles.totals}>
           <div className={styles.totalRow}>
             <span>Subtotal</span>
@@ -112,7 +120,7 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
             </span>
           </div>
           <div className={`${styles.totalRow} ${styles.totalRowFinal}`}>
-            <span>Total</span>
+            <span>Total Due</span>
             <span className={styles.numberCell}>
               {formatCurrency(data.total, "USD")}
             </span>
@@ -132,6 +140,13 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
             </>
           ) : null}
         </div>
+
+        {data.bottomNote ? (
+          <div className={styles.bottomNoteRow}>
+            <span className={styles.bottomNoteLabel}>Note</span>
+            <span className={styles.bottomNoteValue}>{data.bottomNote}</span>
+          </div>
+        ) : null}
 
         <div className={styles.paymentSection}>
           <p className={styles.sectionHeading}>Payment to be made to:</p>

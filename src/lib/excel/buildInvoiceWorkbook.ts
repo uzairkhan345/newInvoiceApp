@@ -136,8 +136,8 @@ export async function buildInvoiceWorkbook(
 
   // ── Item table ──
   ws.mergeCells(`A${row}:D${row}`);
-  ws.getCell(`A${row}`).value = "DESCRIPTION";
-  ws.getCell(`E${row}`).value = "QTY";
+  ws.getCell(`A${row}`).value = "ITEM";
+  ws.getCell(`E${row}`).value = "UNIT (HRS)";
   ws.getCell(`F${row}`).value = "RATE";
   ws.getCell(`G${row}`).value = "AMOUNT (USD)";
   ["A", "E", "F", "G"].forEach((col) => {
@@ -157,8 +157,10 @@ export async function buildInvoiceWorkbook(
     ws.mergeCells(`A${row}:D${row}`);
     ws.getCell(`A${row}`).value = item.description;
     ws.getCell(`A${row}`).font = arial({});
-    ws.getCell(`E${row}`).value = item.quantity;
-    ws.getCell(`F${row}`).value = formatCurrency(item.unitPrice, "USD");
+    ws.getCell(`E${row}`).value = item.isFlatAmount ? "-" : item.quantity;
+    ws.getCell(`F${row}`).value = item.isFlatAmount
+      ? "-"
+      : formatCurrency(item.unitPrice!, "USD");
     ws.getCell(`G${row}`).value = formatCurrency(item.amount, "USD");
     ["A", "B", "C", "D", "E", "F", "G"].forEach((col) => {
       const cell = ws.getCell(`${col}${row}`);
@@ -181,6 +183,17 @@ export async function buildInvoiceWorkbook(
 
   row += 1;
 
+  // ── Items note (M14/M15) — unlabeled italic line describing the items as a whole ──
+  if (data.itemsNote) {
+    ws.getCell(`A${row}`).value = data.itemsNote;
+    ws.getCell(`A${row}`).font = arial({
+      size: 8,
+      italic: true,
+      color: MUTED_TEXT_COLOR,
+    });
+    row += 1;
+  }
+
   // ── Totals ──
   ws.getCell(`A${row}`).value = "Subtotal";
   ws.getCell(`A${row}`).font = arial({});
@@ -189,7 +202,7 @@ export async function buildInvoiceWorkbook(
   ws.getCell(`G${row}`).alignment = { horizontal: "right" };
   row += 1;
 
-  ws.getCell(`A${row}`).value = "Total";
+  ws.getCell(`A${row}`).value = "Total Due";
   ws.getCell(`A${row}`).font = arial({ bold: true });
   ws.getCell(`G${row}`).value = formatCurrency(data.total, "USD");
   ws.getCell(`G${row}`).font = arial({ bold: true });
@@ -209,6 +222,15 @@ export async function buildInvoiceWorkbook(
   }
 
   row += 1;
+
+  // ── Bottom note (M14/M15) — bold "Note" label, independent of itemsNote above ──
+  if (data.bottomNote) {
+    ws.getCell(`A${row}`).value = "Note";
+    ws.getCell(`A${row}`).font = arial({ bold: true });
+    ws.getCell(`B${row}`).value = data.bottomNote;
+    ws.getCell(`B${row}`).font = arial({});
+    row += 2;
+  }
 
   // ── Payment details ──
   ws.getCell(`A${row}`).value = "Payment to be made to:";

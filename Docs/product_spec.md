@@ -84,6 +84,8 @@ The immutable master ledger entry for a requested payment. Stores flat historica
 | `FromPartySnapshot` | Object | Copy of the Contractor's Name, Email, and address fields at snapshot time. |
 | `ToPartySnapshot` | Object | Copy of the Client's Name, Email, and address fields at snapshot time. |
 | `PaymentDetailsSnapshot` | List of Objects | Copy of the chosen `PaymentMethod.Fields` array. There is **no** `PaymentMethodId` foreign key on `Invoice` — the snapshot alone is sufficient; it exists for historical record-keeping, not detailed audit trails. |
+| `ItemsNote` | Text, Optional *(new — M14)* | Free-text note describing the line items as a whole, rendered unlabeled/italic below them on the document. Plain admin-authored content, not a snapshot of live external data — ordinary `DRAFT`-editable/locked-once-`SENT` field like `InvoiceNumber`. |
+| `BottomNote` | Text, Optional *(new — M14)* | A separate, independently-optional free-text note rendered near the bottom of the document (bold label + value), below the totals. Same editability rule as `ItemsNote` — the two are unrelated fields, not a repeat of one value. |
 
 There is no `Tax` field and no generic per-invoice `Currency` field (see §5 for why — replaced by the USD-plus-converted-total model).
 
@@ -94,9 +96,10 @@ There is no `Tax` field and no generic per-invoice `Currency` field (see §5 for
 | `Id` | Identifier, Primary Key | Unique item identifier. |
 | `InvoiceId` | Identifier, Foreign Key | Parent `Invoice.Id`. |
 | `Description` | Text | Required. Statement of the task/service/product. |
-| `Quantity` | Decimal | Must be greater than `0`. |
-| `UnitPrice` | Decimal | Must be `>= 0`. Always USD. |
-| `Amount` | Decimal | `Quantity * UnitPrice`, calculated by the backend — the source of truth, never trusted from the frontend. |
+| `IsFlatAmount` | Boolean, default `false` *(new — M14)* | Per-item toggle between Hourly (`false`) and Flat (`true`) pricing mode, mixable within one invoice — see below. |
+| `Quantity` | Decimal, Optional | Required and must be greater than `0` when `IsFlatAmount` is `false` (Hourly); always `null` when `IsFlatAmount` is `true` (Flat). |
+| `UnitPrice` | Decimal, Optional | Required and must be `>= 0` when `IsFlatAmount` is `false`; always `null` when `IsFlatAmount` is `true`. Always USD. |
+| `Amount` | Decimal | For an Hourly item: `Quantity * UnitPrice`, calculated by the backend — never trusted from the frontend. For a Flat item: entered directly by the admin and trusted as submitted — the one narrow, deliberate exception to "amount is always backend-calculated" (there is nothing to compute it from). |
 | `SortOrder` | Integer *(new — see `Docs/implementation_decisions.md` §22)* | Preserves line-item display order; the underlying relational store has no inherent row order for a "list" of items. |
 
 ## 2. Structural Examples for Dynamic Payment Fields

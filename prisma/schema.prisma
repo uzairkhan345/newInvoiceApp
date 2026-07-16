@@ -127,6 +127,8 @@ model Invoice {
   fromPartySnapshot      Json
   toPartySnapshot        Json
   paymentDetailsSnapshot Json
+  itemsNote              String?
+  bottomNote             String?
   createdAt              DateTime      @default(now())
   updatedAt              DateTime      @updatedAt
 
@@ -139,15 +141,19 @@ model Invoice {
 
 /// Docs/product_spec.md §1.5. `sortOrder` preserves line-item display order
 /// (Docs/implementation_decisions.md §22) — Postgres rows have no inherent order.
+/// `isFlatAmount` (M14) toggles per-row between Hourly (quantity/unitPrice
+/// required, `amount` backend-computed) and Flat (`amount` entered directly,
+/// quantity/unitPrice null) — see Docs/implementation_decisions.md §10.
 model InvoiceItem {
-  id          String  @id @default(cuid())
-  invoiceId   String
-  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  description String
-  quantity    Decimal @db.Decimal(10, 2)
-  unitPrice   Decimal @db.Decimal(12, 2)
-  amount      Decimal @db.Decimal(12, 2)
-  sortOrder   Int
+  id           String   @id @default(cuid())
+  invoiceId    String
+  invoice      Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description  String
+  isFlatAmount Boolean  @default(false)
+  quantity     Decimal? @db.Decimal(10, 2)
+  unitPrice    Decimal? @db.Decimal(12, 2)
+  amount       Decimal  @db.Decimal(12, 2)
+  sortOrder    Int
 
   @@index([invoiceId])
 }

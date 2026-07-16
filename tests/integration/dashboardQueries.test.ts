@@ -98,7 +98,15 @@ function baseInvoiceInput(overrides: Partial<InvoiceInput> = {}): InvoiceInput {
     issueDate: "2026-01-01",
     dueDate: "2026-01-15",
     convertedTotal: "",
-    items: [{ description: "Consulting", quantity: "2", unitPrice: "150.00" }],
+    items: [
+      {
+        description: "Consulting",
+        quantity: "2",
+        unitPrice: "150.00",
+        isFlatAmount: false,
+        amount: "",
+      },
+    ],
     ...overrides,
   };
 }
@@ -156,7 +164,15 @@ describe("invoiceService dashboard aggregates", () => {
     const invoice = await invoiceService.createDraft(
       project.id,
       baseInvoiceInput({
-        items: [{ description: "Consulting", quantity: "1", unitPrice: "250" }],
+        items: [
+          {
+            description: "Consulting",
+            quantity: "1",
+            unitPrice: "250",
+            isFlatAmount: false,
+            amount: "",
+          },
+        ],
       }),
     );
     createdInvoiceIds.push(invoice.id);

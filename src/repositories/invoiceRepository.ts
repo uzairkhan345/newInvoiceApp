@@ -14,8 +14,9 @@ import type { ProjectWithRelations } from "@/repositories/projectRepository";
  */
 export type InvoiceItemWriteInput = {
   description: string;
-  quantity: Prisma.Decimal;
-  unitPrice: Prisma.Decimal;
+  isFlatAmount: boolean;
+  quantity: Prisma.Decimal | null;
+  unitPrice: Prisma.Decimal | null;
   amount: Prisma.Decimal;
   sortOrder: number;
 };
@@ -32,6 +33,8 @@ export type InvoiceWriteInput = {
   fromPartySnapshot: Prisma.InputJsonValue;
   toPartySnapshot: Prisma.InputJsonValue;
   paymentDetailsSnapshot: Prisma.InputJsonValue;
+  itemsNote: string | null;
+  bottomNote: string | null;
   items: InvoiceItemWriteInput[];
 };
 
@@ -75,7 +78,9 @@ function countByStatus(status: InvoiceStatus): Promise<number> {
 }
 
 /** Dashboard (M10) — USD-only outstanding subtext (Docs/ui_design_guide.md §16); subtotal === total, no tax. */
-async function sumSubtotalByStatus(status: InvoiceStatus): Promise<Prisma.Decimal> {
+async function sumSubtotalByStatus(
+  status: InvoiceStatus,
+): Promise<Prisma.Decimal> {
   const result = await prisma.invoice.aggregate({
     where: { status },
     _sum: { subtotal: true },
@@ -136,6 +141,7 @@ function findInvoiceNumbersForProject(projectId: string): Promise<string[]> {
 function itemsCreateInput(items: InvoiceItemWriteInput[]) {
   return items.map((item) => ({
     description: item.description,
+    isFlatAmount: item.isFlatAmount,
     quantity: item.quantity,
     unitPrice: item.unitPrice,
     amount: item.amount,
