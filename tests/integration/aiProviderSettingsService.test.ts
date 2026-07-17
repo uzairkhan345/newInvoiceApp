@@ -1,10 +1,35 @@
 // @vitest-environment node
-import { afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { aiProviderSettingsService } from "@/services/aiProviderSettingsService";
 import { prisma } from "@/lib/prisma";
+import type { AiProviderSetting } from "@/generated/prisma/client";
+
+/**
+ * This table can hold real, user-configured provider settings (M16's
+ * /settings page) outside of tests — unlike every other integration test's
+ * `[test] ...`-tagged, individually-tracked rows, these tests need the table
+ * both clean at the start (several assert "all 3 providers unconfigured")
+ * and isolated between tests (blanket `deleteMany()` in `afterEach`). Snapshot
+ * whatever existed before this file ran, clear it for a clean run, then
+ * restore the snapshot in `afterAll` — so a real `/settings` configuration
+ * survives `pnpm test` instead of being silently wiped or causing a spurious
+ * failure in the first test.
+ */
+let originalRows: AiProviderSetting[] = [];
+
+beforeAll(async () => {
+  originalRows = await prisma.aiProviderSetting.findMany();
+  await prisma.aiProviderSetting.deleteMany();
+});
 
 afterEach(async () => {
   await prisma.aiProviderSetting.deleteMany();
+});
+
+afterAll(async () => {
+  if (originalRows.length > 0) {
+    await prisma.aiProviderSetting.createMany({ data: originalRows });
+  }
 });
 
 describe("aiProviderSettingsService", () => {
