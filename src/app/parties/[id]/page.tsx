@@ -27,6 +27,7 @@ export default async function PartyDetailPage({
   }
 
   if (isEditing) {
+    const aiConfig = await getAiAssistConfigSummary();
     return (
       <>
         <PageHeader
@@ -47,7 +48,7 @@ export default async function PartyDetailPage({
         <PartyForm
           mode="edit"
           partyId={party.id}
-          aiConfig={getAiAssistConfigSummary()}
+          aiConfig={aiConfig}
           defaultValues={{
             name: party.name,
             email: party.email ?? "",

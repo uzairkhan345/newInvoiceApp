@@ -20,6 +20,7 @@ export default async function NewInvoiceForProjectPage({
   const suggestedInvoiceNumber =
     await invoiceService.previewNextInvoiceNumber(projectId);
   const today = toDateInputValue(new Date());
+  const aiConfig = await getAiAssistConfigSummary();
 
   return (
     <>
@@ -30,7 +31,7 @@ export default async function NewInvoiceForProjectPage({
       <InvoiceForm
         mode="create"
         projectId={project.id}
-        aiConfig={getAiAssistConfigSummary()}
+        aiConfig={aiConfig}
         project={{
           name: project.name,
           contractorName: project.contractor.name,

@@ -76,7 +76,7 @@ export function AIAssistPanel({
             AI Assist
           </CardTitle>
           <CardAction>
-            <ConfigureSummary aiConfig={aiConfig} />
+            <ConfigureSummary />
           </CardAction>
         </CardHeader>
         <CardContent>
@@ -124,7 +124,7 @@ export function AIAssistPanel({
           AI Assist
         </CardTitle>
         <CardAction>
-          <ConfigureSummary aiConfig={aiConfig} />
+          <ConfigureSummary />
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">

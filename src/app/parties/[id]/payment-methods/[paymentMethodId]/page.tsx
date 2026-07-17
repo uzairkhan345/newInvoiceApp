@@ -21,6 +21,7 @@ export default async function EditPaymentMethodPage({
   }
 
   const fields = paymentMethod.fields as unknown as PaymentMethodField[];
+  const aiConfig = await getAiAssistConfigSummary();
 
   return (
     <>
@@ -29,7 +30,7 @@ export default async function EditPaymentMethodPage({
         mode="edit"
         partyId={party.id}
         paymentMethodId={paymentMethod.id}
-        aiConfig={getAiAssistConfigSummary()}
+        aiConfig={aiConfig}
         defaultValues={{
           type: paymentMethod.type,
           label: paymentMethod.label,

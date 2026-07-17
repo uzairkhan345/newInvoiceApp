@@ -14,15 +14,12 @@ export default async function NewPaymentMethodPage({
   if (!party) {
     notFound();
   }
+  const aiConfig = await getAiAssistConfigSummary();
 
   return (
     <>
       <PageHeader title="Add Payment Method" subtitle={`For ${party.name}.`} />
-      <PaymentMethodForm
-        mode="create"
-        partyId={party.id}
-        aiConfig={getAiAssistConfigSummary()}
-      />
+      <PaymentMethodForm mode="create" partyId={party.id} aiConfig={aiConfig} />
     </>
   );
 }

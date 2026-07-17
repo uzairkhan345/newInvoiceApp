@@ -1,10 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import {
-  resolveAiAssistSequence,
-  getAiAssistConfigSummary,
-} from "@/lib/ai-providers/config";
-import { runWithFallback } from "@/lib/ai-providers/fallbackRunner";
+import type { ResolvedAiTarget } from "@/lib/ai-providers/config";
+
+// M16 (Docs/execution_plan.md) moved config from env vars to a DB-backed
+// service — resolveAiAssistSequence() is now a thin async wrapper over
+// aiProviderSettingsService (covered by its own DB-backed integration test,
+// tests/integration/aiProviderSettingsService.test.ts). Here it's mocked
+// directly so runWithFallback's walk/fetch/schema-validation logic is
+// tested in isolation, same as before.
+const resolveAiAssistSequence = vi.fn<() => Promise<ResolvedAiTarget[]>>();
+vi.mock("@/lib/ai-providers/config", () => ({
+  resolveAiAssistSequence: () => resolveAiAssistSequence(),
+}));
+
+const { runWithFallback } = await import("@/lib/ai-providers/fallbackRunner");
 
 const schema = z.object({ name: z.string().optional() });
 
@@ -18,66 +27,14 @@ function jsonResponse(body: unknown, ok = true, status = 200) {
 }
 
 afterEach(() => {
-  vi.unstubAllEnvs();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
-});
-
-describe("resolveAiAssistSequence / getAiAssistConfigSummary", () => {
-  it("is empty and reports unconfigured when no env vars are set", () => {
-    vi.stubEnv("AI_PRIMARY_PROVIDER", "");
-    vi.stubEnv("AI_PRIMARY_MODEL", "");
-    vi.stubEnv("AI_FALLBACK_SEQUENCE", "");
-    vi.stubEnv("GOOGLE_API_KEY", "");
-    vi.stubEnv("ANTHROPIC_API_KEY", "");
-    vi.stubEnv("GROQ_API_KEY", "");
-
-    expect(resolveAiAssistSequence()).toEqual([]);
-    expect(getAiAssistConfigSummary()).toEqual({
-      configured: false,
-      primary: null,
-      fallback: [],
-    });
-  });
-
-  it("drops a primary target whose API key is missing, falling through to a configured fallback", () => {
-    vi.stubEnv("AI_PRIMARY_PROVIDER", "google");
-    vi.stubEnv("AI_PRIMARY_MODEL", "gemini-2.5-flash");
-    vi.stubEnv("GOOGLE_API_KEY", ""); // no key -> primary unusable
-    vi.stubEnv("AI_FALLBACK_SEQUENCE", "anthropic:claude-haiku-4-5");
-    vi.stubEnv("ANTHROPIC_API_KEY", "ant-key");
-
-    const sequence = resolveAiAssistSequence();
-    expect(sequence).toEqual([
-      { provider: "anthropic", model: "claude-haiku-4-5", apiKey: "ant-key" },
-    ]);
-    expect(getAiAssistConfigSummary().configured).toBe(true);
-  });
-
-  it("parses a full primary + multi-entry fallback sequence in order", () => {
-    vi.stubEnv("AI_PRIMARY_PROVIDER", "google");
-    vi.stubEnv("AI_PRIMARY_MODEL", "gemini-2.5-flash");
-    vi.stubEnv("GOOGLE_API_KEY", "g-key");
-    vi.stubEnv(
-      "AI_FALLBACK_SEQUENCE",
-      "anthropic:claude-haiku-4-5, groq:llama-3.3-70b-versatile",
-    );
-    vi.stubEnv("ANTHROPIC_API_KEY", "a-key");
-    vi.stubEnv("GROQ_API_KEY", "gr-key");
-
-    expect(resolveAiAssistSequence().map((t) => t.provider)).toEqual([
-      "google",
-      "anthropic",
-      "groq",
-    ]);
-  });
+  resolveAiAssistSequence.mockReset();
 });
 
 describe("runWithFallback", () => {
   it("returns null and never calls fetch when nothing is configured", async () => {
-    vi.stubEnv("AI_PRIMARY_PROVIDER", "");
-    vi.stubEnv("AI_PRIMARY_MODEL", "");
-    vi.stubEnv("AI_FALLBACK_SEQUENCE", "");
+    resolveAiAssistSequence.mockResolvedValue([]);
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
@@ -91,11 +48,10 @@ describe("runWithFallback", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("returns the first provider's validated JSON on success", async () => {
-    vi.stubEnv("AI_PRIMARY_PROVIDER", "google");
-    vi.stubEnv("AI_PRIMARY_MODEL", "gemini-2.5-flash");
-    vi.stubEnv("GOOGLE_API_KEY", "g-key");
-    vi.stubEnv("AI_FALLBACK_SEQUENCE", "");
+  it("returns the first target's validated JSON on success", async () => {
+    resolveAiAssistSequence.mockResolvedValue([
+      { provider: "google", model: "gemini-2.5-flash", apiKey: "g-key" },
+    ]);
 
     const fetchMock = vi.fn().mockResolvedValue(
       jsonResponse({
@@ -115,10 +71,9 @@ describe("runWithFallback", () => {
   });
 
   it("strips markdown fences before parsing JSON", async () => {
-    vi.stubEnv("AI_PRIMARY_PROVIDER", "google");
-    vi.stubEnv("AI_PRIMARY_MODEL", "gemini-2.5-flash");
-    vi.stubEnv("GOOGLE_API_KEY", "g-key");
-    vi.stubEnv("AI_FALLBACK_SEQUENCE", "");
+    resolveAiAssistSequence.mockResolvedValue([
+      { provider: "google", model: "gemini-2.5-flash", apiKey: "g-key" },
+    ]);
 
     const fetchMock = vi.fn().mockResolvedValue(
       jsonResponse({
@@ -142,28 +97,24 @@ describe("runWithFallback", () => {
     expect(result).toEqual({ name: "Acme" });
   });
 
-  it("falls through to the next provider when the primary errors, and again when a response fails schema validation", async () => {
-    vi.stubEnv("AI_PRIMARY_PROVIDER", "google");
-    vi.stubEnv("AI_PRIMARY_MODEL", "gemini-2.5-flash");
-    vi.stubEnv("GOOGLE_API_KEY", "g-key");
-    vi.stubEnv(
-      "AI_FALLBACK_SEQUENCE",
-      "anthropic:claude-haiku-4-5,groq:llama-3.3-70b-versatile",
-    );
-    vi.stubEnv("ANTHROPIC_API_KEY", "a-key");
-    vi.stubEnv("GROQ_API_KEY", "gr-key");
+  it("falls through to the next target when one errors, and again when a response fails schema validation — walking across providers just like within one", async () => {
+    resolveAiAssistSequence.mockResolvedValue([
+      { provider: "google", model: "gemini-2.5-flash", apiKey: "g-key" },
+      { provider: "google", model: "gemini-2.5-pro", apiKey: "g-key" },
+      { provider: "groq", model: "llama-3.3-70b-versatile", apiKey: "gr-key" },
+    ]);
 
     const fetchMock = vi
       .fn()
-      // google: network/HTTP failure
+      // google:gemini-2.5-flash — network/HTTP failure
       .mockResolvedValueOnce(jsonResponse({}, false, 500))
-      // anthropic: valid JSON but fails schema (name must be a string)
+      // google:gemini-2.5-pro — valid JSON but fails schema (name must be a string)
       .mockResolvedValueOnce(
         jsonResponse({
-          content: [{ type: "text", text: '{"name": 12345}' }],
+          candidates: [{ content: { parts: [{ text: '{"name": 12345}' }] } }],
         }),
       )
-      // groq: succeeds
+      // groq — succeeds
       .mockResolvedValueOnce(
         jsonResponse({
           choices: [{ message: { content: '{"name":"Acme"}' } }],
@@ -181,11 +132,10 @@ describe("runWithFallback", () => {
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
-  it("returns null (never throws) when every provider fails", async () => {
-    vi.stubEnv("AI_PRIMARY_PROVIDER", "google");
-    vi.stubEnv("AI_PRIMARY_MODEL", "gemini-2.5-flash");
-    vi.stubEnv("GOOGLE_API_KEY", "g-key");
-    vi.stubEnv("AI_FALLBACK_SEQUENCE", "");
+  it("returns null (never throws) when every target fails", async () => {
+    resolveAiAssistSequence.mockResolvedValue([
+      { provider: "google", model: "gemini-2.5-flash", apiKey: "g-key" },
+    ]);
 
     const fetchMock = vi.fn().mockRejectedValue(new Error("network down"));
     vi.stubGlobal("fetch", fetchMock);

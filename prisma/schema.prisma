@@ -29,6 +29,12 @@ enum ProjectStatus {
   ARCHIVED
 }
 
+enum AiProviderName {
+  google
+  anthropic
+  groq
+}
+
 enum DisplayCurrency {
   USD
   AUD
@@ -156,4 +162,22 @@ model InvoiceItem {
   sortOrder    Int
 
   @@index([invoiceId])
+}
+
+/// M16 (`Docs/execution_plan.md`) — DB-backed AI-assist provider config,
+/// replacing M11's environment-variables-only decision. Exactly one row per
+/// fixed provider (google/anthropic/groq — never a dynamic/admin-defined
+/// provider list, see the M16 note). `apiKeyCiphertext` is AES-256-GCM
+/// (encrypted with `SETTINGS_ENCRYPTION_KEY`), never stored/returned as
+/// plaintext. `models` is an ordered free-text list — array position IS the
+/// within-provider fallback order, same convention as `PaymentMethod.fields`.
+/// `order` is the cross-provider cascade order (0 = default/first-tried).
+model AiProviderSetting {
+  provider         AiProviderName @id
+  apiKeyCiphertext String?
+  models           String[]       @default([])
+  enabled          Boolean        @default(true)
+  order            Int
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 }

@@ -22,6 +22,7 @@ export default async function InvoiceDetailPage({
   if (!invoice) {
     notFound();
   }
+  const aiConfig = await getAiAssistConfigSummary();
 
   const headerAction = (
     <div className="flex items-center gap-3">
@@ -88,7 +89,7 @@ export default async function InvoiceDetailPage({
         mode="edit"
         invoiceId={invoice.id}
         projectId={invoice.projectId}
-        aiConfig={getAiAssistConfigSummary()}
+        aiConfig={aiConfig}
         project={{
           name: invoice.project.name,
           contractorName: invoice.project.contractor.name,
