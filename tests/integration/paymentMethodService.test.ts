@@ -152,6 +152,77 @@ describe("paymentMethodService", () => {
     expect(reloadedSecond!.isDefault).toBe(true);
   });
 
+  it("encrypts field values at rest (M17.5) — the raw DB row is ciphertext, the service returns plaintext", async () => {
+    const party = await createTestParty("[test] Encryption Party");
+
+    const method = await paymentMethodService.create(
+      party.id,
+      baseInput({
+        fields: [
+          { key: "account_number", label: "Account Number", value: "1234567890" },
+        ],
+      }),
+    );
+
+    // create() itself already returns decrypted plaintext.
+    const createdFields = method.fields as unknown as {
+      key: string;
+      value: string;
+    }[];
+    expect(createdFields[0].value).toBe("1234567890");
+
+    // The raw DB row (bypassing the service) must never hold plaintext.
+    const raw = await prisma.paymentMethod.findUniqueOrThrow({
+      where: { id: method.id },
+    });
+    const rawFields = raw.fields as unknown as { key: string; value: string }[];
+    expect(rawFields[0].value).not.toBe("1234567890");
+
+    // getById/listForParty decrypt back to the original plaintext.
+    const reloaded = await paymentMethodService.getById(method.id);
+    const reloadedFields = reloaded!.fields as unknown as {
+      key: string;
+      value: string;
+    }[];
+    expect(reloadedFields[0].value).toBe("1234567890");
+
+    const listed = await paymentMethodService.listForParty(party.id);
+    const listedFields = listed[0].fields as unknown as {
+      key: string;
+      value: string;
+    }[];
+    expect(listedFields[0].value).toBe("1234567890");
+  });
+
+  it("re-encrypts on update (M17.5) — a changed value is ciphertext at rest and decrypts back correctly", async () => {
+    const party = await createTestParty("[test] Update Encryption Party");
+    const method = await paymentMethodService.create(
+      party.id,
+      baseInput({
+        fields: [{ key: "account_number", label: "Account Number", value: "old-value" }],
+      }),
+    );
+
+    const updated = await paymentMethodService.update(
+      method.id,
+      party.id,
+      baseInput({
+        fields: [{ key: "account_number", label: "Account Number", value: "new-value" }],
+      }),
+    );
+    const updatedFields = updated.fields as unknown as {
+      key: string;
+      value: string;
+    }[];
+    expect(updatedFields[0].value).toBe("new-value");
+
+    const raw = await prisma.paymentMethod.findUniqueOrThrow({
+      where: { id: method.id },
+    });
+    const rawFields = raw.fields as unknown as { key: string; value: string }[];
+    expect(rawFields[0].value).not.toBe("new-value");
+  });
+
   it("deletes an unreferenced payment method", async () => {
     const party = await createTestParty("[test] Deletable PM Party");
     const method = await paymentMethodService.create(party.id, baseInput());

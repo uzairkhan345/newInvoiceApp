@@ -237,7 +237,22 @@ describe("invoiceService.createDraft", () => {
 
     expect(invoice.fromPartySnapshot).toMatchObject({ name: contractor.name });
     expect(invoice.toPartySnapshot).toMatchObject({ name: client.name });
-    expect(invoice.paymentDetailsSnapshot).toEqual(paymentMethod.fields);
+
+    // Docs/feedback_backlog.md M17.5 — buildSnapshots copies the raw
+    // PaymentMethod row (ciphertext), not paymentMethodService's decrypted
+    // return value, so the snapshot matches the *stored* row exactly.
+    const rawPaymentMethod = await prisma.paymentMethod.findUniqueOrThrow({
+      where: { id: paymentMethod.id },
+    });
+    expect(invoice.paymentDetailsSnapshot).toEqual(rawPaymentMethod.fields);
+
+    const snapshotFields = invoice.paymentDetailsSnapshot as unknown as {
+      value: string;
+    }[];
+    const decryptedFields = paymentMethod.fields as unknown as {
+      value: string;
+    }[];
+    expect(snapshotFields[0].value).not.toBe(decryptedFields[0].value);
   });
 
   it("persists convertedTotal only when the project's DisplayCurrency isn't USD", async () => {

@@ -27,6 +27,17 @@ import type { Party, PaymentMethod } from "@/generated/prisma/client";
 /** Sentinel for "no preferred payment method" — Select items can't carry an empty-string value. */
 const NO_PAYMENT_METHOD = "__none__";
 
+const displayCurrencyLabels: Record<ProjectInput["displayCurrency"], string> = {
+  USD: "USD",
+  AUD: "AUD",
+  GBP: "GBP",
+};
+
+const statusLabels: Record<ProjectInput["status"], string> = {
+  ACTIVE: "Active",
+  ARCHIVED: "Archived",
+};
+
 export function ProjectForm({
   mode,
   projectId,
@@ -188,6 +199,18 @@ export function ProjectForm({
                       placeholder={
                         contractorId ? "None" : "Select a contractor first"
                       }
+                      renderValue={(value) =>
+                        value === NO_PAYMENT_METHOD
+                          ? "None"
+                          : (() => {
+                              const method = availablePaymentMethods.find(
+                                (m) => m.id === value,
+                              );
+                              return method
+                                ? `${method.label}${method.isDefault ? " (Default)" : ""}`
+                                : undefined;
+                            })()
+                      }
                     />
                   </SelectTrigger>
                   <SelectContent>
@@ -236,7 +259,13 @@ export function ProjectForm({
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger id="displayCurrency" className="w-full">
-                      <SelectValue />
+                      <SelectValue
+                        renderValue={(value) =>
+                          displayCurrencyLabels[
+                            value as ProjectInput["displayCurrency"]
+                          ]
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="USD">USD</SelectItem>
@@ -259,7 +288,11 @@ export function ProjectForm({
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger id="status" className="w-full">
-                      <SelectValue />
+                      <SelectValue
+                        renderValue={(value) =>
+                          statusLabels[value as ProjectInput["status"]]
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ACTIVE">Active</SelectItem>

@@ -162,7 +162,12 @@ export function PaymentMethodForm({
                     }}
                   >
                     <SelectTrigger id="type" className="w-full">
-                      <SelectValue placeholder="Select a type" />
+                      <SelectValue
+                        placeholder="Select a type"
+                        renderValue={(value) =>
+                          typeLabels[value as PaymentMethodInput["type"]]
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {Object.entries(typeLabels).map(([value, label]) => (

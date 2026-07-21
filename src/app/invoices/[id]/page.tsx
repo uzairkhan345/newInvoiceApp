@@ -51,7 +51,11 @@ export default async function InvoiceDetailPage({
         <FileText className="h-3.5 w-3.5" />
         PDF
       </Button>
-      <StatusActionBar invoiceId={invoice.id} status={invoice.status} />
+      <StatusActionBar
+        invoiceId={invoice.id}
+        status={invoice.status}
+        hasNoPaymentMethod={!invoice.project.preferredPaymentMethod}
+      />
     </div>
   );
 

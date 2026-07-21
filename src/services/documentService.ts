@@ -1,6 +1,7 @@
 import type { InvoiceStatus } from "@/generated/prisma/client";
 import type { InvoiceWithItems } from "@/repositories/invoiceRepository";
 import type { PaymentMethodField } from "@/repositories/paymentMethodRepository";
+import { decryptSecret } from "@/lib/crypto/settingsEncryption";
 
 export type PartySnapshotData = {
   name: string;
@@ -49,11 +50,18 @@ export type InvoiceDocumentData = {
  * for a DRAFT invoice mid-edit) — a pure, synchronous mapper that imports no
  * repository, so there is nothing here that could ever issue a live query.
  * `invoice.items` arrives pre-ordered by `sortOrder` (invoiceRepository.findById's
- * `orderBy`), so no re-sorting is needed here.
+ * `orderBy`), so no re-sorting is needed here. `paymentDetailsSnapshot.value`
+ * is stored encrypted (Docs/feedback_backlog.md M17.5 — still-encrypted at
+ * SENT, same as the live `PaymentMethod.fields` it was copied from); decrypted
+ * here at render time only, via a pure function call, not a live query — this
+ * mapper still never imports a repository.
  */
 function assembleInvoiceDocumentData(
   invoice: InvoiceWithItems,
 ): InvoiceDocumentData {
+  const paymentDetails =
+    invoice.paymentDetailsSnapshot as unknown as PaymentMethodField[];
+
   return {
     invoiceNumber: invoice.invoiceNumber,
     status: invoice.status,
@@ -62,8 +70,10 @@ function assembleInvoiceDocumentData(
     projectName: invoice.project.name,
     contractor: invoice.fromPartySnapshot as unknown as PartySnapshotData,
     client: invoice.toPartySnapshot as unknown as PartySnapshotData,
-    paymentDetails:
-      invoice.paymentDetailsSnapshot as unknown as PaymentMethodField[],
+    paymentDetails: paymentDetails.map((field) => ({
+      ...field,
+      value: decryptSecret(field.value),
+    })),
     items: invoice.items.map((item) => ({
       id: item.id,
       description: item.description,

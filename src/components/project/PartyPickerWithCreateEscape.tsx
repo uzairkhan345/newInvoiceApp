@@ -27,6 +27,11 @@ import {
 } from "@/components/ui/select";
 import type { Party } from "@/generated/prisma/client";
 
+const partyTypeLabels: Record<PartyInput["type"], string> = {
+  INDIVIDUAL: "Individual",
+  ORGANIZATION: "Organization",
+};
+
 const emptyPartyDefaults: PartyInput = {
   name: "",
   email: "",
@@ -146,7 +151,12 @@ function MiniCreatePartyDialog({
               render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange}>
                   <SelectTrigger id="mini-party-type" className="w-full">
-                    <SelectValue placeholder="Select a type" />
+                    <SelectValue
+                      placeholder="Select a type"
+                      renderValue={(value) =>
+                        partyTypeLabels[value as PartyInput["type"]]
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="INDIVIDUAL">Individual</SelectItem>
@@ -215,7 +225,12 @@ export function PartyPickerWithCreateEscape({
         onValueChange={(newValue) => onChange(newValue ?? "")}
       >
         <SelectTrigger className="w-full">
-          <SelectValue placeholder={placeholder} />
+          <SelectValue
+            placeholder={placeholder}
+            renderValue={(value) =>
+              parties.find((party) => party.id === value)?.name
+            }
+          />
         </SelectTrigger>
         <SelectContent>
           {parties.map((party) => (

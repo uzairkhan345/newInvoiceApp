@@ -151,12 +151,16 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
         <div className={styles.paymentSection}>
           <p className={styles.sectionHeading}>Payment to be made to:</p>
           <div className={styles.paymentGrid}>
-            {data.paymentDetails.map((field) => (
-              <div key={field.key} className={styles.paymentRow}>
-                <span className={styles.paymentLabel}>{field.label}</span>
-                <span className={styles.paymentValue}>{field.value}</span>
-              </div>
-            ))}
+            {data.paymentDetails.length > 0 ? (
+              data.paymentDetails.map((field) => (
+                <div key={field.key} className={styles.paymentRow}>
+                  <span className={styles.paymentLabel}>{field.label}</span>
+                  <span className={styles.paymentValue}>{field.value}</span>
+                </div>
+              ))
+            ) : (
+              <p className={styles.paymentValue}>No payment method on file</p>
+            )}
           </div>
         </div>
       </div>

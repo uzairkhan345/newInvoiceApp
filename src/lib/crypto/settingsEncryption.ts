@@ -6,10 +6,17 @@ import {
 } from "node:crypto";
 
 /**
- * AES-256-GCM at-rest encryption for AiProviderSetting.apiKeyCiphertext
- * (M16, Docs/execution_plan.md). `SETTINGS_ENCRYPTION_KEY` can be any
- * string — it's SHA-256-hashed to a stable 32-byte key rather than requiring
- * the admin to generate/paste real key material. Server-only.
+ * AES-256-GCM at-rest encryption, shared by AiProviderSetting.apiKeyCiphertext
+ * (M16) and PaymentMethod.fields[].value / Invoice.paymentDetailsSnapshot
+ * (M17.5, Docs/feedback_backlog.md) — one key, reused rather than adding a
+ * second secret to configure and never lose. `SETTINGS_ENCRYPTION_KEY` can be
+ * any string — it's SHA-256-hashed to a stable 32-byte key rather than
+ * requiring the admin to generate/paste real key material. Server-only.
+ *
+ * Losing/rotating this key makes every encrypted value it protects
+ * permanently undecryptable — that now includes real client banking details,
+ * not just an easily-re-enterable AI provider key. Never change it once
+ * anything has been saved through it.
  */
 const IV_LENGTH = 12;
 const AUTH_TAG_LENGTH = 16;

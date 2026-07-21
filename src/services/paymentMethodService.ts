@@ -1,7 +1,11 @@
 import { paymentMethodRepository } from "@/repositories/paymentMethodRepository";
-import type { PaymentMethodWriteInput } from "@/repositories/paymentMethodRepository";
+import type {
+  PaymentMethodField,
+  PaymentMethodWriteInput,
+} from "@/repositories/paymentMethodRepository";
 import type { PaymentMethodInput } from "@/lib/validation/paymentMethod";
 import type { PaymentMethod } from "@/generated/prisma/client";
+import { encryptSecret, decryptSecret } from "@/lib/crypto/settingsEncryption";
 
 /**
  * Thrown when a delete is blocked by a live foreign-key reference
@@ -17,6 +21,35 @@ export class PaymentMethodDeletionBlockedError extends Error {
   }
 }
 
+/**
+ * Docs/feedback_backlog.md M17.5 — only `value` is encrypted (the actual
+ * banking detail); `key`/`label` are just field labels like "Account Number"
+ * and aren't sensitive, and encrypting them would break nothing but gain
+ * nothing either.
+ */
+function encryptFields(fields: PaymentMethodField[]): PaymentMethodField[] {
+  return fields.map((field) => ({
+    ...field,
+    value: encryptSecret(field.value),
+  }));
+}
+
+function decryptFields(fields: PaymentMethodField[]): PaymentMethodField[] {
+  return fields.map((field) => ({
+    ...field,
+    value: decryptSecret(field.value),
+  }));
+}
+
+function decryptPaymentMethod(method: PaymentMethod): PaymentMethod {
+  return {
+    ...method,
+    fields: decryptFields(
+      method.fields as unknown as PaymentMethodField[],
+    ) as unknown as PaymentMethod["fields"],
+  };
+}
+
 function toWriteInput(
   partyId: string,
   input: PaymentMethodInput,
@@ -26,16 +59,18 @@ function toWriteInput(
     type: input.type,
     label: input.label,
     isDefault: input.isDefault,
-    fields: input.fields,
+    fields: encryptFields(input.fields),
   };
 }
 
-function listForParty(partyId: string): Promise<PaymentMethod[]> {
-  return paymentMethodRepository.findByParty(partyId);
+async function listForParty(partyId: string): Promise<PaymentMethod[]> {
+  const methods = await paymentMethodRepository.findByParty(partyId);
+  return methods.map(decryptPaymentMethod);
 }
 
-function getById(id: string): Promise<PaymentMethod | null> {
-  return paymentMethodRepository.findById(id);
+async function getById(id: string): Promise<PaymentMethod | null> {
+  const method = await paymentMethodRepository.findById(id);
+  return method ? decryptPaymentMethod(method) : null;
 }
 
 /**
@@ -50,7 +85,10 @@ async function create(
   if (input.isDefault) {
     await paymentMethodRepository.unsetDefaultForParty(partyId);
   }
-  return paymentMethodRepository.create(toWriteInput(partyId, input));
+  const created = await paymentMethodRepository.create(
+    toWriteInput(partyId, input),
+  );
+  return decryptPaymentMethod(created);
 }
 
 async function update(
@@ -61,12 +99,13 @@ async function update(
   if (input.isDefault) {
     await paymentMethodRepository.unsetDefaultForParty(partyId, id);
   }
-  return paymentMethodRepository.update(id, {
+  const updated = await paymentMethodRepository.update(id, {
     type: input.type,
     label: input.label,
     isDefault: input.isDefault,
-    fields: input.fields,
+    fields: encryptFields(input.fields),
   });
+  return decryptPaymentMethod(updated);
 }
 
 /** Story 2.4 — blocked while set as any Project's preferred payment method. */

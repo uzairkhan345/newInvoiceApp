@@ -53,9 +53,12 @@ const TRANSITIONS: Record<
 export function StatusActionBar({
   invoiceId,
   status,
+  hasNoPaymentMethod,
 }: {
   invoiceId: string;
   status: InvoiceStatus;
+  /** Docs/feedback_backlog.md M17.2 — the contractor has no preferred payment method, so a DRAFT→SENT transition would permanently lock in an empty payment snapshot. Only meaningful for the SENT transition. */
+  hasNoPaymentMethod: boolean;
 }) {
   const router = useRouter();
 
@@ -87,7 +90,11 @@ export function StatusActionBar({
           triggerLabel={transition.label}
           triggerVariant={transition.target === "VOID" ? "outline" : "default"}
           title={transition.label}
-          description={transition.description}
+          description={
+            transition.target === "SENT" && hasNoPaymentMethod
+              ? `${transition.description} This invoice has no payment details on file — send anyway?`
+              : transition.description
+          }
           confirmLabel={transition.label}
           onConfirm={() => handleTransition(transition.target)}
         />

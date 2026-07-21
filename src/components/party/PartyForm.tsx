@@ -22,6 +22,11 @@ import { AIAssistPanel } from "@/components/ai-assist/AIAssistPanel";
 import { useApplySuggestion } from "@/components/ai-assist/useApplySuggestion";
 import type { AiAssistConfigSummary } from "@/lib/ai-providers/config";
 
+const partyTypeLabels: Record<PartyInput["type"], string> = {
+  INDIVIDUAL: "Individual",
+  ORGANIZATION: "Organization",
+};
+
 export function PartyForm({
   mode,
   partyId,
@@ -118,7 +123,12 @@ export function PartyForm({
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger id="type" className="w-full">
-                      <SelectValue placeholder="Select a type" />
+                      <SelectValue
+                        placeholder="Select a type"
+                        renderValue={(value) =>
+                          partyTypeLabels[value as PartyInput["type"]]
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="INDIVIDUAL">Individual</SelectItem>

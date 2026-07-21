@@ -18,13 +18,36 @@ function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   );
 }
 
-function SelectValue({ className, ...props }: SelectPrimitive.Value.Props) {
+function SelectValue({
+  className,
+  placeholder,
+  renderValue,
+  ...props
+}: SelectPrimitive.Value.Props & {
+  /**
+   * Maps the current value to its display label. Required whenever a
+   * `Select`'s value can be pre-populated at mount (i.e. any edit form) —
+   * Base UI's own label lookup (its `items` registry) is only reliably
+   * populated by a user click, so a value set from server data at mount
+   * silently renders the raw id/enum instead of a label without this.
+   * Falls back to `placeholder` when there's no value yet.
+   */
+  renderValue?: (value: unknown) => React.ReactNode;
+}) {
   return (
     <SelectPrimitive.Value
       data-slot="select-value"
       className={cn("flex flex-1 text-left", className)}
+      placeholder={placeholder}
       {...props}
-    />
+    >
+      {renderValue
+        ? (value: unknown) =>
+            value === null || value === undefined || value === ""
+              ? placeholder
+              : renderValue(value)
+        : undefined}
+    </SelectPrimitive.Value>
   );
 }
 

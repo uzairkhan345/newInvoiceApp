@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { documentService } from "@/services/documentService";
 import { partyRepository } from "@/repositories/partyRepository";
 import { paymentMethodRepository } from "@/repositories/paymentMethodRepository";
+import { encryptSecret } from "@/lib/crypto/settingsEncryption";
 import { Prisma } from "@/generated/prisma/client";
 import type { InvoiceWithItems } from "@/repositories/invoiceRepository";
 
@@ -39,8 +40,11 @@ function fakeInvoice(
       postalCode: null,
       country: null,
     },
+    // Docs/feedback_backlog.md M17.5 — stored encrypted, same as the real
+    // Invoice.paymentDetailsSnapshot column since it's copied verbatim from
+    // the now-encrypted PaymentMethod.fields.
     paymentDetailsSnapshot: [
-      { key: "bank_name", label: "Bank Name", value: "Test Bank" },
+      { key: "bank_name", label: "Bank Name", value: encryptSecret("Test Bank") },
     ],
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -132,6 +136,29 @@ describe("documentService.assembleInvoiceDocumentData", () => {
     );
     expect(data.convertedTotal).toBeNull();
     expect(data.convertedCurrency).toBeNull();
+  });
+
+  it("decrypts paymentDetailsSnapshot values for rendering (M17.5) — the raw invoice column stays encrypted", () => {
+    const encryptedValue = encryptSecret("Test Bank");
+    const invoice = fakeInvoice({
+      paymentDetailsSnapshot: [
+        { key: "bank_name", label: "Bank Name", value: encryptedValue },
+      ],
+    });
+
+    const data = documentService.assembleInvoiceDocumentData(invoice);
+
+    expect(data.paymentDetails).toEqual([
+      { key: "bank_name", label: "Bank Name", value: "Test Bank" },
+    ]);
+    expect(encryptedValue).not.toBe("Test Bank");
+  });
+
+  it("passes through an empty paymentDetailsSnapshot unchanged (M17.2 — no payment method on file)", () => {
+    const data = documentService.assembleInvoiceDocumentData(
+      fakeInvoice({ paymentDetailsSnapshot: [] }),
+    );
+    expect(data.paymentDetails).toEqual([]);
   });
 
   it("never queries partyRepository or paymentMethodRepository — sources exclusively from the invoice's own snapshot fields", () => {

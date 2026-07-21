@@ -237,13 +237,19 @@ export async function buildInvoiceWorkbook(
   ws.getCell(`A${row}`).font = arial({ bold: true });
   row += 1;
 
-  data.paymentDetails.forEach((field) => {
-    ws.getCell(`A${row}`).value = field.label;
+  if (data.paymentDetails.length === 0) {
+    ws.getCell(`A${row}`).value = "No payment method on file";
     ws.getCell(`A${row}`).font = arial({ color: MUTED_TEXT_COLOR });
-    ws.getCell(`B${row}`).value = field.value;
-    ws.getCell(`B${row}`).font = arial({});
     row += 1;
-  });
+  } else {
+    data.paymentDetails.forEach((field) => {
+      ws.getCell(`A${row}`).value = field.label;
+      ws.getCell(`A${row}`).font = arial({ color: MUTED_TEXT_COLOR });
+      ws.getCell(`B${row}`).value = field.value;
+      ws.getCell(`B${row}`).font = arial({});
+      row += 1;
+    });
+  }
 
   // ── Page setup ──
   ws.pageSetup = {

@@ -73,6 +73,11 @@ function ProjectInfoPanel({ project }: { project: InvoiceFormProjectInfo }) {
               </span>
             )}
           </p>
+          {project.preferredPaymentMethodLabel === null ? (
+            <p className="mt-1 inline-block rounded-full bg-[var(--alert-warning-bg)] px-2 py-0.5 text-[11px] font-semibold text-[var(--alert-warning-text)]">
+              This invoice will be generated with no payment details
+            </p>
+          ) : null}
         </div>
       </CardContent>
     </Card>
