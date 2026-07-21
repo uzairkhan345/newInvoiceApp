@@ -97,6 +97,68 @@ describe("runWithFallback", () => {
     expect(result).toEqual({ name: "Acme" });
   });
 
+  it("recovers a raw JSON value even with trailing prose and no code fence (a real live-provider failure mode)", async () => {
+    resolveAiAssistSequence.mockResolvedValue([
+      { provider: "google", model: "gemini-2.5-flash", apiKey: "g-key" },
+    ]);
+
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  text: '{"name":"Acme"}\nLet me know if you would like any changes!',
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await runWithFallback({
+      systemPrompt: "sys",
+      userPrompt: "user",
+      schema,
+    });
+
+    expect(result).toEqual({ name: "Acme" });
+  });
+
+  it("doesn't miscount JSON depth when a string value contains brace characters", async () => {
+    resolveAiAssistSequence.mockResolvedValue([
+      { provider: "google", model: "gemini-2.5-flash", apiKey: "g-key" },
+    ]);
+
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  text: '{"name":"literally { not json }"}\ntrailing text',
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await runWithFallback({
+      systemPrompt: "sys",
+      userPrompt: "user",
+      schema,
+    });
+
+    expect(result).toEqual({ name: "literally { not json }" });
+  });
+
   it("falls through to the next target when one errors, and again when a response fails schema validation — walking across providers just like within one", async () => {
     resolveAiAssistSequence.mockResolvedValue([
       { provider: "google", model: "gemini-2.5-flash", apiKey: "g-key" },

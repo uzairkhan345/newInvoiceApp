@@ -131,6 +131,23 @@ function findById(id: string): Promise<InvoiceWithItems | null> {
   });
 }
 
+/**
+ * Docs/feedback_backlog.md M18 (Autofill from last invoice) — the most
+ * recently *issued* invoice for a project, any status (a stray DRAFT/VOID
+ * still counts as "last time" — Docs/feedback_backlog.md's grilled decision).
+ * Includes items since Autofill copies them; no party/payment-method
+ * relations needed here (unlike findById), so a lighter include than that.
+ */
+function findMostRecentByProject(
+  projectId: string,
+): Promise<(Invoice & { items: InvoiceItem[] }) | null> {
+  return prisma.invoice.findFirst({
+    where: { projectId },
+    include: { items: { orderBy: { sortOrder: "asc" } } },
+    orderBy: { issueDate: "desc" },
+  });
+}
+
 /** Sourced for invoiceNumberService's per-project sequence computation. */
 function findInvoiceNumbersForProject(projectId: string): Promise<string[]> {
   return prisma.invoice
@@ -216,6 +233,7 @@ function deleteById(id: string): Promise<Invoice> {
 export const invoiceRepository = {
   findMany,
   findById,
+  findMostRecentByProject,
   findInvoiceNumbersForProject,
   createWithItems,
   replaceItemsAndUpdate,

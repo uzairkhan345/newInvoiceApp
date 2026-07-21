@@ -16,9 +16,15 @@ import {
   type AiChatMessage,
 } from "@/components/ai-assist/ChatMessage";
 import { ConfigureSummary } from "@/components/ai-assist/ConfigureSummary";
-import { runAiAssistAction } from "@/actions/aiAssist.actions";
-import type { AiFormType } from "@/services/aiAssistService";
+import {
+  runAiAssistAction,
+  runInvoiceAiAssistAction,
+} from "@/actions/aiAssist.actions";
+import type { AiFormType, InvoiceAiContext } from "@/services/aiAssistService";
 import type { AiAssistConfigSummary } from "@/lib/ai-providers/config";
+
+/** Docs/feedback_backlog.md M18 — after this many clarifying questions with no resolved suggestion, stop looping and hand back to the user. */
+const MAX_CLARIFICATION_ROUNDS = 2;
 
 function humanizeKey(key: string): string {
   return key
@@ -42,6 +48,11 @@ const PLACEHOLDER: Record<AiFormType, string> = {
     'e.g. "3 days of consulting at $150/hr, issued today, due in 15 days"',
 };
 
+/** Builds the transcript text sent as the next `promptText` when continuing a pending clarification round. */
+function appendToTranscript(transcript: string, line: string): string {
+  return `${transcript}\n${line}`;
+}
+
 /**
  * Docs/ui_design_guide.md §14 — chat-style panel alongside the Party,
  * Payment Method, and Invoice forms (create AND edit — grilled/confirmed
@@ -49,19 +60,30 @@ const PLACEHOLDER: Record<AiFormType, string> = {
  * progressive enhancement: `onApply` only ever stages field values into the
  * caller's already-open react-hook-form instance — this component never
  * submits anything itself.
+ *
+ * Invoice-only, Docs/feedback_backlog.md M18: `getContext` (when provided)
+ * enables project + current-form-value context and a two-round clarifying-
+ * question loop, via `runInvoiceAiAssistAction` instead of the plain
+ * single-shot `runAiAssistAction` party/paymentMethod still use unchanged.
  */
 export function AIAssistPanel({
   formType,
   aiConfig,
   onApply,
+  getContext,
 }: {
   formType: AiFormType;
   aiConfig: AiAssistConfigSummary;
   onApply: (suggestion: Record<string, unknown>) => void;
+  getContext?: () => InvoiceAiContext;
 }) {
   const [messages, setMessages] = useState<AiChatMessage[]>([]);
   const [promptText, setPromptText] = useState("");
   const [isPending, startTransition] = useTransition();
+  const [clarification, setClarification] = useState<{
+    transcript: string;
+    count: number;
+  } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -89,13 +111,12 @@ export function AIAssistPanel({
     );
   }
 
-  function handleSend() {
-    const prompt = promptText.trim();
-    if (!prompt || isPending) return;
-    setMessages((prev) => [...prev, { role: "user", text: prompt }]);
-    setPromptText("");
+  function handleSendSingleShot(
+    prompt: string,
+    kind: "party" | "paymentMethod",
+  ) {
     startTransition(async () => {
-      const result = await runAiAssistAction(formType, prompt);
+      const result = await runAiAssistAction(kind, prompt);
       if (!result.success) {
         setMessages((prev) => [
           ...prev,
@@ -115,6 +136,82 @@ export function AIAssistPanel({
         },
       ]);
     });
+  }
+
+  function handleSendInvoice(prompt: string) {
+    const isReply = clarification !== null;
+    const promptForModel = isReply
+      ? appendToTranscript(clarification!.transcript, `User: ${prompt}`)
+      : prompt;
+
+    startTransition(async () => {
+      const result = await runInvoiceAiAssistAction(
+        promptForModel,
+        getContext!(),
+      );
+
+      if (!result.success) {
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", text: result.error, isError: true },
+        ]);
+        setClarification(null);
+        return;
+      }
+
+      const { data } = result;
+      if (data.responseType === "clarification") {
+        const question = data.question;
+        const nextCount = (clarification?.count ?? 0) + 1;
+        if (nextCount > MAX_CLARIFICATION_ROUNDS) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              text: "I still can't pin that down confidently — please fill in the rest by hand.",
+              isError: true,
+            },
+          ]);
+          setClarification(null);
+          return;
+        }
+        setMessages((prev) => [...prev, { role: "assistant", text: question }]);
+        setClarification({
+          transcript: appendToTranscript(
+            promptForModel,
+            `Assistant: ${question}`,
+          ),
+          count: nextCount,
+        });
+        return;
+      }
+
+      onApply(data.suggestion);
+      const appliedFields = Object.keys(data.suggestion)
+        .map(humanizeKey)
+        .join(", ");
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          text: `Applied: ${appliedFields}. Review before saving.`,
+        },
+      ]);
+      setClarification(null);
+    });
+  }
+
+  function handleSend() {
+    const prompt = promptText.trim();
+    if (!prompt || isPending) return;
+    setMessages((prev) => [...prev, { role: "user", text: prompt }]);
+    setPromptText("");
+
+    if (formType === "invoice") {
+      handleSendInvoice(prompt);
+    } else {
+      handleSendSingleShot(prompt, formType);
+    }
   }
 
   return (
@@ -147,7 +244,7 @@ export function AIAssistPanel({
           <Textarea
             value={promptText}
             onChange={(event) => setPromptText(event.target.value)}
-            placeholder={PLACEHOLDER[formType]}
+            placeholder={clarification ? "Your answer…" : PLACEHOLDER[formType]}
             rows={3}
             className="text-[13px]"
             onKeyDown={(event) => {

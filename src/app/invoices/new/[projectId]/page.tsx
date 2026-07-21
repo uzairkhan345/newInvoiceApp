@@ -21,6 +21,8 @@ export default async function NewInvoiceForProjectPage({
     await invoiceService.previewNextInvoiceNumber(projectId);
   const today = toDateInputValue(new Date());
   const aiConfig = await getAiAssistConfigSummary();
+  const autofillData =
+    await invoiceService.getAutofillDataForProject(projectId);
 
   return (
     <>
@@ -32,6 +34,7 @@ export default async function NewInvoiceForProjectPage({
         mode="create"
         projectId={project.id}
         aiConfig={aiConfig}
+        autofillData={autofillData}
         project={{
           name: project.name,
           contractorName: project.contractor.name,
@@ -39,6 +42,7 @@ export default async function NewInvoiceForProjectPage({
           preferredPaymentMethodLabel:
             project.preferredPaymentMethod?.label ?? null,
           displayCurrency: project.displayCurrency,
+          invoiceNumberFormat: project.invoiceNumberFormat,
         }}
         defaultValues={{
           invoiceNumber: suggestedInvoiceNumber,

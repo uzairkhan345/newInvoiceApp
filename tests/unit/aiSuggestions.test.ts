@@ -3,6 +3,7 @@ import {
   partySuggestionSchema,
   paymentMethodSuggestionSchema,
   invoiceSuggestionSchema,
+  invoiceAssistResponseSchema,
 } from "@/lib/validation/aiSuggestions";
 
 describe("aiSuggestions schemas", () => {
@@ -75,5 +76,56 @@ describe("aiSuggestions schemas", () => {
       ],
     });
     expect(result.success).toBe(true);
+  });
+});
+
+describe("invoiceAssistResponseSchema (Docs/feedback_backlog.md M18 — context + clarification)", () => {
+  it("accepts a suggestion-shaped response", () => {
+    const result = invoiceAssistResponseSchema.safeParse({
+      responseType: "suggestion",
+      suggestion: { itemsNote: "July work" },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts a clarification-shaped response", () => {
+    const result = invoiceAssistResponseSchema.safeParse({
+      responseType: "clarification",
+      question: "What's the rate for the third line item?",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a clarification with an empty question", () => {
+    const result = invoiceAssistResponseSchema.safeParse({
+      responseType: "clarification",
+      question: "",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a suggestion whose nested items entry is invalid, same as invoiceSuggestionSchema alone", () => {
+    const result = invoiceAssistResponseSchema.safeParse({
+      responseType: "suggestion",
+      suggestion: {
+        items: [
+          {
+            description: "Consulting",
+            isFlatAmount: false,
+            quantity: "3",
+            unitPrice: "",
+            amount: "",
+          },
+        ],
+      },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects an unrecognized responseType", () => {
+    const result = invoiceAssistResponseSchema.safeParse({
+      responseType: "something-else",
+    });
+    expect(result.success).toBe(false);
   });
 });

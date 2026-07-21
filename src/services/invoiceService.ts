@@ -263,6 +263,45 @@ async function previewNextInvoiceNumber(projectId: string): Promise<string> {
   });
 }
 
+export type InvoiceAutofillData = {
+  items: {
+    description: string;
+    isFlatAmount: boolean;
+    quantity: string;
+    unitPrice: string;
+    amount: string;
+  }[];
+  itemsNote: string;
+  bottomNote: string;
+};
+
+/**
+ * Docs/feedback_backlog.md M18 (Autofill from last invoice) — copies only
+ * line items and notes from the project's most recently issued invoice
+ * (any status); never invoiceNumber/dates/convertedTotal (Docs/feedback_backlog.md's
+ * grilled decision — those would either collide or paste stale values).
+ * Same string-mapping convention as the edit form's own defaultValues
+ * (`/invoices/[id]/page.tsx`).
+ */
+async function getAutofillDataForProject(
+  projectId: string,
+): Promise<InvoiceAutofillData | null> {
+  const invoice = await invoiceRepository.findMostRecentByProject(projectId);
+  if (!invoice) return null;
+
+  return {
+    items: invoice.items.map((item) => ({
+      description: item.description,
+      isFlatAmount: item.isFlatAmount,
+      quantity: item.quantity?.toString() ?? "",
+      unitPrice: item.unitPrice?.toString() ?? "",
+      amount: item.isFlatAmount ? item.amount.toString() : "",
+    })),
+    itemsNote: invoice.itemsNote ?? "",
+    bottomNote: invoice.bottomNote ?? "",
+  };
+}
+
 async function createDraft(
   projectId: string,
   input: InvoiceInput,
@@ -397,6 +436,7 @@ export const invoiceService = {
   listByStatus,
   getById,
   previewNextInvoiceNumber,
+  getAutofillDataForProject,
   createDraft,
   updateDraft,
   validateForSend,

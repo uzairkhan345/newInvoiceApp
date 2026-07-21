@@ -868,3 +868,95 @@ describe("invoiceService.delete", () => {
     ).rejects.toBeInstanceOf(InvoiceNotFoundError);
   });
 });
+
+describe("invoiceService.getAutofillDataForProject (Docs/feedback_backlog.md M18 — Autofill from last invoice)", () => {
+  it("returns null when the project has no prior invoice", async () => {
+    const { project } = await createTestProject();
+    await expect(
+      invoiceService.getAutofillDataForProject(project.id),
+    ).resolves.toBeNull();
+  });
+
+  it("returns the most recently issued invoice's items/notes as plain strings, any status", async () => {
+    const { project } = await createTestProject();
+    const older = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({
+        invoiceNumber: "TP-OLDER",
+        issueDate: "2026-01-01",
+        items: [hourlyItem("Older work", "1", "100")],
+      }),
+    );
+    createdInvoiceIds.push(older.id);
+
+    const newer = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({
+        invoiceNumber: "TP-NEWER",
+        issueDate: "2026-02-01",
+        dueDate: "2026-02-15",
+        itemsNote: "Newer note",
+        bottomNote: "Newer bottom",
+        items: [
+          hourlyItem("Consulting", "3", "150"),
+          flatItem("Retainer", "500"),
+        ],
+      }),
+    );
+    createdInvoiceIds.push(newer.id);
+    await invoiceService.transitionStatus(newer.id, "SENT");
+    await invoiceService.transitionStatus(newer.id, "PAID");
+
+    const autofill =
+      await invoiceService.getAutofillDataForProject(project.id);
+
+    expect(autofill).not.toBeNull();
+    expect(autofill!.itemsNote).toBe("Newer note");
+    expect(autofill!.bottomNote).toBe("Newer bottom");
+    expect(autofill!.items).toEqual([
+      {
+        description: "Consulting",
+        isFlatAmount: false,
+        quantity: "3",
+        unitPrice: "150",
+        amount: "",
+      },
+      {
+        description: "Retainer",
+        isFlatAmount: true,
+        quantity: "",
+        unitPrice: "",
+        amount: "500",
+      },
+    ]);
+  });
+
+  it("treats even a DRAFT or VOID invoice as 'last time' when it's the most recently issued (grilled decision — any status counts)", async () => {
+    const { project } = await createTestProject();
+    const sent = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({
+        invoiceNumber: "TP-SENT",
+        issueDate: "2026-01-01",
+        items: [hourlyItem("Sent work", "1", "100")],
+      }),
+    );
+    createdInvoiceIds.push(sent.id);
+    await invoiceService.transitionStatus(sent.id, "SENT");
+
+    const laterVoid = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({
+        invoiceNumber: "TP-VOID",
+        issueDate: "2026-03-01",
+        items: [hourlyItem("Voided work", "5", "200")],
+      }),
+    );
+    createdInvoiceIds.push(laterVoid.id);
+    await invoiceService.transitionStatus(laterVoid.id, "VOID");
+
+    const autofill =
+      await invoiceService.getAutofillDataForProject(project.id);
+    expect(autofill!.items[0].description).toBe("Voided work");
+  });
+});

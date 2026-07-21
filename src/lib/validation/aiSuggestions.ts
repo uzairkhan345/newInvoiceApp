@@ -19,3 +19,27 @@ export type PaymentMethodSuggestion = z.infer<
   typeof paymentMethodSuggestionSchema
 >;
 export type InvoiceSuggestion = z.infer<typeof invoiceSuggestionSchema>;
+
+/**
+ * Docs/feedback_backlog.md M18 (AI-assist context + clarification) —
+ * invoice-only: the model's response is either a confident suggestion
+ * (same shape as before) or a single clarifying question when it can't
+ * proceed without an answer. Party/Payment Method forms are unchanged and
+ * never use this — they always return a plain `invoiceSuggestionSchema`-
+ * shaped object via the original single-shot path.
+ */
+export const invoiceAssistResponseSchema = z.discriminatedUnion(
+  "responseType",
+  [
+    z.object({
+      responseType: z.literal("suggestion"),
+      suggestion: invoiceSuggestionSchema,
+    }),
+    z.object({
+      responseType: z.literal("clarification"),
+      question: z.string().trim().min(1),
+    }),
+  ],
+);
+
+export type InvoiceAssistResponse = z.infer<typeof invoiceAssistResponseSchema>;

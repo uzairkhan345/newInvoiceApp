@@ -101,6 +101,7 @@ export default async function InvoiceDetailPage({
           preferredPaymentMethodLabel:
             invoice.project.preferredPaymentMethod?.label ?? null,
           displayCurrency: invoice.project.displayCurrency,
+          invoiceNumberFormat: invoice.project.invoiceNumberFormat,
         }}
         defaultValues={{
           invoiceNumber: invoice.invoiceNumber,

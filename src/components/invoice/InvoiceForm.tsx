@@ -19,6 +19,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AIAssistPanel } from "@/components/ai-assist/AIAssistPanel";
 import { useApplySuggestion } from "@/components/ai-assist/useApplySuggestion";
 import type { AiAssistConfigSummary } from "@/lib/ai-providers/config";
+import type { InvoiceAiContext } from "@/services/aiAssistService";
+import type { InvoiceAutofillData } from "@/services/invoiceService";
+import { Sparkles } from "lucide-react";
 
 export type InvoiceFormProjectInfo = {
   name: string;
@@ -26,6 +29,7 @@ export type InvoiceFormProjectInfo = {
   clientName: string;
   preferredPaymentMethodLabel: string | null;
   displayCurrency: "USD" | "AUD" | "GBP";
+  invoiceNumberFormat: string;
 };
 
 /**
@@ -91,6 +95,7 @@ export function InvoiceForm({
   project,
   defaultValues,
   aiConfig,
+  autofillData,
 }: {
   mode: "create" | "edit";
   projectId: string;
@@ -98,6 +103,8 @@ export function InvoiceForm({
   project: InvoiceFormProjectInfo;
   defaultValues?: Partial<InvoiceInput>;
   aiConfig: AiAssistConfigSummary;
+  /** Docs/feedback_backlog.md M18 (Autofill) — the project's most recent invoice's items/notes, pre-fetched server-side; create mode only, null when the project has no prior invoice. */
+  autofillData?: InvoiceAutofillData | null;
 }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -131,6 +138,33 @@ export function InvoiceForm({
       ...defaultValues,
     },
   });
+
+  /** Docs/feedback_backlog.md M18 (Autofill) — items/notes only; invoiceNumber/dates/convertedTotal are left exactly as they are. */
+  function handleAutofill() {
+    if (!autofillData) return;
+    reset({
+      ...getValues(),
+      items: autofillData.items,
+      itemsNote: autofillData.itemsNote,
+      bottomNote: autofillData.bottomNote,
+    });
+    toast.success("Filled in from the last invoice — review before saving.");
+  }
+
+  /** Docs/feedback_backlog.md M18 (AI-assist context) — read fresh at send-time, not memoized, so it always reflects the form's current values. */
+  function getAiContext(): InvoiceAiContext {
+    return {
+      project: {
+        name: project.name,
+        contractorName: project.contractorName,
+        clientName: project.clientName,
+        preferredPaymentMethodLabel: project.preferredPaymentMethodLabel,
+        displayCurrency: project.displayCurrency,
+        invoiceNumberFormat: project.invoiceNumberFormat,
+      },
+      currentValues: getValues(),
+    };
+  }
 
   const onSubmit = handleSubmit(async (values) => {
     setIsSubmitting(true);
@@ -215,6 +249,20 @@ export function InvoiceForm({
                 </FormField>
               ) : null}
 
+              {mode === "create" && autofillData ? (
+                <div className="mb-4 flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-7 px-2 text-[11px]"
+                    onClick={handleAutofill}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Autofill from Last Invoice
+                  </Button>
+                </div>
+              ) : null}
+
               <LineItemsEditor
                 control={control}
                 register={register}
@@ -264,6 +312,7 @@ export function InvoiceForm({
         <AIAssistPanel
           formType="invoice"
           aiConfig={aiConfig}
+          getContext={getAiContext}
           onApply={(suggestion) =>
             applySuggestion(suggestion, (patch) =>
               reset({ ...getValues(), ...patch }),
