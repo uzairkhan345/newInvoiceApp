@@ -159,7 +159,11 @@ describe("paymentMethodService", () => {
       party.id,
       baseInput({
         fields: [
-          { key: "account_number", label: "Account Number", value: "1234567890" },
+          {
+            key: "account_number",
+            label: "Account Number",
+            value: "1234567890",
+          },
         ],
       }),
     );
@@ -199,7 +203,13 @@ describe("paymentMethodService", () => {
     const method = await paymentMethodService.create(
       party.id,
       baseInput({
-        fields: [{ key: "account_number", label: "Account Number", value: "old-value" }],
+        fields: [
+          {
+            key: "account_number",
+            label: "Account Number",
+            value: "old-value",
+          },
+        ],
       }),
     );
 
@@ -207,7 +217,13 @@ describe("paymentMethodService", () => {
       method.id,
       party.id,
       baseInput({
-        fields: [{ key: "account_number", label: "Account Number", value: "new-value" }],
+        fields: [
+          {
+            key: "account_number",
+            label: "Account Number",
+            value: "new-value",
+          },
+        ],
       }),
     );
     const updatedFields = updated.fields as unknown as {

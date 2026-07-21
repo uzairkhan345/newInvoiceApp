@@ -11,6 +11,7 @@ import {
   updateProjectAction,
 } from "@/actions/project.actions";
 import { PartyPickerWithCreateEscape } from "@/components/project/PartyPickerWithCreateEscape";
+import { CreatePaymentMethodDialog } from "@/components/payment-method/CreatePaymentMethodDialog";
 import { FormField } from "@/components/shared/FormField";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,7 @@ export function ProjectForm({
   const [paymentMethodsByPartyId, setPaymentMethodsByPartyId] = useState(
     initialPaymentMethodsByPartyId,
   );
+  const [paymentMethodDialogOpen, setPaymentMethodDialogOpen] = useState(false);
 
   const {
     register,
@@ -91,6 +93,18 @@ export function ProjectForm({
       ...prev,
       [party.id]: prev[party.id] ?? [],
     }));
+  }
+
+  /** Docs/feedback_backlog.md M17.4 — adds the new method to the pool and auto-selects it as Preferred, mirroring registerNewParty's auto-select-into-the-triggering-field behavior. */
+  function registerNewPaymentMethod(paymentMethod: PaymentMethod) {
+    setPaymentMethodsByPartyId((prev) => ({
+      ...prev,
+      [paymentMethod.partyId]: [
+        ...(prev[paymentMethod.partyId] ?? []),
+        paymentMethod,
+      ],
+    }));
+    setValue("preferredPaymentMethodId", paymentMethod.id);
   }
 
   const onSubmit = handleSubmit(async (values) => {
@@ -226,12 +240,27 @@ export function ProjectForm({
               )}
             />
             {contractorId && availablePaymentMethods.length === 0 ? (
-              <p className="text-[11px] text-muted-foreground">
-                This contractor has no payment methods yet — add one from their
-                party page, then set it here later.
-              </p>
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span>This contractor has no payment methods yet.</span>
+                <button
+                  type="button"
+                  className="font-semibold text-brand hover:underline"
+                  onClick={() => setPaymentMethodDialogOpen(true)}
+                >
+                  + Create Payment Method
+                </button>
+              </div>
             ) : null}
           </FormField>
+
+          {contractorId ? (
+            <CreatePaymentMethodDialog
+              open={paymentMethodDialogOpen}
+              onOpenChange={setPaymentMethodDialogOpen}
+              partyId={contractorId}
+              onCreated={registerNewPaymentMethod}
+            />
+          ) : null}
 
           <FormField
             label="Invoice Number Format"

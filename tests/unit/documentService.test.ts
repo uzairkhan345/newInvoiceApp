@@ -44,7 +44,11 @@ function fakeInvoice(
     // Invoice.paymentDetailsSnapshot column since it's copied verbatim from
     // the now-encrypted PaymentMethod.fields.
     paymentDetailsSnapshot: [
-      { key: "bank_name", label: "Bank Name", value: encryptSecret("Test Bank") },
+      {
+        key: "bank_name",
+        label: "Bank Name",
+        value: encryptSecret("Test Bank"),
+      },
     ],
     createdAt: new Date(),
     updatedAt: new Date(),

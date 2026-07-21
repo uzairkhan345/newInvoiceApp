@@ -1,20 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
+import { useState } from "react";
 import { Plus } from "lucide-react";
-import { partySchema, type PartyInput } from "@/lib/validation/party";
-import { createPartyAction } from "@/actions/party.actions";
-import { FormField } from "@/components/shared/FormField";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -25,53 +16,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PartyForm } from "@/components/party/PartyForm";
 import type { Party } from "@/generated/prisma/client";
 
-const partyTypeLabels: Record<PartyInput["type"], string> = {
-  INDIVIDUAL: "Individual",
-  ORGANIZATION: "Organization",
-};
-
-const emptyPartyDefaults: PartyInput = {
-  name: "",
-  email: "",
-  type: "ORGANIZATION",
-  street1: "",
-  street2: "",
-  city: "",
-  state: "",
-  postalCode: "",
-  country: "",
-};
-
-/** Builds a Party-shaped object from validated input + a freshly-issued id, mirroring partyService's null-normalization, so the picker can add it to its options without a round-trip refetch. */
-function toLocalParty(id: string, input: PartyInput): Party {
-  const nullIfEmpty = (value: string | undefined) =>
-    value && value.length > 0 ? value : null;
-
-  return {
-    id,
-    name: input.name,
-    email: nullIfEmpty(input.email),
-    type: input.type,
-    street1: nullIfEmpty(input.street1),
-    street2: nullIfEmpty(input.street2),
-    city: nullIfEmpty(input.city),
-    state: nullIfEmpty(input.state),
-    postalCode: nullIfEmpty(input.postalCode),
-    country: nullIfEmpty(input.country),
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-}
-
 /**
- * Docs/product_spec.md Workflow 3 / Docs/implementation_decisions.md §20 —
- * standing "select the prerequisite first, with an inline create-new escape
- * hatch" pattern. Creating a party here never navigates away from the
- * project form and never loses its in-progress field values.
+ * Docs/feedback_backlog.md M17.3 — the inline "create new party" escape
+ * hatch embeds the full PartyForm (identical fields to the standalone
+ * /parties/new page, including address) in embedded/AI-assist-free mode, so
+ * a party created here is never structurally incomplete and the Project
+ * form underneath is never navigated away from or lost. Only rendered while
+ * `open`, so each opening starts from a fresh, blank form.
  */
-function MiniCreatePartyDialog({
+function CreatePartyDialog({
   open,
   onOpenChange,
   onCreated,
@@ -80,106 +36,25 @@ function MiniCreatePartyDialog({
   onOpenChange: (open: boolean) => void;
   onCreated: (party: Party) => void;
 }) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const {
-    register,
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<PartyInput>({
-    resolver: zodResolver(partySchema),
-    defaultValues: emptyPartyDefaults,
-  });
-
-  useEffect(() => {
-    if (open) {
-      reset(emptyPartyDefaults);
-    }
-  }, [open, reset]);
-
-  const onSubmit = handleSubmit(async (values) => {
-    setIsSubmitting(true);
-    try {
-      const result = await createPartyAction(values);
-      if (!result.success) {
-        toast.error(result.error);
-        return;
-      }
-      toast.success("Party created");
-      onCreated(toLocalParty(result.data.id, values));
-    } finally {
-      setIsSubmitting(false);
-    }
-  });
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Create New Party</DialogTitle>
           <DialogDescription>
-            Add the minimum details now — the full profile (address, etc.) can
-            be filled in later from the Parties page.
+            Add this party&apos;s full details without leaving this page.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} noValidate>
-          <FormField
-            label="Name"
-            htmlFor="mini-party-name"
-            required
-            error={errors.name?.message}
-          >
-            <Input id="mini-party-name" {...register("name")} />
-          </FormField>
-          <FormField
-            label="Email"
-            htmlFor="mini-party-email"
-            error={errors.email?.message}
-          >
-            <Input id="mini-party-email" type="email" {...register("email")} />
-          </FormField>
-          <FormField
-            label="Type"
-            htmlFor="mini-party-type"
-            required
-            error={errors.type?.message}
-          >
-            <Controller
-              name="type"
-              control={control}
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger id="mini-party-type" className="w-full">
-                    <SelectValue
-                      placeholder="Select a type"
-                      renderValue={(value) =>
-                        partyTypeLabels[value as PartyInput["type"]]
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="INDIVIDUAL">Individual</SelectItem>
-                    <SelectItem value="ORGANIZATION">Organization</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </FormField>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isSubmitting}
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Creating…" : "Create Party"}
-            </Button>
-          </DialogFooter>
-        </form>
+        {open ? (
+          <PartyForm
+            mode="create"
+            embedded
+            onCreated={(party) => {
+              onCreated(party);
+              onOpenChange(false);
+            }}
+          />
+        ) : null}
       </DialogContent>
     </Dialog>
   );
@@ -242,7 +117,7 @@ export function PartyPickerWithCreateEscape({
       </Select>
       {error ? <p className="text-[11px] text-destructive">{error}</p> : null}
 
-      <MiniCreatePartyDialog
+      <CreatePartyDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onCreated={(party) => {
