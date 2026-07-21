@@ -69,6 +69,7 @@ export default async function ProjectDetailPage({
             contractorId: project.contractorId,
             preferredPaymentMethodId: project.preferredPaymentMethodId ?? "",
             invoiceNumberFormat: project.invoiceNumberFormat,
+            invoicePeriodType: project.invoicePeriodType ?? "",
             displayCurrency: project.displayCurrency,
             status: project.status,
           }}

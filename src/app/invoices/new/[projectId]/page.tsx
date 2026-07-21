@@ -4,6 +4,7 @@ import { InvoiceForm } from "@/components/invoice/InvoiceForm";
 import { projectService } from "@/services/projectService";
 import { invoiceService } from "@/services/invoiceService";
 import { toDateInputValue } from "@/lib/dates";
+import { computeDueDate } from "@/lib/invoicePeriod";
 import { getAiAssistConfigSummary } from "@/lib/ai-providers/config";
 
 export default async function NewInvoiceForProjectPage({
@@ -20,6 +21,9 @@ export default async function NewInvoiceForProjectPage({
   const suggestedInvoiceNumber =
     await invoiceService.previewNextInvoiceNumber(projectId);
   const today = toDateInputValue(new Date());
+  const initialDueDate = project.invoicePeriodType
+    ? computeDueDate(today, project.invoicePeriodType)
+    : today;
   const aiConfig = await getAiAssistConfigSummary();
   const autofillData =
     await invoiceService.getAutofillDataForProject(projectId);
@@ -43,11 +47,12 @@ export default async function NewInvoiceForProjectPage({
             project.preferredPaymentMethod?.label ?? null,
           displayCurrency: project.displayCurrency,
           invoiceNumberFormat: project.invoiceNumberFormat,
+          invoicePeriodType: project.invoicePeriodType,
         }}
         defaultValues={{
           invoiceNumber: suggestedInvoiceNumber,
           issueDate: today,
-          dueDate: today,
+          dueDate: initialDueDate,
         }}
       />
     </>

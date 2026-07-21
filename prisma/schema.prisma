@@ -48,6 +48,16 @@ enum InvoiceStatus {
   VOID
 }
 
+/// Docs/feedback_backlog.md M19.2a — optional per-project invoice period,
+/// used only to compute the create form's default due date (M19.2b). Each
+/// value has fixed math: WEEKLY/SEMI_MONTHLY are flat day-adds (+7/+15),
+/// MONTHLY is calendar-month arithmetic (+1 month), never a flat 30 days.
+enum InvoicePeriodType {
+  WEEKLY
+  SEMI_MONTHLY
+  MONTHLY
+}
+
 /// Docs/product_spec.md §1.1. No Role field — any party may be used as a
 /// Project's contractor, client, or both (Docs/implementation_decisions.md §15).
 /// Address is inlined (§16) — no separate Address entity.
@@ -103,6 +113,7 @@ model Project {
   preferredPaymentMethodId String?
   preferredPaymentMethod   PaymentMethod?  @relation("ProjectPreferredPaymentMethod", fields: [preferredPaymentMethodId], references: [id], onDelete: Restrict)
   invoiceNumberFormat      String
+  invoicePeriodType        InvoicePeriodType?
   displayCurrency          DisplayCurrency @default(USD)
   status                   ProjectStatus   @default(ACTIVE)
   createdAt                DateTime        @default(now())

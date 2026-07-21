@@ -17,6 +17,10 @@ export const projectSchema = z.object({
     .string()
     .trim()
     .min(1, "Invoice number format is required"),
+  invoicePeriodType: z
+    .enum(["WEEKLY", "SEMI_MONTHLY", "MONTHLY"])
+    .optional()
+    .or(z.literal("")),
   displayCurrency: z.enum(["USD", "AUD", "GBP"], {
     message: "Select a display currency",
   }),

@@ -23,10 +23,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { INVOICE_PERIOD_LABELS } from "@/lib/invoicePeriod";
 import type { Party, PaymentMethod } from "@/generated/prisma/client";
 
 /** Sentinel for "no preferred payment method" — Select items can't carry an empty-string value. */
 const NO_PAYMENT_METHOD = "__none__";
+
+/** Sentinel for "no invoice period" — Select items can't carry an empty-string value. */
+const NO_INVOICE_PERIOD = "__none__";
 
 const displayCurrencyLabels: Record<ProjectInput["displayCurrency"], string> = {
   USD: "USD",
@@ -76,6 +80,7 @@ export function ProjectForm({
       contractorId: "",
       preferredPaymentMethodId: "",
       invoiceNumberFormat: "{abbreviation}-{number}-{date}",
+      invoicePeriodType: "",
       displayCurrency: "USD",
       status: "ACTIVE",
       ...defaultValues,
@@ -273,6 +278,51 @@ export function ProjectForm({
               placeholder="{abbreviation}-{number}-{date}"
               {...register("invoiceNumberFormat")}
             />
+          </FormField>
+
+          <FormField
+            label="Invoice Period"
+            htmlFor="invoicePeriodType"
+            error={errors.invoicePeriodType?.message}
+          >
+            <Controller
+              name="invoicePeriodType"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  value={field.value || NO_INVOICE_PERIOD}
+                  onValueChange={(value) =>
+                    field.onChange(value === NO_INVOICE_PERIOD ? "" : value)
+                  }
+                >
+                  <SelectTrigger id="invoicePeriodType" className="w-full">
+                    <SelectValue
+                      renderValue={(value) =>
+                        value === NO_INVOICE_PERIOD
+                          ? "None"
+                          : INVOICE_PERIOD_LABELS[
+                              value as keyof typeof INVOICE_PERIOD_LABELS
+                            ]
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_INVOICE_PERIOD}>None</SelectItem>
+                    {Object.entries(INVOICE_PERIOD_LABELS).map(
+                      ([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ),
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Used only to suggest a due date on the invoice create form —
+              never enforced.
+            </p>
           </FormField>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

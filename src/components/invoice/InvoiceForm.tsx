@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,6 +21,8 @@ import { useApplySuggestion } from "@/components/ai-assist/useApplySuggestion";
 import type { AiAssistConfigSummary } from "@/lib/ai-providers/config";
 import type { InvoiceAiContext } from "@/services/aiAssistService";
 import type { InvoiceAutofillData } from "@/services/invoiceService";
+import { computeDueDate } from "@/lib/invoicePeriod";
+import type { InvoicePeriodType } from "@/generated/prisma/client";
 import { Sparkles } from "lucide-react";
 
 export type InvoiceFormProjectInfo = {
@@ -30,6 +32,8 @@ export type InvoiceFormProjectInfo = {
   preferredPaymentMethodLabel: string | null;
   displayCurrency: "USD" | "AUD" | "GBP";
   invoiceNumberFormat: string;
+  /** Docs/feedback_backlog.md M19.2b — drives the create form's live due-date recompute only; unused in edit mode. */
+  invoicePeriodType: InvoicePeriodType | null;
 };
 
 /**
@@ -116,6 +120,8 @@ export function InvoiceForm({
     handleSubmit,
     reset,
     getValues,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<InvoiceInput>({
     resolver: zodResolver(invoiceSchema),
@@ -138,6 +144,32 @@ export function InvoiceForm({
       ...defaultValues,
     },
   });
+
+  /**
+   * Docs/feedback_backlog.md M19.2b — create-form only (edit mode leaves an
+   * existing draft's dueDate untouched, since there's no way to tell whether
+   * a loaded value was auto-computed or deliberately hand-set). Tracks the
+   * last auto-computed value so any divergence — typed by hand, or set by an
+   * applied AI-assist suggestion — permanently opts this form session out of
+   * further auto-recompute, mirroring PaymentMethodForm's type-template-swap
+   * ref (`previousTypeRef`).
+   */
+  const lastAutoDueDateRef = useRef<string | undefined>(getValues("dueDate"));
+  const issueDate = watch("issueDate");
+
+  useEffect(() => {
+    if (mode !== "create" || !project.invoicePeriodType || !issueDate) return;
+    const currentDueDate = getValues("dueDate");
+    if (
+      lastAutoDueDateRef.current !== undefined &&
+      currentDueDate !== lastAutoDueDateRef.current
+    ) {
+      return;
+    }
+    const computed = computeDueDate(issueDate, project.invoicePeriodType);
+    lastAutoDueDateRef.current = computed;
+    setValue("dueDate", computed, { shouldValidate: true });
+  }, [issueDate, mode, project.invoicePeriodType, getValues, setValue]);
 
   /** Docs/feedback_backlog.md M18 (Autofill) — items/notes only; invoiceNumber/dates/convertedTotal are left exactly as they are. */
   function handleAutofill() {

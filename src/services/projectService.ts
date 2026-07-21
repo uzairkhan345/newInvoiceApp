@@ -5,7 +5,7 @@ import type {
 } from "@/repositories/projectRepository";
 import { paymentMethodRepository } from "@/repositories/paymentMethodRepository";
 import type { ProjectInput } from "@/lib/validation/project";
-import type { Project } from "@/generated/prisma/client";
+import type { Project, InvoicePeriodType } from "@/generated/prisma/client";
 
 /**
  * Thrown when a delete is blocked by a live foreign-key reference
@@ -67,6 +67,9 @@ function toWriteInput(input: ProjectInput): ProjectWriteInput {
     contractorId: input.contractorId,
     preferredPaymentMethodId: nullIfEmpty(input.preferredPaymentMethodId),
     invoiceNumberFormat: input.invoiceNumberFormat,
+    invoicePeriodType: nullIfEmpty(input.invoicePeriodType) as
+      | InvoicePeriodType
+      | null,
     displayCurrency: input.displayCurrency,
     status: input.status,
   };

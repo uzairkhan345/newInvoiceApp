@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DetailField } from "@/components/shared/DetailField";
+import { INVOICE_PERIOD_LABELS } from "@/lib/invoicePeriod";
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
 
 const CURRENCY_LABELS: Record<ProjectWithRelations["displayCurrency"], string> =
@@ -74,6 +75,14 @@ export function ProjectDetailCard({
         <DetailField
           label="Invoice Number Format"
           value={project.invoiceNumberFormat}
+        />
+        <DetailField
+          label="Invoice Period"
+          value={
+            project.invoicePeriodType
+              ? INVOICE_PERIOD_LABELS[project.invoicePeriodType]
+              : "None"
+          }
         />
         <DetailField
           label="Display Currency"
