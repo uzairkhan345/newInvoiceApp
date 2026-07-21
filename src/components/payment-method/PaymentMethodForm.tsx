@@ -225,7 +225,7 @@ export function PaymentMethodForm({
       </FormField>
 
       <FormField
-        label="Label"
+        label="Payment Method Name"
         htmlFor="label"
         required
         error={errors.label?.message}
@@ -240,27 +240,33 @@ export function PaymentMethodForm({
 
       <div
         className={cn(
-          "mb-4 flex items-center gap-2 rounded-md transition-colors duration-1000",
+          "mb-4 flex flex-col gap-1 rounded-md transition-colors duration-1000",
           highlightedKeys.has("isDefault") && "bg-brand-light/60",
         )}
       >
-        <Controller
-          name="isDefault"
-          control={control}
-          render={({ field }) => (
-            <Checkbox
-              id="isDefault"
-              checked={field.value}
-              onCheckedChange={(checked) => field.onChange(checked)}
-            />
-          )}
-        />
-        <label
-          htmlFor="isDefault"
-          className="text-[13px] font-medium text-foreground"
-        >
-          Set as default payment method for this party
-        </label>
+        <div className="flex items-center gap-2">
+          <Controller
+            name="isDefault"
+            control={control}
+            render={({ field }) => (
+              <Checkbox
+                id="isDefault"
+                checked={field.value}
+                onCheckedChange={(checked) => field.onChange(checked)}
+              />
+            )}
+          />
+          <label
+            htmlFor="isDefault"
+            className="text-[13px] font-medium text-foreground"
+          >
+            Set as default payment method for this party
+          </label>
+        </div>
+        <p className="pl-6 text-[11px] text-muted-foreground">
+          This is what a Project&rsquo;s Preferred Payment Method picker
+          selects by default for this party.
+        </p>
       </div>
 
       <div

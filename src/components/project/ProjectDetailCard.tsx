@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Pencil } from "lucide-react";
+import { FileText, Pencil } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -41,7 +41,16 @@ export function ProjectDetailCard({
         <CardTitle className="text-[15px] font-bold text-foreground">
           Details
         </CardTitle>
-        <CardAction>
+        <CardAction className="flex gap-2">
+          <Button
+            variant="outline"
+            className="h-8 px-3 text-[12px]"
+            nativeButton={false}
+            render={<Link href={`/invoices/new/${project.id}`} />}
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Create Invoice
+          </Button>
           <Button
             variant="outline"
             className="h-8 px-3 text-[12px]"
