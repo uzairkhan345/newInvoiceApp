@@ -60,6 +60,20 @@ describe("invoiceNumberService.generateInvoiceNumber", () => {
     expect(result).toBe("01-05-2026");
   });
 
+  it("substitutes {year} as a standalone 4-digit token, independent of {date}", () => {
+    const result = generateInvoiceNumber({
+      project: {
+        abbreviation: "TQ",
+        name: "[redacted]",
+        invoiceNumberFormat: "{abbreviation}-{year}-{number}",
+      },
+      existingInvoiceNumbers: [],
+      now: new Date(2026, 6, 9), // July 9, 2026 (local)
+    });
+
+    expect(result).toBe("TQ-2026-01");
+  });
+
   it("honors an explicit {date:DD-MM-YYYY} qualifier", () => {
     const result = generateInvoiceNumber({
       project: {
@@ -122,5 +136,13 @@ describe("invoiceNumberService.nextSequence", () => {
       "{abbreviation}-{number}",
     );
     expect(sequence).toBe(2);
+  });
+
+  it("treats {year} as a wildcard when extracting the sequence, same as {date}", () => {
+    const sequence = nextSequence(
+      ["TQ-2026-01", "TQ-2026-02"],
+      "{abbreviation}-{year}-{number}",
+    );
+    expect(sequence).toBe(3);
   });
 });

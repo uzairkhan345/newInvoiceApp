@@ -216,6 +216,11 @@ function listByStatus(status: InvoiceStatus): Promise<InvoiceListItem[]> {
   return invoiceRepository.findMany({ status });
 }
 
+/** Docs/feedback_backlog.md M19.3a — invoices-for-this-project section on the Project detail page. */
+function listByProject(projectId: string): Promise<InvoiceListItem[]> {
+  return invoiceRepository.findMany({ projectId });
+}
+
 /** Dashboard (M10) — stats row counts (Docs/ui_design_guide.md §16). */
 function countByStatus(status: InvoiceStatus): Promise<number> {
   return invoiceRepository.countByStatus(status);
@@ -434,6 +439,7 @@ async function remove(id: string): Promise<void> {
 export const invoiceService = {
   list,
   listByStatus,
+  listByProject,
   getById,
   previewNextInvoiceNumber,
   getAutofillDataForProject,

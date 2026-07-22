@@ -95,7 +95,7 @@ export default async function PartyDetailPage({
       />
       <PartyDetailCard party={party} editHref={`/parties/${party.id}?edit=1`} />
 
-      <div className="mt-8 mb-3 flex items-center justify-between">
+      <div className="mt-8 mb-1 flex items-center justify-between">
         <h2 className="text-[15px] font-bold text-foreground">
           Payment Methods
         </h2>
@@ -110,6 +110,10 @@ export default async function PartyDetailPage({
           </Button>
         ) : null}
       </div>
+      <p className="mb-3 text-[11px] text-muted-foreground">
+        Only needed if this party is ever used as a project&rsquo;s contractor —
+        a party used only as a client doesn&rsquo;t need one.
+      </p>
       <PaymentMethodList
         partyId={party.id}
         paymentMethods={paymentMethods}

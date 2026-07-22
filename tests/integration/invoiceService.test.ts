@@ -547,6 +547,39 @@ describe("invoiceService.previewNextInvoiceNumber", () => {
   });
 });
 
+describe("invoiceService.listByProject (Docs/feedback_backlog.md M19.3a)", () => {
+  it("returns only invoices belonging to the given project, newest first", async () => {
+    const { project: projectA } = await createTestProject();
+    const { project: projectB } = await createTestProject();
+
+    const a1 = await invoiceService.createDraft(
+      projectA.id,
+      baseInvoiceInput({ invoiceNumber: "TP-01" }),
+    );
+    const a2 = await invoiceService.createDraft(
+      projectA.id,
+      baseInvoiceInput({ invoiceNumber: "TP-02" }),
+    );
+    const b1 = await invoiceService.createDraft(
+      projectB.id,
+      baseInvoiceInput({ invoiceNumber: "TP-01" }),
+    );
+    createdInvoiceIds.push(a1.id, a2.id, b1.id);
+
+    const result = await invoiceService.listByProject(projectA.id);
+
+    expect(result.map((invoice) => invoice.id).sort()).toEqual(
+      [a1.id, a2.id].sort(),
+    );
+  });
+
+  it("returns an empty array for a project with no invoices", async () => {
+    const { project } = await createTestProject();
+    const result = await invoiceService.listByProject(project.id);
+    expect(result).toEqual([]);
+  });
+});
+
 describe("invoiceService.validateForSend", () => {
   it("rejects when there are no line items", async () => {
     const { project } = await createTestProject();
@@ -907,8 +940,7 @@ describe("invoiceService.getAutofillDataForProject (Docs/feedback_backlog.md M18
     await invoiceService.transitionStatus(newer.id, "SENT");
     await invoiceService.transitionStatus(newer.id, "PAID");
 
-    const autofill =
-      await invoiceService.getAutofillDataForProject(project.id);
+    const autofill = await invoiceService.getAutofillDataForProject(project.id);
 
     expect(autofill).not.toBeNull();
     expect(autofill!.itemsNote).toBe("Newer note");
@@ -955,8 +987,7 @@ describe("invoiceService.getAutofillDataForProject (Docs/feedback_backlog.md M18
     createdInvoiceIds.push(laterVoid.id);
     await invoiceService.transitionStatus(laterVoid.id, "VOID");
 
-    const autofill =
-      await invoiceService.getAutofillDataForProject(project.id);
+    const autofill = await invoiceService.getAutofillDataForProject(project.id);
     expect(autofill!.items[0].description).toBe("Voided work");
   });
 });

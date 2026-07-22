@@ -32,9 +32,12 @@ const STATUS_LABELS: Record<ProjectWithRelations["status"], string> = {
 export function ProjectDetailCard({
   project,
   editHref,
+  nextInvoiceNumber,
 }: {
   project: ProjectWithRelations;
   editHref: string;
+  /** Docs/feedback_backlog.md M19.3b — same preview call the invoice create form already uses. */
+  nextInvoiceNumber: string;
 }) {
   return (
     <Card>
@@ -76,6 +79,7 @@ export function ProjectDetailCard({
           label="Invoice Number Format"
           value={project.invoiceNumberFormat}
         />
+        <DetailField label="Next Invoice Number" value={nextInvoiceNumber} />
         <DetailField
           label="Invoice Period"
           value={

@@ -3,13 +3,16 @@ import { formatDateToken, type InvoiceDateFormat } from "@/lib/dates";
 
 /**
  * Docs/execution_plan.md §9 — invoice number generation. Supported tokens:
- * `{abbreviation}`, `{number}`, and `{date}` (or `{date:MM-DD-YYYY}` /
+ * `{abbreviation}`, `{number}`, `{date}` (or `{date:MM-DD-YYYY}` /
  * `{date:DD-MM-YYYY}` to pick the date format inline — there is no separate
  * Project.dateFormat column, so the format string itself is the one place
- * this is configured, consistent with the docs' own format examples).
+ * this is configured, consistent with the docs' own format examples), and
+ * `{year}` (Docs/feedback_backlog.md M19.1) — a standalone 4-digit year,
+ * independent of `{date}`, for formats like `{abbreviation}-{year}-{number}`
+ * that don't want a full date embedded.
  */
 const TOKEN_PATTERN =
-  /\{abbreviation\}|\{number\}|\{date(?::(MM-DD-YYYY|DD-MM-YYYY))?\}/g;
+  /\{abbreviation\}|\{number\}|\{year\}|\{date(?::(MM-DD-YYYY|DD-MM-YYYY))?\}/g;
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -88,6 +91,7 @@ export function generateInvoiceNumber({
     (fullMatch, dateFormatGroup: InvoiceDateFormat | undefined) => {
       if (fullMatch.startsWith("{abbreviation}")) return abbreviation;
       if (fullMatch.startsWith("{number}")) return paddedNumber;
+      if (fullMatch.startsWith("{year}")) return String(now.getFullYear());
       return formatDateToken(now, dateFormatGroup ?? "MM-DD-YYYY");
     },
   );

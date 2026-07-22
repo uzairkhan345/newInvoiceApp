@@ -4,10 +4,15 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { ProjectForm } from "@/components/project/ProjectForm";
 import { ProjectDetailCard } from "@/components/project/ProjectDetailCard";
 import { ProjectDeleteButton } from "@/components/project/ProjectDeleteButton";
+import { InvoiceTable } from "@/components/invoice/InvoiceTable";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
+import { FileText } from "lucide-react";
 import { projectService } from "@/services/projectService";
 import { partyService } from "@/services/partyService";
 import { paymentMethodService } from "@/services/paymentMethodService";
+import { invoiceService } from "@/services/invoiceService";
+import { toInvoiceTableRow } from "@/lib/invoiceTableRow";
 import type { PaymentMethod } from "@/generated/prisma/client";
 
 export default async function ProjectDetailPage({
@@ -78,7 +83,11 @@ export default async function ProjectDetailPage({
     );
   }
 
-  const isDeletable = await projectService.isDeletable(id);
+  const [isDeletable, nextInvoiceNumber, invoices] = await Promise.all([
+    projectService.isDeletable(id),
+    invoiceService.previewNextInvoiceNumber(id),
+    invoiceService.listByProject(id),
+  ]);
 
   return (
     <>
@@ -98,7 +107,42 @@ export default async function ProjectDetailPage({
       <ProjectDetailCard
         project={project}
         editHref={`/projects/${project.id}?edit=1`}
+        nextInvoiceNumber={nextInvoiceNumber}
       />
+
+      <div className="mt-8 mb-3 flex items-center justify-between">
+        <h2 className="text-[15px] font-bold text-foreground">Invoices</h2>
+        {invoices.length > 0 ? (
+          <Button
+            variant="outline"
+            className="h-8 px-3 text-[12px]"
+            nativeButton={false}
+            render={<Link href={`/invoices/new/${project.id}`} />}
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Create Invoice
+          </Button>
+        ) : null}
+      </div>
+      {invoices.length === 0 ? (
+        <EmptyState
+          title="No invoices yet"
+          description="Create the first invoice for this project."
+          action={
+            <Button
+              nativeButton={false}
+              render={<Link href={`/invoices/new/${project.id}`} />}
+            >
+              Create Invoice
+            </Button>
+          }
+        />
+      ) : (
+        <InvoiceTable
+          invoices={invoices.map(toInvoiceTableRow)}
+          hideProjectColumn
+        />
+      )}
     </>
   );
 }

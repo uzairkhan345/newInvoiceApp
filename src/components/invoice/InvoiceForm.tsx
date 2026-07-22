@@ -238,6 +238,13 @@ export function InvoiceForm({
                   className="font-mono"
                   {...register("invoiceNumber")}
                 />
+                {mode === "create" ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    Suggested automatically from the project&rsquo;s format —
+                    freely editable, so you can continue a sequence from outside
+                    this app.
+                  </p>
+                ) : null}
               </FormField>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -337,6 +344,12 @@ export function InvoiceForm({
                     ? "Create Invoice"
                     : "Save Changes"}
               </Button>
+              {mode === "create" ? (
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  Saved as a draft immediately — edit freely until it&rsquo;s
+                  marked Sent.
+                </p>
+              ) : null}
             </form>
           </CardContent>
         </Card>

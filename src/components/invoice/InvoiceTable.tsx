@@ -8,7 +8,14 @@ import { formatDisplayDate } from "@/lib/dates";
 import type { InvoiceTableRow } from "@/lib/invoiceTableRow";
 
 /** Docs/ui_design_guide.md §9/§4 — List/Ledger template for Invoices. */
-export function InvoiceTable({ invoices }: { invoices: InvoiceTableRow[] }) {
+export function InvoiceTable({
+  invoices,
+  hideProjectColumn,
+}: {
+  invoices: InvoiceTableRow[];
+  /** Docs/feedback_backlog.md M19.3a — the Project column is redundant when this table is already scoped to one project. */
+  hideProjectColumn?: boolean;
+}) {
   const router = useRouter();
 
   const columns: DataTableColumn<InvoiceTableRow>[] = [
@@ -18,7 +25,14 @@ export function InvoiceTable({ invoices }: { invoices: InvoiceTableRow[] }) {
         <span className="font-mono font-medium">{invoice.invoiceNumber}</span>
       ),
     },
-    { header: "Project", cell: (invoice) => invoice.project.name },
+    ...(hideProjectColumn
+      ? []
+      : [
+          {
+            header: "Project",
+            cell: (invoice: InvoiceTableRow) => invoice.project.name,
+          } satisfies DataTableColumn<InvoiceTableRow>,
+        ]),
     { header: "Client", cell: (invoice) => invoice.project.client.name },
     {
       header: "Issue Date",
