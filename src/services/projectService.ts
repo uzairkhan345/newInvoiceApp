@@ -110,6 +110,26 @@ function listRecentlyCreated(limit: number): Promise<ProjectWithRelations[]> {
   return projectRepository.findRecentlyCreated(limit);
 }
 
+/**
+ * Docs/feedback_backlog.md M25 — Party detail page's "used by" tags per
+ * payment method. Returns { [paymentMethodId]: projectName[] }, grouping
+ * server-side so the page/component don't each need their own reduce.
+ */
+async function listProjectNamesByPreferredPaymentMethod(
+  paymentMethodIds: string[],
+): Promise<Record<string, string[]>> {
+  const projects =
+    await projectRepository.findByPreferredPaymentMethodIds(paymentMethodIds);
+  const byPaymentMethodId: Record<string, string[]> = {};
+  for (const project of projects) {
+    if (!project.preferredPaymentMethodId) continue;
+    (byPaymentMethodId[project.preferredPaymentMethodId] ??= []).push(
+      project.name,
+    );
+  }
+  return byPaymentMethodId;
+}
+
 function getById(id: string): Promise<ProjectWithRelations | null> {
   return projectRepository.findById(id);
 }
@@ -155,4 +175,5 @@ export const projectService = {
   countActive,
   listMissingPreferredPaymentMethod,
   listRecentlyCreated,
+  listProjectNamesByPreferredPaymentMethod,
 };

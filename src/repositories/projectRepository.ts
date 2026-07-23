@@ -96,6 +96,29 @@ function findRecentlyCreated(limit: number): Promise<ProjectWithRelations[]> {
   });
 }
 
+/**
+ * Docs/feedback_backlog.md M25 — Party detail page's "used by" tags per
+ * payment method. Minimal projection (no relations needed) since the caller
+ * already knows the owning party; scoped to ACTIVE projects only, same
+ * reasoning as findMissingPreferredPaymentMethod (an ARCHIVED project isn't
+ * really "using" the payment method for anything ongoing).
+ */
+function findByPreferredPaymentMethodIds(
+  paymentMethodIds: string[],
+): Promise<
+  { id: string; name: string; preferredPaymentMethodId: string | null }[]
+> {
+  if (paymentMethodIds.length === 0) return Promise.resolve([]);
+  return prisma.project.findMany({
+    where: {
+      preferredPaymentMethodId: { in: paymentMethodIds },
+      status: "ACTIVE",
+    },
+    select: { id: true, name: true, preferredPaymentMethodId: true },
+    orderBy: { name: "asc" },
+  });
+}
+
 export const projectRepository = {
   findMany,
   findById,
@@ -106,4 +129,5 @@ export const projectRepository = {
   findMissingPreferredPaymentMethod,
   countActive,
   findRecentlyCreated,
+  findByPreferredPaymentMethodIds,
 };

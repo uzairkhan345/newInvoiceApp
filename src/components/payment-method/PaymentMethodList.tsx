@@ -28,10 +28,13 @@ export function PaymentMethodList({
   partyId,
   paymentMethods,
   deletableIds,
+  projectNamesByPaymentMethodId,
 }: {
   partyId: string;
   paymentMethods: PaymentMethod[];
   deletableIds: Set<string>;
+  /** Docs/feedback_backlog.md M25 — which project(s) (if any) use each method as their preferred payment method, ACTIVE projects only. */
+  projectNamesByPaymentMethodId: Record<string, string[]>;
 }) {
   const router = useRouter();
 
@@ -56,6 +59,7 @@ export function PaymentMethodList({
     <div className="flex flex-col gap-3">
       {paymentMethods.map((method) => {
         const fields = method.fields as unknown as PaymentMethodField[];
+        const usedByProjects = projectNamesByPaymentMethodId[method.id] ?? [];
         return (
           <Card key={method.id}>
             <CardContent className="flex items-start justify-between gap-4 pt-6">
@@ -74,6 +78,22 @@ export function PaymentMethodList({
                 <p className="text-[11px] text-muted-foreground">
                   {fields.map((f) => f.label).join(" · ")}
                 </p>
+                {usedByProjects.length > 0 ? (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[11px] text-muted-foreground">
+                      Used by:
+                    </span>
+                    {usedByProjects.map((projectName) => (
+                      <Badge
+                        key={projectName}
+                        variant="outline"
+                        className="font-normal normal-case"
+                      >
+                        {projectName}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : null}
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <Button

@@ -8,6 +8,7 @@ import { PaymentMethodList } from "@/components/payment-method/PaymentMethodList
 import { Button } from "@/components/ui/button";
 import { partyService } from "@/services/partyService";
 import { paymentMethodService } from "@/services/paymentMethodService";
+import { projectService } from "@/services/projectService";
 import { getAiAssistConfigSummary } from "@/lib/ai-providers/config";
 
 export default async function PartyDetailPage({
@@ -69,9 +70,14 @@ export default async function PartyDetailPage({
     partyService.isDeletable(id),
     paymentMethodService.listForParty(id),
   ]);
-  const deletableFlags = await Promise.all(
-    paymentMethods.map((method) => paymentMethodService.isDeletable(method.id)),
-  );
+  const [deletableFlags, projectNamesByPaymentMethodId] = await Promise.all([
+    Promise.all(
+      paymentMethods.map((method) => paymentMethodService.isDeletable(method.id)),
+    ),
+    projectService.listProjectNamesByPreferredPaymentMethod(
+      paymentMethods.map((method) => method.id),
+    ),
+  ]);
   const deletableIds = new Set(
     paymentMethods
       .filter((_, index) => deletableFlags[index])
@@ -118,6 +124,7 @@ export default async function PartyDetailPage({
         partyId={party.id}
         paymentMethods={paymentMethods}
         deletableIds={deletableIds}
+        projectNamesByPaymentMethodId={projectNamesByPaymentMethodId}
       />
     </>
   );
