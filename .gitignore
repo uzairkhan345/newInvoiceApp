@@ -48,3 +48,8 @@ next-env.d.ts
 /Data_ingestion
 /scripts/ingestDataIngestionInvoices.ts
 /scripts/ingest[redacted]G19.ts
+
+# Pre-implementation reference material (stale specs, UI mockups, and real
+# client invoice PDFs/screenshots used only as visual reference) — never
+# to be committed. See CLAUDE.md's ai_context/ section.
+/ai_context
