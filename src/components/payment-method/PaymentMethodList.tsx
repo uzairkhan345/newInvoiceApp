@@ -87,7 +87,7 @@ export function PaymentMethodList({
                       <Badge
                         key={projectName}
                         variant="outline"
-                        className="font-normal normal-case"
+                        className="border-transparent bg-brand-light font-normal normal-case text-brand"
                       >
                         {projectName}
                       </Badge>
