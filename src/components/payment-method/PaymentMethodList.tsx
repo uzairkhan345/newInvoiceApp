@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { deletePaymentMethodAction } from "@/actions/paymentMethod.actions";
 import type { PaymentMethod } from "@/generated/prisma/client";
 import type { PaymentMethodField } from "@/repositories/paymentMethodRepository";
+import type { ProjectRef } from "@/services/projectService";
 
 const typeLabels: Record<string, string> = {
   BANK_WIRE: "Bank Wire",
@@ -28,13 +29,13 @@ export function PaymentMethodList({
   partyId,
   paymentMethods,
   deletableIds,
-  projectNamesByPaymentMethodId,
+  projectRefsByPaymentMethodId,
 }: {
   partyId: string;
   paymentMethods: PaymentMethod[];
   deletableIds: Set<string>;
-  /** Docs/feedback_backlog.md M25 — which project(s) (if any) use each method as their preferred payment method, ACTIVE projects only. */
-  projectNamesByPaymentMethodId: Record<string, string[]>;
+  /** Docs/feedback_backlog.md M25 — which project(s) (if any) use each method as their preferred payment method, ACTIVE projects only; each tag links to that project's detail page. */
+  projectRefsByPaymentMethodId: Record<string, ProjectRef[]>;
 }) {
   const router = useRouter();
 
@@ -59,7 +60,7 @@ export function PaymentMethodList({
     <div className="flex flex-col gap-3">
       {paymentMethods.map((method) => {
         const fields = method.fields as unknown as PaymentMethodField[];
-        const usedByProjects = projectNamesByPaymentMethodId[method.id] ?? [];
+        const usedByProjects = projectRefsByPaymentMethodId[method.id] ?? [];
         return (
           <Card key={method.id}>
             <CardContent className="flex items-start justify-between gap-4 pt-6">
@@ -83,13 +84,14 @@ export function PaymentMethodList({
                     <span className="text-[11px] text-muted-foreground">
                       Used by:
                     </span>
-                    {usedByProjects.map((projectName) => (
+                    {usedByProjects.map((project) => (
                       <Badge
-                        key={projectName}
+                        key={project.id}
                         variant="outline"
-                        className="border-transparent bg-brand-light font-normal normal-case text-brand"
+                        className="border-transparent bg-brand-light font-normal normal-case text-brand transition-colors hover:bg-brand hover:text-primary-foreground"
+                        render={<Link href={`/projects/${project.id}`} />}
                       >
-                        {projectName}
+                        {project.name}
                       </Badge>
                     ))}
                   </div>

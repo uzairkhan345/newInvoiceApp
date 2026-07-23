@@ -70,11 +70,11 @@ export default async function PartyDetailPage({
     partyService.isDeletable(id),
     paymentMethodService.listForParty(id),
   ]);
-  const [deletableFlags, projectNamesByPaymentMethodId] = await Promise.all([
+  const [deletableFlags, projectRefsByPaymentMethodId] = await Promise.all([
     Promise.all(
       paymentMethods.map((method) => paymentMethodService.isDeletable(method.id)),
     ),
-    projectService.listProjectNamesByPreferredPaymentMethod(
+    projectService.listProjectRefsByPreferredPaymentMethod(
       paymentMethods.map((method) => method.id),
     ),
   ]);
@@ -124,7 +124,7 @@ export default async function PartyDetailPage({
         partyId={party.id}
         paymentMethods={paymentMethods}
         deletableIds={deletableIds}
-        projectNamesByPaymentMethodId={projectNamesByPaymentMethodId}
+        projectRefsByPaymentMethodId={projectRefsByPaymentMethodId}
       />
     </>
   );
