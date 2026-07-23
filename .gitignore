@@ -41,3 +41,9 @@ next-env.d.ts
 .vercel
 
 /src/generated/prisma
+
+# One-time real-invoice data-ingestion source material and the script that
+# transcribed it (contains real bank account/SWIFT/ABA numbers in plaintext) —
+# never to be preserved/committed.
+/Data_ingestion
+/scripts/ingestDataIngestionInvoices.ts
