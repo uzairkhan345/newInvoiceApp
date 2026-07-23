@@ -10,7 +10,11 @@ import type { ProjectWithRelations } from "@/repositories/projectRepository";
 import { generateInvoiceNumber } from "@/services/invoiceNumberService";
 import type { InvoiceInput } from "@/lib/validation/invoice";
 import { Prisma } from "@/generated/prisma/client";
-import type { Invoice, InvoiceStatus } from "@/generated/prisma/client";
+import type {
+  DisplayCurrency,
+  Invoice,
+  InvoiceStatus,
+} from "@/generated/prisma/client";
 
 /**
  * Thrown when a projectId doesn't resolve to a real Project — createDraft is
@@ -173,13 +177,29 @@ function nullIfBlank(value: string | undefined): string | null {
   return value && value.trim().length > 0 ? value.trim() : null;
 }
 
+/**
+ * Docs/feedback_backlog.md M26 — the currency an invoice's `subtotal`/
+ * `total`/item rates are actually denominated in: always USD for a `DUAL`-
+ * mode project (its core amounts never leave USD, only the optional
+ * converted total does), the project's own `displayCurrency` for a `SINGLE`-
+ * mode one (which may itself be USD, for a project that hasn't opted into
+ * either currency feature at all). Exported so pages building
+ * `InvoiceFormProjectInfo`/`InvoiceAiContext` can resolve the same value for
+ * display, without duplicating the ternary.
+ */
+function resolveInvoiceCurrency(
+  project: ProjectWithRelations,
+): DisplayCurrency {
+  return project.currencyMode === "DUAL" ? "USD" : project.displayCurrency;
+}
+
 function toWriteInput(
   project: ProjectWithRelations,
   input: InvoiceInput,
 ): InvoiceWriteInput {
   const items = computeItems(input.items);
   const subtotal = sumAmounts(items);
-  const isNonUsd = project.displayCurrency !== "USD";
+  const isDual = project.currencyMode === "DUAL";
 
   return {
     projectId: project.id,
@@ -188,11 +208,12 @@ function toWriteInput(
     dueDate: new Date(input.dueDate),
     subtotal,
     total: subtotal, // Docs/implementation_decisions.md §13 — no tax, Total always equals Subtotal.
+    currency: resolveInvoiceCurrency(project),
     convertedTotal:
-      isNonUsd && input.convertedTotal
+      isDual && input.convertedTotal
         ? new Prisma.Decimal(input.convertedTotal)
         : null,
-    convertedCurrency: isNonUsd ? project.displayCurrency : null,
+    convertedCurrency: isDual ? project.displayCurrency : null,
     ...buildSnapshots(project),
     itemsNote: nullIfBlank(input.itemsNote),
     bottomNote: nullIfBlank(input.bottomNote),
@@ -229,6 +250,13 @@ function countByStatus(status: InvoiceStatus): Promise<number> {
 /** Dashboard (M10) — USD-only outstanding subtext for the Sent/Unpaid stat. */
 function sumSubtotalByStatus(status: InvoiceStatus): Promise<Prisma.Decimal> {
   return invoiceRepository.sumSubtotalByStatus(status);
+}
+
+/** Dashboard — Docs/feedback_backlog.md M26's per-currency breakdown lines. */
+function sumSubtotalByStatusGroupedByNonUsdCurrency(
+  status: InvoiceStatus,
+): Promise<{ currency: string; total: Prisma.Decimal }[]> {
+  return invoiceRepository.sumSubtotalByStatusGroupedByNonUsdCurrency(status);
 }
 
 /** Dashboard (M10) — Needs Attention's overdue set. */
@@ -376,7 +404,7 @@ function collectSendValidationReasons(
   ) {
     reasons.push("Due date must be on or after the issue date.");
   }
-  if (project.displayCurrency !== "USD" && existing.convertedTotal == null) {
+  if (project.currencyMode === "DUAL" && existing.convertedTotal == null) {
     reasons.push(
       `Enter a converted total in ${project.displayCurrency} before sending.`,
     );
@@ -421,11 +449,12 @@ async function transitionStatus(
   const reasons = collectSendValidationReasons(existing, project);
   if (reasons.length > 0) throw new InvoiceSendValidationError(reasons);
 
-  const isNonUsd = project.displayCurrency !== "USD";
+  const isDual = project.currencyMode === "DUAL";
   return invoiceRepository.updateStatus(id, "SENT", {
     ...buildSnapshots(project),
-    convertedTotal: isNonUsd ? existing.convertedTotal : null,
-    convertedCurrency: isNonUsd ? project.displayCurrency : null,
+    currency: resolveInvoiceCurrency(project),
+    convertedTotal: isDual ? existing.convertedTotal : null,
+    convertedCurrency: isDual ? project.displayCurrency : null,
   });
 }
 
@@ -441,6 +470,7 @@ export const invoiceService = {
   listByStatus,
   listByProject,
   getById,
+  resolveInvoiceCurrency,
   previewNextInvoiceNumber,
   getAutofillDataForProject,
   createDraft,
@@ -450,6 +480,7 @@ export const invoiceService = {
   delete: remove,
   countByStatus,
   sumSubtotalByStatus,
+  sumSubtotalByStatusGroupedByNonUsdCurrency,
   listOverdue,
   listRecentActivity,
 };

@@ -18,6 +18,7 @@ function fakeInvoice(
     dueDate: new Date("2026-01-15"),
     subtotal: new Prisma.Decimal("300"),
     total: new Prisma.Decimal("300"),
+    currency: "USD",
     convertedTotal: new Prisma.Decimal("450"),
     convertedCurrency: "AUD",
     fromPartySnapshot: {
@@ -93,6 +94,7 @@ describe("documentService.assembleInvoiceDocumentData", () => {
     });
     expect(data.subtotal).toBe("300");
     expect(data.total).toBe("300");
+    expect(data.currency).toBe("USD");
     expect(data.convertedTotal).toBe("450");
     expect(data.convertedCurrency).toBe("AUD");
   });

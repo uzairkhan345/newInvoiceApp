@@ -4,6 +4,7 @@ import type {
   PaymentMethod,
   Project,
   DisplayCurrency,
+  ProjectCurrencyMode,
   ProjectStatus,
   InvoicePeriodType,
 } from "@/generated/prisma/client";
@@ -23,6 +24,7 @@ export type ProjectWriteInput = {
   preferredPaymentMethodId: string | null;
   invoiceNumberFormat: string;
   invoicePeriodType: InvoicePeriodType | null;
+  currencyMode: ProjectCurrencyMode;
   displayCurrency: DisplayCurrency;
   status: ProjectStatus;
 };

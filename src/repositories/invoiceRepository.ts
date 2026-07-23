@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { startOfTodayUTC } from "@/lib/dates";
 import { Prisma } from "@/generated/prisma/client";
 import type {
+  DisplayCurrency,
   Invoice,
   InvoiceItem,
   InvoiceStatus,
@@ -28,6 +29,7 @@ export type InvoiceWriteInput = {
   dueDate: Date;
   subtotal: Prisma.Decimal;
   total: Prisma.Decimal;
+  currency: DisplayCurrency;
   convertedTotal: Prisma.Decimal | null;
   convertedCurrency: string | null;
   fromPartySnapshot: Prisma.InputJsonValue;
@@ -77,15 +79,43 @@ function countByStatus(status: InvoiceStatus): Promise<number> {
   return prisma.invoice.count({ where: { status } });
 }
 
-/** Dashboard (M10) — USD-only outstanding subtext (Docs/ui_design_guide.md §16); subtotal === total, no tax. */
+/**
+ * Dashboard (M10) — USD-only outstanding subtext (Docs/ui_design_guide.md
+ * §16); subtotal === total, no tax. Docs/feedback_backlog.md M26 — scoped to
+ * `currency: "USD"` explicitly, not every invoice: a `SINGLE`-mode non-USD
+ * invoice's `subtotal` is genuinely denominated in that other currency, and
+ * blending it into a raw sum here would silently mix currencies. `DUAL`-mode
+ * invoices always have `currency: "USD"` regardless of their project's
+ * `displayCurrency`, so they're correctly still included.
+ */
 async function sumSubtotalByStatus(
   status: InvoiceStatus,
 ): Promise<Prisma.Decimal> {
   const result = await prisma.invoice.aggregate({
-    where: { status },
+    where: { status, currency: "USD" },
     _sum: { subtotal: true },
   });
   return result._sum.subtotal ?? new Prisma.Decimal(0);
+}
+
+/**
+ * Dashboard (M10) — Docs/feedback_backlog.md M26. The non-USD counterpart to
+ * `sumSubtotalByStatus` above: one same-currency grouped sum per non-USD
+ * currency actually present among invoices of this status, rendered as
+ * secondary breakdown lines rather than blended into the primary USD figure.
+ */
+async function sumSubtotalByStatusGroupedByNonUsdCurrency(
+  status: InvoiceStatus,
+): Promise<{ currency: string; total: Prisma.Decimal }[]> {
+  const rows = await prisma.invoice.groupBy({
+    by: ["currency"],
+    where: { status, currency: { not: "USD" } },
+    _sum: { subtotal: true },
+  });
+  return rows.map((row) => ({
+    currency: row.currency,
+    total: row._sum.subtotal ?? new Prisma.Decimal(0),
+  }));
 }
 
 /** Dashboard (M10) — Needs Attention's overdue set: SENT + past-due, most overdue first. */
@@ -205,6 +235,7 @@ export type SentSnapshotUpdate = {
   fromPartySnapshot: Prisma.InputJsonValue;
   toPartySnapshot: Prisma.InputJsonValue;
   paymentDetailsSnapshot: Prisma.InputJsonValue;
+  currency: DisplayCurrency;
   convertedTotal: Prisma.Decimal | null;
   convertedCurrency: string | null;
 };
@@ -241,6 +272,7 @@ export const invoiceRepository = {
   deleteById,
   countByStatus,
   sumSubtotalByStatus,
+  sumSubtotalByStatusGroupedByNonUsdCurrency,
   findOverdueCandidates,
   findRecentByStatuses,
 };

@@ -53,6 +53,7 @@ function fakeData(
     itemsNote: null,
     subtotal: "300",
     total: "300",
+    currency: "USD",
     convertedTotal: null,
     convertedCurrency: null,
     bottomNote: null,

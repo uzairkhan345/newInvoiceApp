@@ -78,7 +78,8 @@ export type InvoiceAiContext = {
     contractorName: string;
     clientName: string;
     preferredPaymentMethodLabel: string | null;
-    displayCurrency: string;
+    /** Docs/feedback_backlog.md M26 — the invoice's actual resolved currency (never assume USD). */
+    currency: string;
     invoiceNumberFormat: string;
   };
   /** The invoice form's current field values (react-hook-form's getValues()) — whatever's already there, from Autofill or hand-typing. */
@@ -97,6 +98,7 @@ export type InvoiceAiContext = {
  */
 function buildInvoiceSystemPrompt(context: InvoiceAiContext): string {
   const today = toDateInputValue(new Date());
+  const { currency } = context.project;
   return `You fill in an invoice's line items and dates on an invoicing app, using the fixed project context and the form's current values given below. The contractor, client, and payment method are already fixed by the project and must never appear in your output.
 
 ${JSON_ONLY_RULE}
@@ -112,7 +114,7 @@ Shape A — a confident suggestion, with every extracted field nested inside "su
     "invoiceNumber": string,
     "issueDate": "YYYY-MM-DD",
     "dueDate": "YYYY-MM-DD",
-    "convertedTotal": string (a plain decimal number, only if the prompt gives a converted-currency amount),
+    "convertedTotal": string (a plain decimal number, only if this project uses a converted total and the prompt gives one — omit entirely for a project whose invoices are already single-currency),
     "itemsNote": string (an optional note describing the line items as a whole, only if the prompt gives one),
     "bottomNote": string (a separate optional note shown near the bottom of the document, only if the prompt gives one),
     "items": [
@@ -120,8 +122,8 @@ Shape A — a confident suggestion, with every extracted field nested inside "su
         "description": string,
         "isFlatAmount": boolean (true for a flat lump-sum item with no hours/rate; false, the default, for an hourly item),
         "quantity": string (plain decimal for an hourly item; "" — an empty string, the key must still be present — for a flat item),
-        "unitPrice": string (plain decimal, USD, for an hourly item; "" for a flat item),
-        "amount": string (plain decimal, USD, for a flat item; "" for an hourly item — its amount is always computed automatically from quantity × unitPrice, never guess a value here)
+        "unitPrice": string (plain decimal, in ${currency}, for an hourly item; "" for a flat item),
+        "amount": string (plain decimal, in ${currency}, for a flat item; "" for an hourly item — its amount is always computed automatically from quantity × unitPrice, never guess a value here)
       }
     ]
   }
@@ -136,7 +138,7 @@ Fixed project context (already fixed — never ask about or restate any of this)
 - Contractor: ${context.project.contractorName}
 - Client: ${context.project.clientName}
 - Preferred payment method: ${context.project.preferredPaymentMethodLabel ?? "none on file"}
-- Display currency: ${context.project.displayCurrency}
+- Currency: ${currency} — every line item quantity/unitPrice/amount you produce must be in this currency
 - Invoice number format: ${context.project.invoiceNumberFormat}
 
 Current form state (already filled in — whether from a prior Autofill or typed by hand; treat this as the starting point for a "same as this, but ..." request; only include a "suggestion" key for something you are adding or changing, never repeat an unchanged value):

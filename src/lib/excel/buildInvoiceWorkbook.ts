@@ -139,7 +139,7 @@ export async function buildInvoiceWorkbook(
   ws.getCell(`A${row}`).value = "ITEM";
   ws.getCell(`E${row}`).value = "UNIT (HRS)";
   ws.getCell(`F${row}`).value = "RATE";
-  ws.getCell(`G${row}`).value = "AMOUNT (USD)";
+  ws.getCell(`G${row}`).value = `AMOUNT (${data.currency})`;
   ["A", "E", "F", "G"].forEach((col) => {
     const cell = ws.getCell(`${col}${row}`);
     cell.font = arial({ bold: true, size: 9, color: MUTED_TEXT_COLOR });
@@ -160,8 +160,8 @@ export async function buildInvoiceWorkbook(
     ws.getCell(`E${row}`).value = item.isFlatAmount ? "-" : item.quantity;
     ws.getCell(`F${row}`).value = item.isFlatAmount
       ? "-"
-      : formatCurrency(item.unitPrice!, "USD");
-    ws.getCell(`G${row}`).value = formatCurrency(item.amount, "USD");
+      : formatCurrency(item.unitPrice!, data.currency);
+    ws.getCell(`G${row}`).value = formatCurrency(item.amount, data.currency);
     ["A", "B", "C", "D", "E", "F", "G"].forEach((col) => {
       const cell = ws.getCell(`${col}${row}`);
       if (!cell.font) cell.font = arial({});
@@ -197,14 +197,14 @@ export async function buildInvoiceWorkbook(
   // ── Totals ──
   ws.getCell(`A${row}`).value = "Subtotal";
   ws.getCell(`A${row}`).font = arial({});
-  ws.getCell(`G${row}`).value = formatCurrency(data.subtotal, "USD");
+  ws.getCell(`G${row}`).value = formatCurrency(data.subtotal, data.currency);
   ws.getCell(`G${row}`).font = arial({});
   ws.getCell(`G${row}`).alignment = { horizontal: "right" };
   row += 1;
 
   ws.getCell(`A${row}`).value = "Total Due";
   ws.getCell(`A${row}`).font = arial({ bold: true });
-  ws.getCell(`G${row}`).value = formatCurrency(data.total, "USD");
+  ws.getCell(`G${row}`).value = formatCurrency(data.total, data.currency);
   ws.getCell(`G${row}`).font = arial({ bold: true });
   ws.getCell(`G${row}`).alignment = { horizontal: "right" };
   row += 1;

@@ -17,8 +17,12 @@ import { formatDisplayDate } from "@/lib/dates";
 /**
  * Operational dashboard (M10) — Docs/execution_plan.md §16 M10,
  * Docs/ui_design_guide.md §16, Docs/mvp_user_stories.md Epic 8. Counts only
- * in the stats row (no revenue framing); every figure is USD; VOID is
- * excluded from every count/total by construction (never queried for here).
+ * in the stats row (no revenue framing); VOID is excluded from every
+ * count/total by construction (never queried for here). The primary
+ * "Sent/Unpaid" dollar figure is USD-only by construction (Docs/feedback_backlog.md
+ * M26) — a non-USD SINGLE-currency invoice is never blended into it, since
+ * this app has no live/stored FX rate to normalize with; it instead gets its
+ * own same-currency breakdown line below the primary figure.
  */
 const RECENT_ACTIVITY_LIMIT = 8;
 
@@ -34,6 +38,7 @@ export default async function DashboardPage() {
     sentCount,
     activeProjectCount,
     sentOutstanding,
+    sentOutstandingByNonUsdCurrency,
     overdueInvoices,
     draftInvoices,
     missingPaymentMethodProjects,
@@ -44,6 +49,7 @@ export default async function DashboardPage() {
     invoiceService.countByStatus("SENT"),
     projectService.countActive(),
     invoiceService.sumSubtotalByStatus("SENT"),
+    invoiceService.sumSubtotalByStatusGroupedByNonUsdCurrency("SENT"),
     invoiceService.listOverdue(),
     invoiceService.listByStatus("DRAFT"),
     projectService.listMissingPreferredPaymentMethod(),
@@ -110,7 +116,22 @@ export default async function DashboardPage() {
           label="Sent / Unpaid"
           value={sentCount}
           icon={Send}
-          subtext={`${formatCurrency(sentOutstanding.toString(), "USD")} outstanding`}
+          subtext={
+            <>
+              <div>
+                {formatCurrency(sentOutstanding.toString(), "USD")} outstanding
+              </div>
+              {/* Docs/feedback_backlog.md M26 — non-USD SINGLE-mode invoices are
+                  excluded from the USD sum above (blending currencies would be
+                  wrong); each currency actually present gets its own line here
+                  instead of being silently dropped. */}
+              {sentOutstandingByNonUsdCurrency.map(({ currency, total }) => (
+                <div key={currency}>
+                  + {formatCurrency(total.toString(), currency)} outstanding
+                </div>
+              ))}
+            </>
+          }
         />
         <StatsCard
           label="Overdue Invoices"

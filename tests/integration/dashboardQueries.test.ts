@@ -65,6 +65,7 @@ function baseProjectInput(overrides: Partial<ProjectInput>): ProjectInput {
     contractorId: "",
     preferredPaymentMethodId: "",
     invoiceNumberFormat: "{abbreviation}-{number}",
+    currencyMode: "SINGLE",
     displayCurrency: "USD",
     status: "ACTIVE",
     ...overrides,

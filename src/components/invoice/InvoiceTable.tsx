@@ -53,7 +53,7 @@ export function InvoiceTable({
       align: "right",
       cell: (invoice) => (
         <span className="font-mono">
-          {formatCurrency(invoice.total, "USD")}
+          {formatCurrency(invoice.total, invoice.currency)}
         </span>
       ),
     },

@@ -12,8 +12,10 @@ import { cn } from "@/lib/utils";
 import type { InvoiceInput } from "@/lib/validation/invoice";
 
 /**
- * Docs/mvp_user_stories.md Story 4.1/4.2 — line items are always USD; the
- * displayed per-row/subtotal amounts here are a client-side preview only.
+ * Docs/mvp_user_stories.md Story 4.1/4.2 — line items are denominated in the
+ * invoice's resolved `currency` (Docs/feedback_backlog.md M26 — always USD
+ * for a `DUAL`-mode project, the project's own currency for a `SINGLE`-mode
+ * one); the displayed per-row/subtotal amounts here are a client-side preview only.
  * The backend recomputes amount/subtotal/total from quantity × unitPrice for
  * an Hourly row (Docs/product_spec.md §1.5) — nothing shown here is ever
  * trusted as the submitted value for that mode. A Flat row (M14,
@@ -25,12 +27,15 @@ export function LineItemsEditor({
   register,
   errors,
   highlighted,
+  currency,
 }: {
   control: Control<InvoiceInput>;
   register: UseFormRegister<InvoiceInput>;
   errors: FieldErrors<InvoiceInput>;
   /** Docs/ui_design_guide.md §14 — brief flash after AI Assist replaces the item list. */
   highlighted?: boolean;
+  /** Docs/feedback_backlog.md M26 — the invoice's actual currency (project-resolved), never hardcoded "USD". */
+  currency: string;
 }) {
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
   const watchedItems = useWatch({ control, name: "items" });
@@ -144,7 +149,7 @@ export function LineItemsEditor({
 
             {watchedItems?.[index]?.isFlatAmount ? (
               <FormField
-                label="Amount (USD)"
+                label={`Amount (${currency})`}
                 htmlFor={`items.${index}.amount`}
                 error={errors.items?.[index]?.amount?.message}
                 className="mb-0"
@@ -170,7 +175,7 @@ export function LineItemsEditor({
                   />
                 </FormField>
                 <FormField
-                  label="Unit Price (USD)"
+                  label={`Unit Price (${currency})`}
                   htmlFor={`items.${index}.unitPrice`}
                   error={errors.items?.[index]?.unitPrice?.message}
                   className="mb-0"
@@ -188,7 +193,7 @@ export function LineItemsEditor({
                 >
                   <Input
                     id={`items.${index}.amount-preview`}
-                    value={formatCurrency(rowAmount(index), "USD")}
+                    value={formatCurrency(rowAmount(index), currency)}
                     disabled
                     className="font-mono"
                   />
@@ -203,7 +208,7 @@ export function LineItemsEditor({
         <p className="text-[13px] font-bold text-foreground">
           Subtotal:{" "}
           <span className="font-mono">
-            {formatCurrency(subtotalPreview, "USD")}
+            {formatCurrency(subtotalPreview, currency)}
           </span>
         </p>
       </div>

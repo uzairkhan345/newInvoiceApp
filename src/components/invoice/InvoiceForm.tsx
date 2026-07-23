@@ -22,7 +22,11 @@ import type { AiAssistConfigSummary } from "@/lib/ai-providers/config";
 import type { InvoiceAiContext } from "@/services/aiAssistService";
 import type { InvoiceAutofillData } from "@/services/invoiceService";
 import { computeDueDate } from "@/lib/invoicePeriod";
-import type { InvoicePeriodType } from "@/generated/prisma/client";
+import type {
+  DisplayCurrency,
+  InvoicePeriodType,
+  ProjectCurrencyMode,
+} from "@/generated/prisma/client";
 import { Sparkles } from "lucide-react";
 
 export type InvoiceFormProjectInfo = {
@@ -30,7 +34,11 @@ export type InvoiceFormProjectInfo = {
   contractorName: string;
   clientName: string;
   preferredPaymentMethodLabel: string | null;
-  displayCurrency: "USD" | "AUD" | "GBP";
+  displayCurrency: DisplayCurrency;
+  /** Docs/feedback_backlog.md M26 — gates the Converted Total field (DUAL only). */
+  currencyMode: ProjectCurrencyMode;
+  /** M26 — the invoice's actual resolved currency: always USD for DUAL, `displayCurrency` for SINGLE. */
+  currency: string;
   invoiceNumberFormat: string;
   /** Docs/feedback_backlog.md M19.2b — drives the create form's live due-date recompute only; unused in edit mode. */
   invoicePeriodType: InvoicePeriodType | null;
@@ -54,9 +62,16 @@ function ProjectInfoPanel({ project }: { project: InvoiceFormProjectInfo }) {
         </div>
         <div>
           <p className="text-[11px] font-bold tracking-[0.05em] text-muted-foreground uppercase">
-            Display Currency
+            Currency
           </p>
-          <p className="font-mono text-foreground">{project.displayCurrency}</p>
+          <p className="font-mono text-foreground">
+            {project.currency}
+            {project.currencyMode === "DUAL" ? (
+              <span className="ml-1 font-sans text-[11px] text-muted-foreground">
+                + converted total in {project.displayCurrency}
+              </span>
+            ) : null}
+          </p>
         </div>
         <div>
           <p className="text-[11px] font-bold tracking-[0.05em] text-muted-foreground uppercase">
@@ -191,7 +206,7 @@ export function InvoiceForm({
         contractorName: project.contractorName,
         clientName: project.clientName,
         preferredPaymentMethodLabel: project.preferredPaymentMethodLabel,
-        displayCurrency: project.displayCurrency,
+        currency: project.currency,
         invoiceNumberFormat: project.invoiceNumberFormat,
       },
       currentValues: getValues(),
@@ -272,7 +287,7 @@ export function InvoiceForm({
                 </FormField>
               </div>
 
-              {project.displayCurrency !== "USD" ? (
+              {project.currencyMode === "DUAL" ? (
                 <FormField
                   label={`Converted Total (${project.displayCurrency})`}
                   htmlFor="convertedTotal"
@@ -307,6 +322,7 @@ export function InvoiceForm({
                 register={register}
                 errors={errors}
                 highlighted={highlightedKeys.has("items")}
+                currency={project.currency}
               />
 
               <FormField

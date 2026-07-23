@@ -101,6 +101,8 @@ export default async function InvoiceDetailPage({
           preferredPaymentMethodLabel:
             invoice.project.preferredPaymentMethod?.label ?? null,
           displayCurrency: invoice.project.displayCurrency,
+          currencyMode: invoice.project.currencyMode,
+          currency: invoiceService.resolveInvoiceCurrency(invoice.project),
           invoiceNumberFormat: invoice.project.invoiceNumberFormat,
           invoicePeriodType: invoice.project.invoicePeriodType,
         }}

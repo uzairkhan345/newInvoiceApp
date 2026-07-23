@@ -37,6 +37,7 @@ export type InvoiceDocumentData = {
   itemsNote: string | null;
   subtotal: string;
   total: string;
+  currency: string;
   convertedTotal: string | null;
   convertedCurrency: string | null;
   bottomNote: string | null;
@@ -61,6 +62,11 @@ export type InvoiceDocumentData = {
  * not snapshotted onto Invoice — editing a Project's Service Description
  * retroactively changes the Details text on every invoice under it,
  * including already-SENT ones. Falls back to `Project.name` when unset.
+ * `currency` (Docs/feedback_backlog.md M26) IS snapshotted onto `Invoice`
+ * (unlike `serviceDescription`) — every rate/subtotal/total figure this view
+ * model exposes is denominated in it, so `InvoiceDocument.tsx`/
+ * `buildInvoiceWorkbook.ts` must format every one of those figures with it,
+ * never a hardcoded `"USD"`.
  */
 function assembleInvoiceDocumentData(
   invoice: InvoiceWithItems,
@@ -91,6 +97,7 @@ function assembleInvoiceDocumentData(
     itemsNote: invoice.itemsNote,
     subtotal: invoice.subtotal.toString(),
     total: invoice.total.toString(),
+    currency: invoice.currency,
     convertedTotal: invoice.convertedTotal?.toString() ?? null,
     convertedCurrency: invoice.convertedCurrency,
     bottomNote: invoice.bottomNote,

@@ -71,6 +71,7 @@ function toWriteInput(input: ProjectInput): ProjectWriteInput {
     invoicePeriodType: nullIfEmpty(input.invoicePeriodType) as
       | InvoicePeriodType
       | null,
+    currencyMode: input.currencyMode,
     displayCurrency: input.displayCurrency,
     status: input.status,
   };

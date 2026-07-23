@@ -46,6 +46,8 @@ export default async function NewInvoiceForProjectPage({
           preferredPaymentMethodLabel:
             project.preferredPaymentMethod?.label ?? null,
           displayCurrency: project.displayCurrency,
+          currencyMode: project.currencyMode,
+          currency: invoiceService.resolveInvoiceCurrency(project),
           invoiceNumberFormat: project.invoiceNumberFormat,
           invoicePeriodType: project.invoicePeriodType,
         }}

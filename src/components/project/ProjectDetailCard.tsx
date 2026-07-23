@@ -17,7 +17,19 @@ const CURRENCY_LABELS: Record<ProjectWithRelations["displayCurrency"], string> =
     USD: "USD",
     AUD: "AUD",
     GBP: "GBP",
+    NZD: "NZD",
+    AED: "AED",
+    PKR: "PKR",
+    SAR: "SAR",
   };
+
+const CURRENCY_MODE_LABELS: Record<
+  ProjectWithRelations["currencyMode"],
+  string
+> = {
+  SINGLE: "Single Currency",
+  DUAL: "Dual Currency",
+};
 
 const STATUS_LABELS: Record<ProjectWithRelations["status"], string> = {
   ACTIVE: "Active",
@@ -93,7 +105,13 @@ export function ProjectDetailCard({
           }
         />
         <DetailField
-          label="Display Currency"
+          label="Currency Mode"
+          value={CURRENCY_MODE_LABELS[project.currencyMode]}
+        />
+        <DetailField
+          label={
+            project.currencyMode === "DUAL" ? "Display Currency" : "Currency"
+          }
           value={CURRENCY_LABELS[project.displayCurrency]}
         />
         <DetailField label="Status" value={STATUS_LABELS[project.status]} />

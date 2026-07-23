@@ -1,9 +1,13 @@
 import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 
 /**
  * Dashboard stats row (M10) — Docs/ui_design_guide.md §16. Counts only; any
- * dollar figure is secondary subtext, never the headline metric.
+ * dollar figure is secondary subtext, never the headline metric. `subtext`
+ * accepts a `ReactNode` (Docs/feedback_backlog.md M26), not just a string, so
+ * the Sent/Unpaid card can stack per-currency breakdown lines beneath the
+ * primary USD figure instead of blending currencies into one string.
  */
 export function StatsCard({
   label,
@@ -13,7 +17,7 @@ export function StatsCard({
 }: {
   label: string;
   value: number;
-  subtext?: string;
+  subtext?: ReactNode;
   icon: LucideIcon;
 }) {
   return (
@@ -27,7 +31,9 @@ export function StatsCard({
             {value}
           </span>
           {subtext ? (
-            <span className="text-[11px] text-muted-foreground">{subtext}</span>
+            <div className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
+              {subtext}
+            </div>
           ) : null}
         </div>
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand">

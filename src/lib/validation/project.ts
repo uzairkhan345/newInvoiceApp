@@ -22,9 +22,13 @@ export const projectSchema = z.object({
     .enum(["WEEKLY", "SEMI_MONTHLY", "MONTHLY"])
     .optional()
     .or(z.literal("")),
-  displayCurrency: z.enum(["USD", "AUD", "GBP"], {
-    message: "Select a display currency",
+  currencyMode: z.enum(["SINGLE", "DUAL"], {
+    message: "Select a currency mode",
   }),
+  displayCurrency: z.enum(
+    ["USD", "AUD", "GBP", "NZD", "AED", "PKR", "SAR"],
+    { message: "Select a currency" },
+  ),
   status: z.enum(["ACTIVE", "ARCHIVED"], {
     message: "Select a status",
   }),

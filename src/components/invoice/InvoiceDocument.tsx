@@ -85,7 +85,7 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
               <th>Item</th>
               <th className={styles.numberCell}>Unit (hrs)</th>
               <th className={styles.numberCell}>Rate</th>
-              <th className={styles.numberCell}>Amount (USD)</th>
+              <th className={styles.numberCell}>Amount ({data.currency})</th>
             </tr>
           </thead>
           <tbody>
@@ -98,10 +98,10 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
                 <td className={styles.numberCell}>
                   {item.isFlatAmount
                     ? "-"
-                    : formatCurrency(item.unitPrice!, "USD")}
+                    : formatCurrency(item.unitPrice!, data.currency)}
                 </td>
                 <td className={styles.numberCell}>
-                  {formatCurrency(item.amount, "USD")}
+                  {formatCurrency(item.amount, data.currency)}
                 </td>
               </tr>
             ))}
@@ -116,13 +116,13 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
           <div className={styles.totalRow}>
             <span>Subtotal</span>
             <span className={styles.numberCell}>
-              {formatCurrency(data.subtotal, "USD")}
+              {formatCurrency(data.subtotal, data.currency)}
             </span>
           </div>
           <div className={`${styles.totalRow} ${styles.totalRowFinal}`}>
             <span>Total Due</span>
             <span className={styles.numberCell}>
-              {formatCurrency(data.total, "USD")}
+              {formatCurrency(data.total, data.currency)}
             </span>
           </div>
           {hasConvertedTotal ? (

@@ -62,6 +62,7 @@ function baseProjectInput(overrides: Partial<ProjectInput>): ProjectInput {
     contractorId: "",
     preferredPaymentMethodId: "",
     invoiceNumberFormat: "{abbreviation}-{number}",
+    currencyMode: "SINGLE",
     displayCurrency: "USD",
     status: "ACTIVE",
     ...overrides,
@@ -266,6 +267,7 @@ describe("invoiceService.createDraft", () => {
     expect(usdInvoice.convertedCurrency).toBeNull();
 
     const { project: audProject } = await createTestProject({
+      currencyMode: "DUAL",
       displayCurrency: "AUD",
     });
     const audInvoice = await invoiceService.createDraft(
@@ -608,7 +610,10 @@ describe("invoiceService.validateForSend", () => {
   });
 
   it("rejects when the project's non-USD DisplayCurrency has no convertedTotal", async () => {
-    const { project } = await createTestProject({ displayCurrency: "AUD" });
+    const { project } = await createTestProject({
+      currencyMode: "DUAL",
+      displayCurrency: "AUD",
+    });
     const invoice = await invoiceService.createDraft(
       project.id,
       baseInvoiceInput({ convertedTotal: "" }),
@@ -621,7 +626,10 @@ describe("invoiceService.validateForSend", () => {
   });
 
   it("resolves without throwing when every requirement is met", async () => {
-    const { project } = await createTestProject({ displayCurrency: "AUD" });
+    const { project } = await createTestProject({
+      currencyMode: "DUAL",
+      displayCurrency: "AUD",
+    });
     const invoice = await invoiceService.createDraft(
       project.id,
       baseInvoiceInput({ convertedTotal: "500" }),

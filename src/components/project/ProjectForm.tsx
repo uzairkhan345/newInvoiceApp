@@ -36,6 +36,25 @@ const displayCurrencyLabels: Record<ProjectInput["displayCurrency"], string> = {
   USD: "USD",
   AUD: "AUD",
   GBP: "GBP",
+  NZD: "NZD",
+  AED: "AED",
+  PKR: "PKR",
+  SAR: "SAR",
+};
+
+/** Docs/feedback_backlog.md M26 — every currency choice, for `SINGLE` mode. */
+const ALL_CURRENCIES = Object.keys(
+  displayCurrencyLabels,
+) as ProjectInput["displayCurrency"][];
+
+/** M26 — USD excluded: it's always the implicit primary in `DUAL` mode, never the second display currency. */
+const NON_USD_CURRENCIES = ALL_CURRENCIES.filter(
+  (currency) => currency !== "USD",
+);
+
+const currencyModeLabels: Record<ProjectInput["currencyMode"], string> = {
+  SINGLE: "Single Currency",
+  DUAL: "Dual Currency",
 };
 
 const statusLabels: Record<ProjectInput["status"], string> = {
@@ -70,6 +89,7 @@ export function ProjectForm({
     handleSubmit,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<ProjectInput>({
     resolver: zodResolver(projectSchema),
@@ -82,6 +102,7 @@ export function ProjectForm({
       preferredPaymentMethodId: "",
       invoiceNumberFormat: "{abbreviation}-{number}-{date}",
       invoicePeriodType: "",
+      currencyMode: "SINGLE",
       displayCurrency: "USD",
       status: "ACTIVE",
       ...defaultValues,
@@ -90,6 +111,7 @@ export function ProjectForm({
 
   const contractorId = watch("contractorId");
   const availablePaymentMethods = paymentMethodsByPartyId[contractorId] ?? [];
+  const currencyMode = watch("currencyMode");
 
   function registerNewParty(party: Party) {
     setParties((prev) =>
@@ -340,7 +362,49 @@ export function ProjectForm({
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField
-              label="Display Currency"
+              label="Currency Mode"
+              htmlFor="currencyMode"
+              required
+              error={errors.currencyMode?.message}
+            >
+              <Controller
+                name="currencyMode"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      // USD is a valid Single Currency choice but can't be the
+                      // Dual mode's second display currency — reset it so the
+                      // hidden field never carries an invalid selection.
+                      if (
+                        value === "DUAL" &&
+                        getValues("displayCurrency") === "USD"
+                      ) {
+                        setValue("displayCurrency", "AUD");
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="currencyMode" className="w-full">
+                      <SelectValue
+                        renderValue={(value) =>
+                          currencyModeLabels[
+                            value as ProjectInput["currencyMode"]
+                          ]
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SINGLE">Single Currency</SelectItem>
+                      <SelectItem value="DUAL">Dual Currency</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </FormField>
+            <FormField
+              label={currencyMode === "DUAL" ? "Display Currency" : "Currency"}
               htmlFor="displayCurrency"
               required
               error={errors.displayCurrency?.message}
@@ -360,41 +424,53 @@ export function ProjectForm({
                       />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="AUD">AUD</SelectItem>
-                      <SelectItem value="GBP">GBP</SelectItem>
+                      {(currencyMode === "DUAL"
+                        ? NON_USD_CURRENCIES
+                        : ALL_CURRENCIES
+                      ).map((currency) => (
+                        <SelectItem key={currency} value={currency}>
+                          {displayCurrencyLabels[currency]}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 )}
               />
-            </FormField>
-            <FormField
-              label="Status"
-              htmlFor="status"
-              required
-              error={errors.status?.message}
-            >
-              <Controller
-                name="status"
-                control={control}
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id="status" className="w-full">
-                      <SelectValue
-                        renderValue={(value) =>
-                          statusLabels[value as ProjectInput["status"]]
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ACTIVE">Active</SelectItem>
-                      <SelectItem value="ARCHIVED">Archived</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
+              {currencyMode === "DUAL" ? (
+                <p className="text-[11px] text-muted-foreground">
+                  Only adds a converted total for display — the invoice&rsquo;s
+                  core amounts stay in USD.
+                </p>
+              ) : null}
             </FormField>
           </div>
+
+          <FormField
+            label="Status"
+            htmlFor="status"
+            required
+            error={errors.status?.message}
+          >
+            <Controller
+              name="status"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="status" className="w-full">
+                    <SelectValue
+                      renderValue={(value) =>
+                        statusLabels[value as ProjectInput["status"]]
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ACTIVE">Active</SelectItem>
+                    <SelectItem value="ARCHIVED">Archived</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </FormField>
 
           <Button type="submit" disabled={isSubmitting} className="mt-2">
             {isSubmitting

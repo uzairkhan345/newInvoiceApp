@@ -35,10 +35,30 @@ enum AiProviderName {
   groq
 }
 
+/// Docs/feedback_backlog.md M26 — expanded from USD/AUD/GBP to add NZD/AED/
+/// PKR/SAR (future-proofing per the user, no concrete need yet beyond the
+/// original three). Used both for `Project.displayCurrency` (whose meaning
+/// now depends on `ProjectCurrencyMode`, see below) and `Invoice.currency`.
 enum DisplayCurrency {
   USD
   AUD
   GBP
+  NZD
+  AED
+  PKR
+  SAR
+}
+
+/// Docs/feedback_backlog.md M26. `SINGLE` (default): `Project.displayCurrency`
+/// is the whole invoice's one and only currency (may be USD — every project
+/// created before this milestone is `SINGLE`+`USD`, i.e. unchanged behavior).
+/// `DUAL`: today's original behavior — every core amount is USD,
+/// `Project.displayCurrency` (never USD in this mode) only adds a manually
+/// entered `Invoice.convertedTotal` shown alongside, never replacing, the USD
+/// figures.
+enum ProjectCurrencyMode {
+  SINGLE
+  DUAL
 }
 
 enum InvoiceStatus {
@@ -119,8 +139,9 @@ model Project {
   preferredPaymentMethod   PaymentMethod?  @relation("ProjectPreferredPaymentMethod", fields: [preferredPaymentMethodId], references: [id], onDelete: Restrict)
   invoiceNumberFormat      String
   invoicePeriodType        InvoicePeriodType?
-  displayCurrency          DisplayCurrency @default(USD)
-  status                   ProjectStatus   @default(ACTIVE)
+  displayCurrency          DisplayCurrency     @default(USD)
+  currencyMode             ProjectCurrencyMode @default(SINGLE)
+  status                   ProjectStatus       @default(ACTIVE)
   createdAt                DateTime        @default(now())
   updatedAt                DateTime        @updatedAt
 
@@ -134,6 +155,12 @@ model Project {
 /// Docs/product_spec.md §1.4. Snapshot-only — no live PaymentMethodId FK
 /// (Docs/implementation_decisions.md §11). Deletable in any status
 /// (Docs/implementation_decisions.md §18/§22), cascading InvoiceItem rows.
+/// `currency` (Docs/feedback_backlog.md M26) is the currency `subtotal`/
+/// `total`/every `InvoiceItem` rate is actually denominated in — always
+/// `USD` for a `DUAL`-mode project's invoice, the project's `displayCurrency`
+/// for a `SINGLE`-mode one. Same snapshot-timing rule as everything else:
+/// recomputed from the live project on every `DRAFT` save and the final
+/// `DRAFT → SENT` transition, then permanently locked.
 model Invoice {
   id                     String        @id @default(cuid())
   projectId              String
@@ -144,6 +171,7 @@ model Invoice {
   dueDate                DateTime      @db.Date
   subtotal               Decimal       @db.Decimal(12, 2)
   total                  Decimal       @db.Decimal(12, 2)
+  currency               DisplayCurrency @default(USD)
   convertedTotal         Decimal?      @db.Decimal(12, 2)
   convertedCurrency      String?
   fromPartySnapshot      Json
