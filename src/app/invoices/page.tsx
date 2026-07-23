@@ -59,10 +59,11 @@ const EMPTY_STATE_COPY: Record<
 export default async function InvoicesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; from?: string }>;
 }) {
-  const { status } = await searchParams;
+  const { status, from } = await searchParams;
   const filter = resolveFilter(status);
+  const cameFromDashboard = from === "dashboard";
 
   const invoices = await (filter === "overdue"
     ? invoiceService.listOverdue()
@@ -81,13 +82,15 @@ export default async function InvoicesPage({
       <PageHeader
         title="Invoices"
         subtitle="Every invoice across every project, newest first."
+        backHref={cameFromDashboard ? "/" : undefined}
+        backLabel="Back to Dashboard"
         action={
           <Button nativeButton={false} render={<Link href="/invoices/new" />}>
             Create Invoice
           </Button>
         }
       />
-      <InvoiceStatusFilter active={filter} />
+      <InvoiceStatusFilter active={filter} fromDashboard={cameFromDashboard} />
       {invoices.length === 0 ? (
         <EmptyState
           title={emptyCopy.title}

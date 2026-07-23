@@ -1,6 +1,8 @@
+import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 /**
  * Dashboard stats row (M10) — Docs/ui_design_guide.md §16. Counts only; any
@@ -8,20 +10,27 @@ import { Card, CardContent } from "@/components/ui/card";
  * accepts a `ReactNode` (Docs/feedback_backlog.md M26), not just a string, so
  * the Sent/Unpaid card can stack per-currency breakdown lines beneath the
  * primary USD figure instead of blending currencies into one string.
+ * `href` (Docs/feedback_backlog.md — dashboard card navigation) makes the
+ * whole card a link into the matching filtered list, reusing the same
+ * hover treatment as the invoices/new project-picker cards.
  */
 export function StatsCard({
   label,
   value,
   subtext,
   icon: Icon,
+  href,
 }: {
   label: string;
   value: number;
   subtext?: ReactNode;
   icon: LucideIcon;
+  href?: string;
 }) {
-  return (
-    <Card>
+  const card = (
+    <Card
+      className={cn(href && "transition-colors hover:bg-muted/40")}
+    >
       <CardContent className="flex items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
@@ -42,4 +51,6 @@ export function StatsCard({
       </CardContent>
     </Card>
   );
+
+  return href ? <Link href={href}>{card}</Link> : card;
 }

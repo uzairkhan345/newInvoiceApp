@@ -22,25 +22,33 @@ export type InvoiceStatusFilterValue = (typeof FILTERS)[number]["value"];
  */
 export function InvoiceStatusFilter({
   active,
+  fromDashboard = false,
 }: {
   active: InvoiceStatusFilterValue;
+  fromDashboard?: boolean;
 }) {
   return (
     <div className="mb-4 inline-flex w-fit items-center gap-[3px] rounded-lg bg-muted p-[3px]">
-      {FILTERS.map((filter) => (
-        <Link
-          key={filter.value}
-          href={filter.value === "all" ? "/invoices" : `/invoices?status=${filter.value}`}
-          className={cn(
-            "rounded-md px-2.5 py-1 text-[13px] font-medium transition-colors",
-            active === filter.value
-              ? "bg-background text-foreground shadow-sm"
-              : "text-foreground/60 hover:text-foreground",
-          )}
-        >
-          {filter.label}
-        </Link>
-      ))}
+      {FILTERS.map((filter) => {
+        const params = new URLSearchParams();
+        if (filter.value !== "all") params.set("status", filter.value);
+        if (fromDashboard) params.set("from", "dashboard");
+        const query = params.toString();
+        return (
+          <Link
+            key={filter.value}
+            href={query ? `/invoices?${query}` : "/invoices"}
+            className={cn(
+              "rounded-md px-2.5 py-1 text-[13px] font-medium transition-colors",
+              active === filter.value
+                ? "bg-background text-foreground shadow-sm"
+                : "text-foreground/60 hover:text-foreground",
+            )}
+          >
+            {filter.label}
+          </Link>
+        );
+      })}
     </div>
   );
 }

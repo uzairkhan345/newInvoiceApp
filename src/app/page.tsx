@@ -110,12 +110,19 @@ export default async function DashboardPage() {
           label="Active Projects"
           value={activeProjectCount}
           icon={Briefcase}
+          href="/projects?from=dashboard"
         />
-        <StatsCard label="Draft Invoices" value={draftCount} icon={FileEdit} />
+        <StatsCard
+          label="Draft Invoices"
+          value={draftCount}
+          icon={FileEdit}
+          href="/invoices?status=draft&from=dashboard"
+        />
         <StatsCard
           label="Sent / Unpaid"
           value={sentCount}
           icon={Send}
+          href="/invoices?status=sent&from=dashboard"
           subtext={
             <>
               <div>
@@ -137,6 +144,7 @@ export default async function DashboardPage() {
           label="Overdue Invoices"
           value={overdueInvoices.length}
           icon={AlertTriangle}
+          href="/invoices?status=overdue&from=dashboard"
         />
       </div>
 

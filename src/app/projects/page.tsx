@@ -5,7 +5,12 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
 import { projectService } from "@/services/projectService";
 
-export default async function ProjectsPage() {
+export default async function ProjectsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string }>;
+}) {
+  const { from } = await searchParams;
   const projects = await projectService.list();
 
   return (
@@ -13,6 +18,8 @@ export default async function ProjectsPage() {
       <PageHeader
         title="Projects"
         subtitle="The bridge between a contractor and a client, and the home for per-engagement invoice settings."
+        backHref={from === "dashboard" ? "/" : undefined}
+        backLabel="Back to Dashboard"
         action={
           <Button nativeButton={false} render={<Link href="/projects/new" />}>
             Create Project
