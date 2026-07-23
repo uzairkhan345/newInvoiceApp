@@ -417,8 +417,7 @@ As the admin, I want to choose which AI provider/model is used and what happens 
 ### Acceptance Criteria
 
 - Supported providers: Google (Gemini), Anthropic (Claude), Groq.
-- **Resolved during blueprint planning** (`Docs/implementation_decisions.md` §22): the primary model, the ordered fallback sequence of alternate models/providers, and the required API key(s) are all configured via **environment variables**, not an in-app settings form.
-- The "Configure" entry point on the AI-assist panel (Stories 11.1–11.3) shows a **read-only** summary of the currently-configured provider/model/fallback sequence, sourced from env vars — changing it means editing env vars and redeploying/restarting.
+- **Resolved during blueprint planning** (`Docs/implementation_decisions.md` §22): the primary model, the ordered fallback sequence of alternate models/providers, and the required API key(s) were originally configured via **environment variables**, not an in-app settings form; the "Configure" entry point on the AI-assist panel (Stories 11.1–11.3) showed a **read-only** summary sourced from env vars. **Superseded by M16** (still within the tracked M0–M16 MVP build, not a post-MVP change): this is now a DB-backed, in-app `/settings` page instead — see `Docs/implementation_decisions.md` §19 for the current shape.
 - If every configured option is unavailable (or none are configured at all), all three creation forms above continue to work perfectly by hand — there is no error state that blocks manual use.
 
 *(Note: there is deliberately no Story 11.5 "Use AI Assist to Fill the Project Form" — this form is explicitly excluded, since it's the one form that would require resolving prompt text against existing parties/payment methods, which is out of scope for MVP.)*
