@@ -76,6 +76,7 @@ export function ProjectForm({
     defaultValues: {
       name: "",
       abbreviation: "",
+      serviceDescription: "",
       clientId: "",
       contractorId: "",
       preferredPaymentMethodId: "",
@@ -155,6 +156,18 @@ export function ProjectForm({
               id="abbreviation"
               placeholder="Auto-derived from name if left blank"
               {...register("abbreviation")}
+            />
+          </FormField>
+
+          <FormField
+            label="Service Description"
+            htmlFor="serviceDescription"
+            error={errors.serviceDescription?.message}
+          >
+            <Input
+              id="serviceDescription"
+              placeholder="Shown in the invoice Details section. Leave blank to use the project name."
+              {...register("serviceDescription")}
             />
           </FormField>
 

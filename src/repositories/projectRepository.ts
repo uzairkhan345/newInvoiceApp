@@ -17,6 +17,7 @@ import type {
 export type ProjectWriteInput = {
   name: string;
   abbreviation: string | null;
+  serviceDescription: string | null;
   clientId: string;
   contractorId: string;
   preferredPaymentMethodId: string | null;

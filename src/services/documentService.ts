@@ -29,7 +29,7 @@ export type InvoiceDocumentData = {
   status: InvoiceStatus;
   issueDate: Date;
   dueDate: Date;
-  projectName: string;
+  serviceDescription: string;
   contractor: PartySnapshotData;
   client: PartySnapshotData;
   paymentDetails: PaymentMethodField[];
@@ -55,6 +55,12 @@ export type InvoiceDocumentData = {
  * SENT, same as the live `PaymentMethod.fields` it was copied from); decrypted
  * here at render time only, via a pure function call, not a live query — this
  * mapper still never imports a repository.
+ * `serviceDescription` (Docs/feedback_backlog.md M23) is a deliberate
+ * exception to the "never live" framing above: like `Project.name` before
+ * it, it's read straight off the already-loaded `invoice.project` relation,
+ * not snapshotted onto Invoice — editing a Project's Service Description
+ * retroactively changes the Details text on every invoice under it,
+ * including already-SENT ones. Falls back to `Project.name` when unset.
  */
 function assembleInvoiceDocumentData(
   invoice: InvoiceWithItems,
@@ -67,7 +73,7 @@ function assembleInvoiceDocumentData(
     status: invoice.status,
     issueDate: invoice.issueDate,
     dueDate: invoice.dueDate,
-    projectName: invoice.project.name,
+    serviceDescription: invoice.project.serviceDescription ?? invoice.project.name,
     contractor: invoice.fromPartySnapshot as unknown as PartySnapshotData,
     client: invoice.toPartySnapshot as unknown as PartySnapshotData,
     paymentDetails: paymentDetails.map((field) => ({

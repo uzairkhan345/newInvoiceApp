@@ -63,6 +63,7 @@ function toWriteInput(input: ProjectInput): ProjectWriteInput {
   return {
     name: input.name,
     abbreviation,
+    serviceDescription: nullIfEmpty(input.serviceDescription),
     clientId: input.clientId,
     contractorId: input.contractorId,
     preferredPaymentMethodId: nullIfEmpty(input.preferredPaymentMethodId),

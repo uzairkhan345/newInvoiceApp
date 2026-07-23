@@ -63,7 +63,7 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
           </div>
           <div>
             <p className={styles.summaryLabel}>Details</p>
-            <p className={styles.summaryContent}>{data.projectName}</p>
+            <p className={styles.summaryContent}>{data.serviceDescription}</p>
           </div>
           <div>
             <p className={styles.summaryLabel}>Payment</p>

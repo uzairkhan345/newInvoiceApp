@@ -2,7 +2,7 @@
 
 This supersedes `ai_context/01_product_specs/invoice_application_single_tenant_spec.md`, which is stale and should not be used going forward (see `Docs/README.md`). It reflects the schema and workflows as finalized in the pre-implementation interrogation session (2026-07-08) — see `Docs/implementation_decisions.md` for the full rationale behind each change.
 
-A handful of small schema additions surfaced later, during execution-plan/blueprint work (see `Docs/execution_plan.md` and `Docs/implementation_decisions.md` §22) — `Project.Abbreviation` and `InvoiceItem.SortOrder` — are folded directly into the tables below, flagged inline.
+A handful of small schema additions surfaced later, during execution-plan/blueprint work (see `Docs/execution_plan.md` and `Docs/implementation_decisions.md` §22) — `Project.Abbreviation` and `InvoiceItem.SortOrder` — are folded directly into the tables below, flagged inline. One further post-MVP addition, `Project.ServiceDescription` (`Docs/feedback_backlog.md` M23), is folded in the same way, flagged inline — most other M17+ feedback-backlog schema changes (e.g. `Project.InvoicePeriodType`, M19.2a) are documented in `Docs/feedback_backlog.md` only, not mirrored here; this table stays the authoritative Project field reference regardless, so `ServiceDescription` is included for completeness even though the general post-MVP convention doesn't require it.
 
 This is a database-agnostic logical schema and set of operational workflows for a **single-tenant** invoice tracking application. `Identifier`, `Text`, `Decimal`, `List`, `Boolean`, `Timestamp`, and `Date` map to whatever the target database/ORM framework calls them.
 
@@ -56,6 +56,7 @@ The bridge between a contractor and a client, and the home for per-engagement co
 | `Id` | Identifier, Primary Key | Unique project identifier. |
 | `Name` | Text | Operational name of the engagement. |
 | `Abbreviation` | Text, Optional *(new — see `Docs/implementation_decisions.md` §22)* | Short code (e.g. `TQ`) sourcing the `{abbreviation}` placeholder in `InvoiceNumberFormat`. If left blank, auto-derived from the initials of `Name`. |
+| `ServiceDescription` | Text, Optional *(new — see `Docs/feedback_backlog.md` M23)* | Customer-facing text shown in the invoice document's "Details" summary column. If left blank, falls back to `Name`. Live-joined at invoice render time, never snapshotted onto `Invoice` — editing it retroactively changes the Details text on every invoice under the project, including already-SENT ones. |
 | `ClientId` | Identifier, Foreign Key → `Party.Id` | The paying party. Any party may fill this role. |
 | `ContractorId` | Identifier, Foreign Key → `Party.Id` | The billing party. Any party may fill this role — including the same party used as `ClientId` on a different project. |
 | `PreferredPaymentMethodId` | Identifier, Foreign Key, Optional → `PaymentMethod.Id` | Must belong to `ContractorId`. Defaults the payout channel for child invoices. |

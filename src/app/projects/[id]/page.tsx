@@ -70,6 +70,7 @@ export default async function ProjectDetailPage({
           defaultValues={{
             name: project.name,
             abbreviation: project.abbreviation ?? "",
+            serviceDescription: project.serviceDescription ?? "",
             clientId: project.clientId,
             contractorId: project.contractorId,
             preferredPaymentMethodId: project.preferredPaymentMethodId ?? "",

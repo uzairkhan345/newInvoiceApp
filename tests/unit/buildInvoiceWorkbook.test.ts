@@ -11,7 +11,7 @@ function fakeData(
     status: "SENT",
     issueDate: new Date("2026-01-01"),
     dueDate: new Date("2026-01-15"),
-    projectName: "Acme Ongoing Support",
+    serviceDescription: "Acme Ongoing Support",
     contractor: {
       name: "Acme Robotics",
       email: "billing@acme.example",

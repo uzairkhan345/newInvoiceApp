@@ -69,6 +69,10 @@ export function ProjectDetailCard({
       <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <DetailField label="Name" value={project.name} />
         <DetailField label="Abbreviation" value={project.abbreviation ?? "—"} />
+        <DetailField
+          label="Service Description"
+          value={project.serviceDescription ?? `${project.name} (from project name)`}
+        />
         <DetailField label="Contractor" value={project.contractor.name} />
         <DetailField label="Client" value={project.client.name} />
         <DetailField

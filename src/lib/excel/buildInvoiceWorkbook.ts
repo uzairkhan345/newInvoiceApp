@@ -117,7 +117,7 @@ export async function buildInvoiceWorkbook(
   ws.mergeCells(`E${summaryHeaderRow + 1}:F${row + 3}`);
   ws.getCell(`A${row}`).value = data.client.name;
   ws.getCell(`A${row}`).font = arial({ bold: true });
-  ws.getCell(`C${row}`).value = data.projectName;
+  ws.getCell(`C${row}`).value = data.serviceDescription;
   ws.getCell(`C${row}`).font = arial({});
   ws.getCell(`C${row}`).alignment = { wrapText: true, vertical: "top" };
   ws.getCell(`E${row}`).value = `Due date: ${formatDisplayDate(data.dueDate)}`;

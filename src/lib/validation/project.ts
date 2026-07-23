@@ -10,6 +10,7 @@ import { z } from "zod";
 export const projectSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   abbreviation: z.string().trim().optional().or(z.literal("")),
+  serviceDescription: z.string().trim().optional().or(z.literal("")),
   clientId: z.string().trim().min(1, "Select a client"),
   contractorId: z.string().trim().min(1, "Select a contractor"),
   preferredPaymentMethodId: z.string().trim().optional().or(z.literal("")),

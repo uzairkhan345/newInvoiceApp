@@ -69,6 +69,7 @@ function fakeInvoice(
     project: {
       id: "proj_1",
       name: "Acme Ongoing Support",
+      serviceDescription: "Software Development Services",
     } as InvoiceWithItems["project"],
     ...overrides,
   } satisfies InvoiceWithItems;
@@ -79,7 +80,7 @@ describe("documentService.assembleInvoiceDocumentData", () => {
     const data = documentService.assembleInvoiceDocumentData(fakeInvoice());
 
     expect(data.invoiceNumber).toBe("TQ-01");
-    expect(data.projectName).toBe("Acme Ongoing Support");
+    expect(data.serviceDescription).toBe("Software Development Services");
     expect(data.contractor).toMatchObject({ name: "Acme Robotics" });
     expect(data.client).toMatchObject({ name: "Client Co" });
     expect(data.paymentDetails).toEqual([
@@ -124,6 +125,19 @@ describe("documentService.assembleInvoiceDocumentData", () => {
       unitPrice: null,
       amount: "500",
     });
+  });
+
+  it("falls back to the project name when serviceDescription is unset (M23)", () => {
+    const data = documentService.assembleInvoiceDocumentData(
+      fakeInvoice({
+        project: {
+          id: "proj_1",
+          name: "Acme Ongoing Support",
+          serviceDescription: null,
+        } as InvoiceWithItems["project"],
+      }),
+    );
+    expect(data.serviceDescription).toBe("Acme Ongoing Support");
   });
 
   it("returns null itemsNote/bottomNote when neither is set", () => {
