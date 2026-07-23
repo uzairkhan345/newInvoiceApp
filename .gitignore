@@ -47,3 +47,4 @@ next-env.d.ts
 # never to be preserved/committed.
 /Data_ingestion
 /scripts/ingestDataIngestionInvoices.ts
+/scripts/ingest[redacted]G19.ts
