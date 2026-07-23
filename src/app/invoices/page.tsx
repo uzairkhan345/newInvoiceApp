@@ -19,7 +19,12 @@ import { toInvoiceTableRow } from "@/lib/invoiceTableRow";
 
 /** Docs/feedback_backlog.md M24 — unrecognized/missing `?status=` falls back to "all". */
 function resolveFilter(status: string | undefined): InvoiceStatusFilterValue {
-  if (status === "overdue" || status === "sent" || status === "draft") {
+  if (
+    status === "overdue" ||
+    status === "sent" ||
+    status === "paid" ||
+    status === "draft"
+  ) {
     return status;
   }
   return "all";
@@ -41,6 +46,10 @@ const EMPTY_STATE_COPY: Record<
     title: "No sent invoices",
     description: "Invoices appear here once they've been sent.",
   },
+  paid: {
+    title: "No paid invoices",
+    description: "Invoices appear here once they've been marked paid.",
+  },
   draft: {
     title: "No draft invoices",
     description: "Invoices appear here while they're still being prepared.",
@@ -59,9 +68,11 @@ export default async function InvoicesPage({
     ? invoiceService.listOverdue()
     : filter === "sent"
       ? invoiceService.listByStatus("SENT")
-      : filter === "draft"
-        ? invoiceService.listByStatus("DRAFT")
-        : invoiceService.list());
+      : filter === "paid"
+        ? invoiceService.listByStatus("PAID")
+        : filter === "draft"
+          ? invoiceService.listByStatus("DRAFT")
+          : invoiceService.list());
 
   const emptyCopy = EMPTY_STATE_COPY[filter];
 

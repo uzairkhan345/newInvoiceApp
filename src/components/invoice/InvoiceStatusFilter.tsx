@@ -5,6 +5,7 @@ const FILTERS = [
   { value: "all", label: "All" },
   { value: "overdue", label: "Overdue" },
   { value: "sent", label: "Sent" },
+  { value: "paid", label: "Paid" },
   { value: "draft", label: "Draft" },
 ] as const;
 
