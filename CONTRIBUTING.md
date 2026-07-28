@@ -16,8 +16,7 @@ pnpm lint
 pnpm test
 ```
 
-> [!IMPORTANT]
-> `pnpm test` includes integration tests that run **against the database in `DATABASE_URL`**, creating and deleting rows (they clean up after themselves, but a failed run can leave stragglers). Use a disposable development database — the `docker compose` one is exactly that. Never point `DATABASE_URL` at data you care about while running tests.
+`pnpm test` includes integration tests that create and delete real rows — they run against a **dedicated test database**, never your development one. The `pretest` hook creates and migrates it automatically (`TEST_DATABASE_URL`, defaulting to `newinvoice_test` on the same Docker Postgres server). If you override `TEST_DATABASE_URL`, it must differ from `DATABASE_URL` — the suite refuses to start otherwise.
 
 A few project conventions worth knowing:
 

@@ -19,6 +19,7 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "pretest": "tsx scripts/prepareTestDb.ts",
     "test": "vitest run",
     "postinstall": "prisma generate"
   },

@@ -52,8 +52,7 @@ Open `/settings`, add an API key for Google, Anthropic, and/or Groq, and list th
 | `pnpm typecheck` | `tsc --noEmit` |
 | `pnpm lint` / `pnpm format` | ESLint / Prettier |
 
-> [!IMPORTANT]
-> **Integration tests run against the database in `DATABASE_URL`** and create/delete rows as they go. Point it at a disposable development database (the Docker one is fine) — never at a database whose data you care about.
+Integration tests run against a **dedicated test database** (`TEST_DATABASE_URL`, defaulting to `newinvoice_test` on the same Docker Postgres server) — created and migrated automatically before each run. They never touch the development database in `DATABASE_URL`.
 
 ## Architecture in brief
 
