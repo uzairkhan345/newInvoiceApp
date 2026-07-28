@@ -35,12 +35,12 @@ export type InvoiceFormProjectInfo = {
   clientName: string;
   preferredPaymentMethodLabel: string | null;
   displayCurrency: DisplayCurrency;
-  /** Docs/feedback_backlog.md M26 — gates the Converted Total field (DUAL only). */
+  /** M26 — gates the Converted Total field (DUAL only). */
   currencyMode: ProjectCurrencyMode;
   /** M26 — the invoice's actual resolved currency: always USD for DUAL, `displayCurrency` for SINGLE. */
   currency: string;
   invoiceNumberFormat: string;
-  /** Docs/feedback_backlog.md M19.2b — drives the create form's live due-date recompute only; unused in edit mode. */
+  /** M19.2b — drives the create form's live due-date recompute only; unused in edit mode. */
   invoicePeriodType: InvoicePeriodType | null;
 };
 
@@ -122,7 +122,7 @@ export function InvoiceForm({
   project: InvoiceFormProjectInfo;
   defaultValues?: Partial<InvoiceInput>;
   aiConfig: AiAssistConfigSummary;
-  /** Docs/feedback_backlog.md M18 (Autofill) — the project's most recent invoice's items/notes, pre-fetched server-side; create mode only, null when the project has no prior invoice. */
+  /** M18 (Autofill) — the project's most recent invoice's items/notes, pre-fetched server-side; create mode only, null when the project has no prior invoice. */
   autofillData?: InvoiceAutofillData | null;
 }) {
   const router = useRouter();
@@ -161,7 +161,7 @@ export function InvoiceForm({
   });
 
   /**
-   * Docs/feedback_backlog.md M19.2b — create-form only (edit mode leaves an
+   * M19.2b — create-form only (edit mode leaves an
    * existing draft's dueDate untouched, since there's no way to tell whether
    * a loaded value was auto-computed or deliberately hand-set). Tracks the
    * last auto-computed value so any divergence — typed by hand, or set by an
@@ -186,7 +186,7 @@ export function InvoiceForm({
     setValue("dueDate", computed, { shouldValidate: true });
   }, [issueDate, mode, project.invoicePeriodType, getValues, setValue]);
 
-  /** Docs/feedback_backlog.md M18 (Autofill) — items/notes only; invoiceNumber/dates/convertedTotal are left exactly as they are. */
+  /** M18 (Autofill) — items/notes only; invoiceNumber/dates/convertedTotal are left exactly as they are. */
   function handleAutofill() {
     if (!autofillData) return;
     reset({
@@ -198,7 +198,7 @@ export function InvoiceForm({
     toast.success("Filled in from the last invoice — review before saving.");
   }
 
-  /** Docs/feedback_backlog.md M18 (AI-assist context) — read fresh at send-time, not memoized, so it always reflects the form's current values. */
+  /** M18 (AI-assist context) — read fresh at send-time, not memoized, so it always reflects the form's current values. */
   function getAiContext(): InvoiceAiContext {
     return {
       project: {

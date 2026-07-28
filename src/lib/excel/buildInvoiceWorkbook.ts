@@ -5,15 +5,14 @@ import { addressLines } from "@/lib/partyAddress";
 import type { InvoiceDocumentData } from "@/services/documentService";
 
 /**
- * Docs/execution_plan.md §11 — ported from
- * ai_context/03_document_generation_reference/generate_invoice.py
- * (layout/formatting reference only, per Docs/implementation_decisions.md
- * §12.1 — never reused as runtime code). Column widths, the separator bar,
- * and the BILL TO/DETAILS/PAYMENT structure follow that reference; exact
- * row numbers are NOT hardcoded to match it, since the reference assumed a
- * fixed 1-2 line address and a phone field we don't have — this builder
- * advances a row cursor instead, the same adaptation InvoiceDocument.tsx
- * already made for the on-screen preview.
+ * Excel workbook builder — layout matched against the reference invoice
+ * documents described in Docs/implementation_decisions.md §12.1 (no
+ * external reference artifact is used at runtime). Column widths, the
+ * separator bar, and the BILL TO/DETAILS/PAYMENT structure follow that
+ * reference; exact row numbers are NOT hardcoded to match it, since the
+ * reference assumed a fixed 1-2 line address and a phone field we don't
+ * have — this builder advances a row cursor instead, the same adaptation
+ * InvoiceDocument.tsx already made for the on-screen preview.
  *
  * Sources exclusively from `InvoiceDocumentData` (documentService's own
  * output) — never a live Party/PaymentMethod query, so a SENT invoice's

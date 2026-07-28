@@ -18,7 +18,7 @@
  * accepted consequence of not having a real history table, not a bug.
  */
 
-/** Docs/feedback_backlog.md M27 — "stale draft" threshold, deliberately a single named constant so it's changeable later without a design decision. */
+/** M27 — "stale draft" threshold, deliberately a single named constant so it's changeable later without a design decision. */
 export const STALE_DRAFT_DAYS = 1;
 
 export const TREND_WINDOW_DAYS = 30;

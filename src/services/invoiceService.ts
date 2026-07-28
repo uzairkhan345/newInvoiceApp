@@ -53,7 +53,7 @@ export class InvoiceNotDraftError extends Error {
   }
 }
 
-/** Docs/execution_plan.md §9 point 4 — friendly message for a manual-edit collision. */
+/** Friendly message for a manual-edit collision on the per-project unique invoice number. */
 export class DuplicateInvoiceNumberError extends Error {
   constructor() {
     super(
@@ -185,7 +185,7 @@ function nullIfBlank(value: string | undefined): string | null {
 }
 
 /**
- * Docs/feedback_backlog.md M26 — the currency an invoice's `subtotal`/
+ * M26 — the currency an invoice's `subtotal`/
  * `total`/item rates are actually denominated in: always USD for a `DUAL`-
  * mode project (its core amounts never leave USD, only the optional
  * converted total does), the project's own `displayCurrency` for a `SINGLE`-
@@ -244,7 +244,7 @@ function listByStatus(status: InvoiceStatus): Promise<InvoiceListItem[]> {
   return invoiceRepository.findMany({ status });
 }
 
-/** Docs/feedback_backlog.md M19.3a — invoices-for-this-project section on the Project detail page. */
+/** M19.3a — invoices-for-this-project section on the Project detail page. */
 function listByProject(projectId: string): Promise<InvoiceListItem[]> {
   return invoiceRepository.findMany({ projectId });
 }
@@ -259,7 +259,7 @@ function sumSubtotalByStatus(status: InvoiceStatus): Promise<Prisma.Decimal> {
   return invoiceRepository.sumSubtotalByStatus(status);
 }
 
-/** Dashboard — Docs/feedback_backlog.md M26's per-currency breakdown lines. */
+/** Dashboard — M26's per-currency breakdown lines. */
 function sumSubtotalByStatusGroupedByNonUsdCurrency(
   status: InvoiceStatus,
 ): Promise<{ currency: string; total: Prisma.Decimal }[]> {
@@ -351,7 +351,7 @@ function getById(id: string): Promise<InvoiceWithItems | null> {
  * Computes the suggested invoice number shown pre-filled on the create form
  * (Story 4.1). Generation happens once, here — not inside createDraft — since
  * the number must already be visible before the admin's first save, and is a
- * plain editable field from then on (Docs/execution_plan.md §9 point 3).
+ * plain editable field from then on.
  */
 async function previewNextInvoiceNumber(projectId: string): Promise<string> {
   const project = await loadProjectOrThrow(projectId);
@@ -380,10 +380,10 @@ export type InvoiceAutofillData = {
 };
 
 /**
- * Docs/feedback_backlog.md M18 (Autofill from last invoice) — copies only
+ * M18 (Autofill from last invoice) — copies only
  * line items and notes from the project's most recently issued invoice
- * (any status); never invoiceNumber/dates/convertedTotal (Docs/feedback_backlog.md's
- * grilled decision — those would either collide or paste stale values).
+ * (any status); never invoiceNumber/dates/convertedTotal (
+ * a deliberate scope decision — those would either collide or paste stale values).
  * Same string-mapping convention as the edit form's own defaultValues
  * (`/invoices/[id]/page.tsx`).
  */
@@ -438,7 +438,7 @@ async function updateDraft(id: string, input: InvoiceInput): Promise<Invoice> {
 }
 
 /**
- * Docs/execution_plan.md §8 / Docs/implementation_decisions.md §10 — the
+ * / Docs/implementation_decisions.md §10 — the
  * only authoritative transition rules; enforced here regardless of what the
  * UI sent, per Story 5.5.
  */

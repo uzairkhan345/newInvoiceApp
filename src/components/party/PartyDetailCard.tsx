@@ -19,7 +19,7 @@ const TYPE_LABELS: Record<Party["type"], string> = {
 
 /**
  * Read-only view of a Party — the default landing state at /parties/[id],
- * per Docs/execution_plan.md §16 M10.5. Mirrors every field PartyForm edits.
+ * per M10.5. Mirrors every field PartyForm edits.
  */
 export function PartyDetailCard({
   party,

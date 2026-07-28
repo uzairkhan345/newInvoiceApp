@@ -29,7 +29,7 @@ const partyTypeLabels: Record<PartyInput["type"], string> = {
 };
 
 /**
- * Docs/feedback_backlog.md M17.3 — builds a Party-shaped object from
+ * M17.3 — builds a Party-shaped object from
  * validated input + a freshly-issued id, mirroring partyService's
  * null-normalization, so an embedded `onCreated` caller can use it without a
  * round-trip refetch.
@@ -67,7 +67,7 @@ export function PartyForm({
   defaultValues?: Partial<PartyInput>;
   aiConfig?: AiAssistConfigSummary;
   /**
-   * Docs/feedback_backlog.md M17.3 — when provided, called with the created
+   * M17.3 — when provided, called with the created
    * Party instead of navigating to its detail page. Lets this form be
    * embedded in a modal (e.g. Project's inline "create new party" escape
    * hatch) without leaving the page underneath it.

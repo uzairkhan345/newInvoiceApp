@@ -7,7 +7,7 @@ import type {
 
 /**
  * Thin Prisma wrappers only — no validation, no business rules
- * (Docs/execution_plan.md §6). `fields` is the ordered {key,label,value}[]
+ *. `fields` is the ordered {key,label,value}[]
  * array (Docs/product_spec.md §2) — array position IS the persisted order.
  */
 export type PaymentMethodField = { key: string; label: string; value: string };
@@ -87,7 +87,7 @@ function unsetDefaultForParty(
  * Live-reference check, same pattern as
  * partyRepository.isReferencedByAnyProject — queries Project directly. Was
  * already fully live as of M3 (before projectRepository existed); stays a
- * direct query now that it does, for the same reason (Docs/execution_plan.md
+ * direct query now that it does, for the same reason (
  * §16 M4).
  */
 function isReferencedAsPreferredPaymentMethod(

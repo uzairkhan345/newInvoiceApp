@@ -31,7 +31,7 @@ export type StatTrendProps = {
  * design_handoff_dashboard_v2/README.md §2. Counts only; any dollar figure
  * is secondary subtext, never the headline metric. `trend` is optional so
  * this can still render a plain stat card without a trend indicator.
- * `href` (Docs/feedback_backlog.md — dashboard card navigation) makes the
+ * `href` makes the
  * whole card a link into the matching filtered list.
  */
 export function StatsCard({

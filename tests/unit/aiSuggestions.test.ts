@@ -79,7 +79,7 @@ describe("aiSuggestions schemas", () => {
   });
 });
 
-describe("invoiceAssistResponseSchema (Docs/feedback_backlog.md M18 — context + clarification)", () => {
+describe("invoiceAssistResponseSchema", () => {
   it("accepts a suggestion-shaped response", () => {
     const result = invoiceAssistResponseSchema.safeParse({
       responseType: "suggestion",

@@ -7,7 +7,7 @@ import type {
 export type { ResolvedAiTarget, AiAssistConfigSummary };
 
 /**
- * DB-backed (M16, Docs/execution_plan.md) — supersedes M11's
+ * DB-backed — supersedes M11's
  * environment-variables-only resolution (`implementation_decisions.md` §22
  * addendum). Thin re-exports over `aiProviderSettingsService` so
  * `fallbackRunner.ts` and every form page keep importing from this same

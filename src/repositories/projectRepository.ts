@@ -11,7 +11,7 @@ import type {
 
 /**
  * Thin Prisma wrappers only — no validation, no business rules
- * (Docs/execution_plan.md §6). `preferredPaymentMethodId: null` explicitly
+ *. `preferredPaymentMethodId: null` explicitly
  * clears the field on update, matching the null-normalization pattern used by
  * partyRepository/paymentMethodRepository.
  */
@@ -35,8 +35,11 @@ export type ProjectWithRelations = Project & {
   preferredPaymentMethod: PaymentMethod | null;
 };
 
-function findMany(): Promise<ProjectWithRelations[]> {
+function findMany(filters?: {
+  status?: ProjectStatus;
+}): Promise<ProjectWithRelations[]> {
   return prisma.project.findMany({
+    where: filters?.status ? { status: filters.status } : undefined,
     include: { client: true, contractor: true, preferredPaymentMethod: true },
     orderBy: { name: "asc" },
   });
@@ -99,7 +102,7 @@ function findRecentlyCreated(limit: number): Promise<ProjectWithRelations[]> {
 }
 
 /**
- * Docs/feedback_backlog.md M25 — Party detail page's "used by" tags per
+ * M25 — Party detail page's "used by" tags per
  * payment method. Minimal projection (no relations needed) since the caller
  * already knows the owning party; scoped to ACTIVE projects only, same
  * reasoning as findMissingPreferredPaymentMethod (an ARCHIVED project isn't

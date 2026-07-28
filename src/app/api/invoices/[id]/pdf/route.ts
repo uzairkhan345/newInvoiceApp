@@ -3,7 +3,7 @@ import { invoiceService } from "@/services/invoiceService";
 import { launchBrowser } from "@/lib/pdf/adapter";
 
 /**
- * Docs/execution_plan.md §12 — navigates the shared /invoices/[id]/print
+ * Navigates the shared /invoices/[id]/print
  * route (the same markup/data as the on-screen preview) via the deployment
  * adapter, streams the buffer back; nothing is ever written to disk.
  */

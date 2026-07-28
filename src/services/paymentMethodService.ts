@@ -22,7 +22,7 @@ export class PaymentMethodDeletionBlockedError extends Error {
 }
 
 /**
- * Docs/feedback_backlog.md M17.5 — only `value` is encrypted (the actual
+ * M17.5 — only `value` is encrypted (the actual
  * banking detail); `key`/`label` are just field labels like "Account Number"
  * and aren't sensitive, and encrypting them would break nothing but gain
  * nothing either.

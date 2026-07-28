@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import type { ResolvedAiTarget } from "@/lib/ai-providers/config";
 
-// M16 (Docs/execution_plan.md) moved config from env vars to a DB-backed
+// M16 moved config from env vars to a DB-backed
 // service — resolveAiAssistSequence() is now a thin async wrapper over
 // aiProviderSettingsService (covered by its own DB-backed integration test,
 // tests/integration/aiProviderSettingsService.test.ts). Here it's mocked

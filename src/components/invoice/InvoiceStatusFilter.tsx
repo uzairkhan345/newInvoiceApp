@@ -12,7 +12,7 @@ const FILTERS = [
 export type InvoiceStatusFilterValue = (typeof FILTERS)[number]["value"];
 
 /**
- * Docs/feedback_backlog.md M24, restyled as pill chips by M27
+ * M24, restyled as pill chips by M27
  * (design_handoff_dashboard_v2/README.md §3) — `/invoices?status=...`
  * (status omitted means "all"). "Overdue" and "Sent" deliberately overlap
  * (an overdue invoice is still SENT) — same overlapping treatment the

@@ -20,7 +20,7 @@ import { PartyForm } from "@/components/party/PartyForm";
 import type { Party } from "@/generated/prisma/client";
 
 /**
- * Docs/feedback_backlog.md M17.3 — the inline "create new party" escape
+ * M17.3 — the inline "create new party" escape
  * hatch embeds the full PartyForm (identical fields to the standalone
  * /parties/new page, including address) in embedded/AI-assist-free mode, so
  * a party created here is never structurally incomplete and the Project

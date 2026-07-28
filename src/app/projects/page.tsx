@@ -44,13 +44,11 @@ export default async function ProjectsPage({
   const filter = resolveFilter(status);
   const cameFromDashboard = from === "dashboard";
 
-  const allProjects = await projectService.list();
-  const projects =
+  const projects = await projectService.list(
     filter === "all"
-      ? allProjects
-      : allProjects.filter(
-          (project) => project.status === filter.toUpperCase(),
-        );
+      ? undefined
+      : { status: filter === "active" ? "ACTIVE" : "ARCHIVED" },
+  );
 
   const emptyCopy = EMPTY_STATE_COPY[filter];
 

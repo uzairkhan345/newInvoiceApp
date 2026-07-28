@@ -1,7 +1,7 @@
 /**
- * Docs/execution_plan.md §9 — the two supported {date} token formats for
+ * The two supported {date} token formats for
  * invoice numbers. There is no separate Project.dateFormat schema column
- * (see Docs/execution_plan.md §9's M5 note) — the format is chosen inline in
+ * — instead, the format is chosen inline in
  * the invoiceNumberFormat string itself via `{date:MM-DD-YYYY}` /
  * `{date:DD-MM-YYYY}`, defaulting to MM-DD-YYYY for a bare `{date}`.
  */
@@ -35,7 +35,7 @@ export function formatDisplayDate(date: Date): string {
 }
 
 /**
- * Docs/execution_plan.md §8 — "today" as a UTC-midnight Date, matching how
+ * "today" as a UTC-midnight Date, matching how
  * `@db.Date` columns are stored/read. Shared by isOverdue and, from M10, the
  * invoiceRepository.findOverdueCandidates query so both use one definition
  * of "past due" instead of two copies of the same date math.
@@ -48,7 +48,7 @@ export function startOfTodayUTC(): Date {
 }
 
 /**
- * Docs/execution_plan.md §8 — OVERDUE is `status === SENT && dueDate < today`,
+ * OVERDUE is `status === SENT && dueDate < today`,
  * compared as UTC dates rather than against the server's local wall-clock time.
  */
 export function isOverdue(dueDate: Date): boolean {

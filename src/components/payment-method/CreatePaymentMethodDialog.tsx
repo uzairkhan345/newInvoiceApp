@@ -11,13 +11,13 @@ import { PaymentMethodForm } from "@/components/payment-method/PaymentMethodForm
 import type { PaymentMethod } from "@/generated/prisma/client";
 
 /**
- * Docs/feedback_backlog.md M17.4 — lets an admin add a contractor's first
+ * M17.4 — lets an admin add a contractor's first
  * payment method without leaving the Project page. Embeds the full
  * PaymentMethodForm (identical fields to the standalone
  * /parties/[id]/payment-methods/new page) in embedded/AI-assist-free mode.
  * Only rendered while `open`, so each opening starts from a fresh, blank
  * form. Contractor-only by construction — this dialog is only ever wired up
- * from ProjectForm's Contractor field, never Client (Docs/feedback_backlog.md
+ * from ProjectForm's Contractor field, never Client (
  * M20 confirmed client parties never reference a payment method).
  */
 export function CreatePaymentMethodDialog({

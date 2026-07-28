@@ -10,8 +10,7 @@ import type {
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
 
 /**
- * Thin Prisma wrappers only — no validation, no business rules
- * (Docs/execution_plan.md §6).
+ * Thin Prisma wrappers only — no validation, no business rules.
  */
 export type InvoiceItemWriteInput = {
   description: string;
@@ -81,7 +80,7 @@ function countByStatus(status: InvoiceStatus): Promise<number> {
 
 /**
  * Dashboard (M10) — USD-only outstanding subtext (Docs/ui_design_guide.md
- * §16); subtotal === total, no tax. Docs/feedback_backlog.md M26 — scoped to
+ * §16); subtotal === total, no tax. M26 — scoped to
  * `currency: "USD"` explicitly, not every invoice: a `SINGLE`-mode non-USD
  * invoice's `subtotal` is genuinely denominated in that other currency, and
  * blending it into a raw sum here would silently mix currencies. `DUAL`-mode
@@ -99,7 +98,7 @@ async function sumSubtotalByStatus(
 }
 
 /**
- * Dashboard (M10) — Docs/feedback_backlog.md M26. The non-USD counterpart to
+ * Dashboard (M10) — M26. The non-USD counterpart to
  * `sumSubtotalByStatus` above: one same-currency grouped sum per non-USD
  * currency actually present among invoices of this status, rendered as
  * secondary breakdown lines rather than blended into the primary USD figure.
@@ -226,9 +225,9 @@ function findById(id: string): Promise<InvoiceWithItems | null> {
 }
 
 /**
- * Docs/feedback_backlog.md M18 (Autofill from last invoice) — the most
+ * M18 (Autofill from last invoice) — the most
  * recently *issued* invoice for a project, any status (a stray DRAFT/VOID
- * still counts as "last time" — Docs/feedback_backlog.md's grilled decision).
+ * still counts as "last time" — a deliberate scope decision).
  * Includes items since Autofill copies them; no party/payment-method
  * relations needed here (unlike findById), so a lighter include than that.
  */
@@ -271,7 +270,7 @@ function createWithItems(data: InvoiceWriteInput): Promise<Invoice> {
 }
 
 /**
- * Docs/execution_plan.md §6 — delete-and-recreate every InvoiceItem row on
+ * Delete-and-recreate every InvoiceItem row on
  * each DRAFT save rather than diffing; items have no identity referenced
  * elsewhere, so this is simpler and equally correct. Wrapped in a
  * transaction since it's two dependent writes, unlike createWithItems's

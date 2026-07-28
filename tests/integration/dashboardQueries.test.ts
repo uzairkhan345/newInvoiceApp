@@ -11,7 +11,7 @@ import type { PartyInput } from "@/lib/validation/party";
 import type { PaymentMethodInput } from "@/lib/validation/paymentMethod";
 
 /**
- * Docs/execution_plan.md §16 M10 — countByStatus/sumSubtotalByStatus exclude
+ * M10 — countByStatus/sumSubtotalByStatus exclude
  * VOID correctly, findOverdueCandidates returns only SENT + past-due, and
  * findMissingPreferredPaymentMethod returns the correct (ACTIVE-only) set.
  * These aggregates run over the whole table (seed data included), so every

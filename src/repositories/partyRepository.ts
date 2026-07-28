@@ -3,7 +3,7 @@ import type { Party, PartyType } from "@/generated/prisma/client";
 
 /**
  * Thin Prisma wrappers only — no validation, no business rules
- * (Docs/execution_plan.md §6). Optional fields are `string | null` (never
+ *. Optional fields are `string | null` (never
  * `undefined`) so callers always explicitly state intent: `null` clears a
  * field on update, a value sets it. Undefined would be silently ignored by
  * Prisma's update — see partyService for where the null-normalization happens.

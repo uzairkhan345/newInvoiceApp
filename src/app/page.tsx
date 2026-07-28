@@ -15,8 +15,8 @@ import { daysSince } from "@/lib/dashboardTrend";
  * §2, Docs/ui_design_guide.md §16), superseding the original M10 layout. Counts
  * only in the stats row (no revenue framing); VOID is excluded from every
  * count/total by construction (never queried for here). The primary
- * "Sent/Unpaid" dollar figure is USD-only by construction (Docs/feedback_backlog.md
- * M26) — a non-USD SINGLE-currency invoice is never blended into it, since
+ * "Sent/Unpaid" dollar figure is USD-only by construction (M26) — a
+ * non-USD SINGLE-currency invoice is never blended into it, since
  * this app has no live/stored FX rate to normalize with; it instead gets its
  * own same-currency breakdown line below the primary figure. Stat-card trends/
  * sparklines are best-effort approximations (no history/audit table exists) —
@@ -136,7 +136,7 @@ export default async function DashboardPage() {
               <div>
                 {formatCurrency(sentOutstanding.toString(), "USD")} outstanding
               </div>
-              {/* Docs/feedback_backlog.md M26 — non-USD SINGLE-mode invoices are
+              {/* M26 — non-USD SINGLE-mode invoices are
                   excluded from the USD sum above (blending currencies would be
                   wrong); each currency actually present gets its own line here
                   instead of being silently dropped. */}

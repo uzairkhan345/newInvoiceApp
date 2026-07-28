@@ -1,7 +1,7 @@
 import type { InvoicePeriodType } from "@/generated/prisma/client";
 
 /**
- * Docs/feedback_backlog.md M19.2a — labels for the ProjectForm dropdown and
+ * M19.2a — labels for the ProjectForm dropdown and
  * ProjectDetailCard's read-only display. Each value's math (see
  * computeDueDate) is fixed and not user-configurable.
  */
@@ -17,7 +17,7 @@ function daysInUtcMonth(year: number, monthIndex0: number): number {
 }
 
 /**
- * Docs/feedback_backlog.md M19.2b — computes a period-based due date from an
+ * M19.2b — computes a period-based due date from an
  * issue date. WEEKLY/SEMI_MONTHLY are flat day-adds (+7/+15); MONTHLY is
  * calendar-month arithmetic that clamps to the target month's last day
  * (e.g. Jan 31 -> Feb 28/29) rather than overflowing into the month after

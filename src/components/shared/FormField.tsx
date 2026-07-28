@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 /**
  * Docs/ui_design_guide.md §10 — label/input/error shape shared by every form.
  * Not a shadcn primitive; shadcn's `base-nova` preset ships no `Form`
- * component under this registry (see Docs/execution_plan.md §7 M0 note), so
+ * component under this registry, so
  * this is the reusable wiring point for react-hook-form + zod across forms.
  */
 export function FormField({

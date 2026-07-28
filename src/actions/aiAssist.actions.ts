@@ -16,7 +16,7 @@ const requestSchema = z.object({
 });
 
 /**
- * Docs/execution_plan.md §1 — the one deliberate exception besides the two
+ * The one deliberate exception besides the two
  * file-download Route Handlers: AI-assist stays a Server Action (invoked via
  * startTransition from AIAssistPanel) rather than a fetch route, keeping one
  * mutation pattern. Never throws to the client — provider/parse failures are
@@ -25,7 +25,7 @@ const requestSchema = z.object({
  * (non-blocking) result, not an exception.
  *
  * Party/Payment Method only — Invoice goes through `runInvoiceAiAssistAction`
- * below (Docs/feedback_backlog.md M18: context + clarification loop).
+ * below.
  */
 export async function runAiAssistAction(
   formType: "party" | "paymentMethod",
@@ -57,7 +57,7 @@ export type InvoiceAiAssistResult =
   | { responseType: "clarification"; question: string };
 
 /**
- * Docs/feedback_backlog.md M18 — the invoice-only path: threads project +
+ * M18 — the invoice-only path: threads project +
  * current-form-value context into the prompt and can return a clarifying
  * question instead of a suggestion. `promptText` is either the user's fresh
  * prompt, or — when continuing a clarification round — the whole

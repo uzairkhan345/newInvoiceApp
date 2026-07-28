@@ -2,7 +2,7 @@
  * Docs/ui_design_guide.md §15 — exact required copy. Renders for SENT/PAID/VOID;
  * zero edit controls exist anywhere on the page in that state.
  *
- * `print:hidden` (Docs/execution_plan.md §12, M9): this is an internal
+ * `print:hidden`: this is an internal
  * admin-facing note about the app's own edit workflow, not part of the
  * invoice document itself — it must not appear on an actual downloaded
  * PDF sent to a client. Hiding it under print media also fixes a real

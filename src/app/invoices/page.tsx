@@ -12,13 +12,13 @@ import { invoiceService } from "@/services/invoiceService";
 import { toInvoiceTableRow } from "@/lib/invoiceTableRow";
 
 /**
- * Docs/execution_plan.md §16 M5 — DRAFT/SENT/PAID/VOID all listed, no
- * status-change buttons yet (M6). Status renders as a plain, uncolored
- * Badge here deliberately — the 5-variant lifecycle-color StatusBadge
- * component is explicitly M6's job (Docs/execution_plan.md §11).
+ * Top-level invoices list — every invoice across every project, newest
+ * first, filterable by a `?status=` search param driving the chip row
+ * (Docs/ui_design_guide.md §4). "Overdue" and "Sent" deliberately overlap:
+ * an overdue invoice is still SENT under the hood.
  */
 
-/** Docs/feedback_backlog.md M24 — unrecognized/missing `?status=` falls back to "all". M27 added "void". */
+/** Unrecognized/missing `?status=` falls back to "all". */
 function resolveFilter(status: string | undefined): InvoiceStatusFilterValue {
   if (
     status === "overdue" ||

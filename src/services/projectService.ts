@@ -98,8 +98,10 @@ async function assertPreferredPaymentMethodBelongsToContractor(
   }
 }
 
-function list(): Promise<ProjectWithRelations[]> {
-  return projectRepository.findMany();
+function list(filters?: {
+  status?: "ACTIVE" | "ARCHIVED";
+}): Promise<ProjectWithRelations[]> {
+  return projectRepository.findMany(filters);
 }
 
 /** Dashboard (M10) — Active Projects stat. */
@@ -140,7 +142,7 @@ function listRecentlyCreated(limit: number): Promise<ProjectWithRelations[]> {
 export type ProjectRef = { id: string; name: string };
 
 /**
- * Docs/feedback_backlog.md M25 — Party detail page's "used by" tags per
+ * M25 — Party detail page's "used by" tags per
  * payment method (clickable through to each project's detail page, so `id`
  * is carried alongside `name`). Returns { [paymentMethodId]: ProjectRef[] },
  * grouping server-side so the page/component don't each need their own reduce.

@@ -1,15 +1,15 @@
-// Invoice application schema — Docs/product_spec.md §1, Docs/execution_plan.md §3.
-// Pinned to Prisma 6.x conventions (see Docs/execution_plan.md §13) — datasource url
+// Invoice application schema — Docs/product_spec.md §1, 
+// Pinned to Prisma 6.x conventions — datasource url
 // stays in schema.prisma via env(), not moved to prisma.config.ts's adapter pattern.
 
 generator client {
   provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  output = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url = env("DATABASE_URL")
 }
 
 enum PartyType {
@@ -35,7 +35,7 @@ enum AiProviderName {
   groq
 }
 
-/// Docs/feedback_backlog.md M26 — expanded from USD/AUD/GBP to add NZD/AED/
+/// M26 — expanded from USD/AUD/GBP to add NZD/AED/
 /// PKR/SAR (future-proofing per the user, no concrete need yet beyond the
 /// original three). Used both for `Project.displayCurrency` (whose meaning
 /// now depends on `ProjectCurrencyMode`, see below) and `Invoice.currency`.
@@ -49,7 +49,7 @@ enum DisplayCurrency {
   SAR
 }
 
-/// Docs/feedback_backlog.md M26. `SINGLE` (default): `Project.displayCurrency`
+/// M26. `SINGLE` (default): `Project.displayCurrency`
 /// is the whole invoice's one and only currency (may be USD — every project
 /// created before this milestone is `SINGLE`+`USD`, i.e. unchanged behavior).
 /// `DUAL`: today's original behavior — every core amount is USD,
@@ -68,7 +68,7 @@ enum InvoiceStatus {
   VOID
 }
 
-/// Docs/feedback_backlog.md M19.2a — optional per-project invoice period,
+/// M19.2a — optional per-project invoice period,
 /// used only to compute the create form's default due date (M19.2b). Each
 /// value has fixed math: WEEKLY/SEMI_MONTHLY are flat day-adds (+7/+15),
 /// MONTHLY is calendar-month arithmetic (+1 month), never a flat 30 days.
@@ -82,37 +82,37 @@ enum InvoicePeriodType {
 /// Project's contractor, client, or both (Docs/implementation_decisions.md §15).
 /// Address is inlined (§16) — no separate Address entity.
 model Party {
-  id         String    @id @default(cuid())
-  name       String
-  email      String?
-  type       PartyType
-  street1    String?
-  street2    String?
-  city       String?
-  state      String?
+  id String @id @default(cuid())
+  name String
+  email String?
+  type PartyType
+  street1 String?
+  street2 String?
+  city String?
+  state String?
   postalCode String?
-  country    String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  country String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  paymentMethods       PaymentMethod[]
-  projectsAsContractor Project[]       @relation("ContractorParty")
-  projectsAsClient     Project[]       @relation("ClientParty")
+  paymentMethods PaymentMethod[]
+  projectsAsContractor Project[] @relation("ContractorParty")
+  projectsAsClient Project[] @relation("ClientParty")
 }
 
 /// Docs/product_spec.md §1.2. `fields` is an ordered {key,label,value}[] array —
 /// see §2 for shape. Service layer enforces at most one IsDefault per party
 /// (Docs/implementation_decisions.md §22) — not a DB-level constraint.
 model PaymentMethod {
-  id        String            @id @default(cuid())
-  partyId   String
-  party     Party             @relation(fields: [partyId], references: [id], onDelete: Cascade)
-  type      PaymentMethodType
-  label     String
-  isDefault Boolean           @default(false)
-  fields    Json
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  id String @id @default(cuid())
+  partyId String
+  party Party @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  type PaymentMethodType
+  label String
+  isDefault Boolean @default(false)
+  fields Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   preferredByProjects Project[] @relation("ProjectPreferredPaymentMethod")
 
@@ -122,28 +122,28 @@ model PaymentMethod {
 /// Docs/product_spec.md §1.3. `abbreviation` sources the {abbreviation}
 /// invoice-number placeholder, falling back to auto-derived initials of
 /// `name` if left blank (Docs/implementation_decisions.md §9/§22).
-/// `serviceDescription` (Docs/feedback_backlog.md M23) is the invoice
+/// `serviceDescription` is the invoice
 /// document's "Details" text, live-joined at render time (never snapshotted
 /// onto Invoice) and falling back to `name` when unset — same live-join,
 /// no-lock-at-SENT behavior `name` itself had there before M23.
 model Project {
-  id                       String          @id @default(cuid())
-  name                     String
-  abbreviation             String?
-  serviceDescription       String?
-  clientId                 String
-  client                   Party           @relation("ClientParty", fields: [clientId], references: [id], onDelete: Restrict)
-  contractorId             String
-  contractor               Party           @relation("ContractorParty", fields: [contractorId], references: [id], onDelete: Restrict)
+  id String @id @default(cuid())
+  name String
+  abbreviation String?
+  serviceDescription String?
+  clientId String
+  client Party @relation("ClientParty", fields: [clientId], references: [id], onDelete: Restrict)
+  contractorId String
+  contractor Party @relation("ContractorParty", fields: [contractorId], references: [id], onDelete: Restrict)
   preferredPaymentMethodId String?
-  preferredPaymentMethod   PaymentMethod?  @relation("ProjectPreferredPaymentMethod", fields: [preferredPaymentMethodId], references: [id], onDelete: Restrict)
-  invoiceNumberFormat      String
-  invoicePeriodType        InvoicePeriodType?
-  displayCurrency          DisplayCurrency     @default(USD)
-  currencyMode             ProjectCurrencyMode @default(SINGLE)
-  status                   ProjectStatus       @default(ACTIVE)
-  createdAt                DateTime        @default(now())
-  updatedAt                DateTime        @updatedAt
+  preferredPaymentMethod PaymentMethod? @relation("ProjectPreferredPaymentMethod", fields: [preferredPaymentMethodId], references: [id], onDelete: Restrict)
+  invoiceNumberFormat String
+  invoicePeriodType InvoicePeriodType?
+  displayCurrency DisplayCurrency @default(USD)
+  currencyMode ProjectCurrencyMode @default(SINGLE)
+  status ProjectStatus @default(ACTIVE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   invoices Invoice[]
 
@@ -155,32 +155,32 @@ model Project {
 /// Docs/product_spec.md §1.4. Snapshot-only — no live PaymentMethodId FK
 /// (Docs/implementation_decisions.md §11). Deletable in any status
 /// (Docs/implementation_decisions.md §18/§22), cascading InvoiceItem rows.
-/// `currency` (Docs/feedback_backlog.md M26) is the currency `subtotal`/
+/// `currency` is the currency `subtotal`/
 /// `total`/every `InvoiceItem` rate is actually denominated in — always
 /// `USD` for a `DUAL`-mode project's invoice, the project's `displayCurrency`
 /// for a `SINGLE`-mode one. Same snapshot-timing rule as everything else:
 /// recomputed from the live project on every `DRAFT` save and the final
 /// `DRAFT → SENT` transition, then permanently locked.
 model Invoice {
-  id                     String        @id @default(cuid())
-  projectId              String
-  project                Project       @relation(fields: [projectId], references: [id], onDelete: Restrict)
-  invoiceNumber          String
-  status                 InvoiceStatus @default(DRAFT)
-  issueDate              DateTime      @db.Date
-  dueDate                DateTime      @db.Date
-  subtotal               Decimal       @db.Decimal(12, 2)
-  total                  Decimal       @db.Decimal(12, 2)
-  currency               DisplayCurrency @default(USD)
-  convertedTotal         Decimal?      @db.Decimal(12, 2)
-  convertedCurrency      String?
-  fromPartySnapshot      Json
-  toPartySnapshot        Json
+  id String @id @default(cuid())
+  projectId String
+  project Project @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  invoiceNumber String
+  status InvoiceStatus @default(DRAFT)
+  issueDate DateTime @db.Date
+  dueDate DateTime @db.Date
+  subtotal Decimal @db.Decimal(12, 2)
+  total Decimal @db.Decimal(12, 2)
+  currency DisplayCurrency @default(USD)
+  convertedTotal Decimal? @db.Decimal(12, 2)
+  convertedCurrency String?
+  fromPartySnapshot Json
+  toPartySnapshot Json
   paymentDetailsSnapshot Json
-  itemsNote              String?
-  bottomNote             String?
-  createdAt              DateTime      @default(now())
-  updatedAt              DateTime      @updatedAt
+  itemsNote String?
+  bottomNote String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   items InvoiceItem[]
 
@@ -195,20 +195,20 @@ model Invoice {
 /// required, `amount` backend-computed) and Flat (`amount` entered directly,
 /// quantity/unitPrice null) — see Docs/implementation_decisions.md §10.
 model InvoiceItem {
-  id           String   @id @default(cuid())
-  invoiceId    String
-  invoice      Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  description  String
-  isFlatAmount Boolean  @default(false)
-  quantity     Decimal? @db.Decimal(10, 2)
-  unitPrice    Decimal? @db.Decimal(12, 2)
-  amount       Decimal  @db.Decimal(12, 2)
-  sortOrder    Int
+  id String @id @default(cuid())
+  invoiceId String
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  isFlatAmount Boolean @default(false)
+  quantity Decimal? @db.Decimal(10, 2)
+  unitPrice Decimal? @db.Decimal(12, 2)
+  amount Decimal @db.Decimal(12, 2)
+  sortOrder Int
 
   @@index([invoiceId])
 }
 
-/// M16 (`Docs/execution_plan.md`) — DB-backed AI-assist provider config,
+/// M16 — DB-backed AI-assist provider config,
 /// replacing M11's environment-variables-only decision. Exactly one row per
 /// fixed provider (google/anthropic/groq — never a dynamic/admin-defined
 /// provider list, see the M16 note). `apiKeyCiphertext` is AES-256-GCM
@@ -217,11 +217,11 @@ model InvoiceItem {
 /// within-provider fallback order, same convention as `PaymentMethod.fields`.
 /// `order` is the cross-provider cascade order (0 = default/first-tried).
 model AiProviderSetting {
-  provider         AiProviderName @id
+  provider AiProviderName @id
   apiKeyCiphertext String?
-  models           String[]       @default([])
-  enabled          Boolean        @default(true)
-  order            Int
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  models String[] @default([])
+  enabled Boolean @default(true)
+  order Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

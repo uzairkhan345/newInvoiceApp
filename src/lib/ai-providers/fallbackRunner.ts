@@ -68,7 +68,7 @@ function extractJson(text: string): unknown {
 
 /**
  * Walks the DB-backed provider→model fallback sequence (M16,
- * Docs/execution_plan.md — providers in cascade order, each provider's
+ * providers in cascade order, each provider's
  * models in list order), stopping at the first response that parses as JSON
  * and validates against `schema`. Every per-target failure (network error,
  * non-JSON response, schema mismatch) is logged and swallowed — this never

@@ -41,7 +41,7 @@ function fakeInvoice(
       postalCode: null,
       country: null,
     },
-    // Docs/feedback_backlog.md M17.5 — stored encrypted, same as the real
+    // M17.5 — stored encrypted, same as the real
     // Invoice.paymentDetailsSnapshot column since it's copied verbatim from
     // the now-encrypted PaymentMethod.fields.
     paymentDetailsSnapshot: [

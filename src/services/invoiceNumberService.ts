@@ -2,12 +2,12 @@ import { deriveAbbreviation } from "@/services/projectService";
 import { formatDateToken, type InvoiceDateFormat } from "@/lib/dates";
 
 /**
- * Docs/execution_plan.md §9 — invoice number generation. Supported tokens:
+ * Invoice number generation. Supported tokens:
  * `{abbreviation}`, `{number}`, `{date}` (or `{date:MM-DD-YYYY}` /
  * `{date:DD-MM-YYYY}` to pick the date format inline — there is no separate
  * Project.dateFormat column, so the format string itself is the one place
  * this is configured, consistent with the docs' own format examples), and
- * `{year}` (Docs/feedback_backlog.md M19.1) — a standalone 4-digit year,
+ * `{year}` — a standalone 4-digit year,
  * independent of `{date}`, for formats like `{abbreviation}-{year}-{number}`
  * that don't want a full date embedded.
  */
@@ -22,7 +22,7 @@ function escapeRegExp(value: string): string {
  * Builds a regex that extracts the `{number}` token's value out of a
  * previously-generated invoice number string, treating every other token as
  * a non-greedy wildcard. Used to recover the numeric sequence even though
- * the schema has no dedicated sequence column (Docs/execution_plan.md §9:
+ * the schema has no dedicated sequence column (
  * "computes next {number} as max(existing sequence) + 1").
  */
 function buildSequenceExtractionRegex(format: string): RegExp {
@@ -46,7 +46,7 @@ function extractSequence(invoiceNumber: string, format: string): number | null {
 
 /**
  * Next sequence is max(existing sequence) + 1, never a row count — so a
- * deleted invoice's number is never reissued, per Docs/execution_plan.md §9.
+ * deleted invoice's number is never reissued, per 
  */
 export function nextSequence(
   existingInvoiceNumbers: string[],

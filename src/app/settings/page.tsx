@@ -3,7 +3,7 @@ import { ProviderSettingsCard } from "@/components/settings/ProviderSettingsCard
 import { aiProviderSettingsService } from "@/services/aiProviderSettingsService";
 
 /**
- * M16 (Docs/execution_plan.md) — DB-backed AI-assist configuration,
+ * M16 — DB-backed AI-assist configuration,
  * replacing M11's read-only env-var summary. Always exactly 3 fixed
  * provider cards (Question 14 of the M16 grill session) — no add/remove.
  * The first card (lowest `order`) is the default/first-tried provider.

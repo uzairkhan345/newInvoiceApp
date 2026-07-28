@@ -239,7 +239,7 @@ describe("invoiceService.createDraft", () => {
     expect(invoice.fromPartySnapshot).toMatchObject({ name: contractor.name });
     expect(invoice.toPartySnapshot).toMatchObject({ name: client.name });
 
-    // Docs/feedback_backlog.md M17.5 — buildSnapshots copies the raw
+    // M17.5 — buildSnapshots copies the raw
     // PaymentMethod row (ciphertext), not paymentMethodService's decrypted
     // return value, so the snapshot matches the *stored* row exactly.
     const rawPaymentMethod = await prisma.paymentMethod.findUniqueOrThrow({
@@ -549,7 +549,7 @@ describe("invoiceService.previewNextInvoiceNumber", () => {
   });
 });
 
-describe("invoiceService.listByProject (Docs/feedback_backlog.md M19.3a)", () => {
+describe("invoiceService.listByProject", () => {
   it("returns only invoices belonging to the given project, newest first", async () => {
     const { project: projectA } = await createTestProject();
     const { project: projectB } = await createTestProject();
@@ -910,7 +910,7 @@ describe("invoiceService.delete", () => {
   });
 });
 
-describe("invoiceService.getAutofillDataForProject (Docs/feedback_backlog.md M18 — Autofill from last invoice)", () => {
+describe("invoiceService.getAutofillDataForProject", () => {
   it("returns null when the project has no prior invoice", async () => {
     const { project } = await createTestProject();
     await expect(
@@ -971,7 +971,7 @@ describe("invoiceService.getAutofillDataForProject (Docs/feedback_backlog.md M18
     ]);
   });
 
-  it("treats even a DRAFT or VOID invoice as 'last time' when it's the most recently issued (grilled decision — any status counts)", async () => {
+  it("treats even a DRAFT or VOID invoice as 'last time' when it's the most recently issued (deliberate decision — any status counts)", async () => {
     const { project } = await createTestProject();
     const sent = await invoiceService.createDraft(
       project.id,

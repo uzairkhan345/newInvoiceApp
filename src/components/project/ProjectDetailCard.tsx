@@ -38,7 +38,7 @@ const STATUS_LABELS: Record<ProjectWithRelations["status"], string> = {
 
 /**
  * Read-only view of a Project — the default landing state at
- * /projects/[id], per Docs/execution_plan.md §16 M10.5. Mirrors every field
+ * /projects/[id], per M10.5. Mirrors every field
  * ProjectForm edits.
  */
 export function ProjectDetailCard({
@@ -48,7 +48,7 @@ export function ProjectDetailCard({
 }: {
   project: ProjectWithRelations;
   editHref: string;
-  /** Docs/feedback_backlog.md M19.3b — same preview call the invoice create form already uses. */
+  /** M19.3b — same preview call the invoice create form already uses. */
   nextInvoiceNumber: string;
 }) {
   return (

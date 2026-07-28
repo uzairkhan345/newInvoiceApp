@@ -55,7 +55,7 @@ const SCHEMAS: Record<SingleShotFormType, ZodType<AiSuggestion>> = {
 };
 
 /**
- * Docs/execution_plan.md §5 aiAssistService row — walks the env-configured
+ * aiAssistService — walks the configured
  * provider/model fallback sequence, returns a partial, schema-validated
  * suggestion, or null if every provider failed/is unconfigured. Never
  * throws — the caller (the Server Action) always gets a clean result.
@@ -78,7 +78,7 @@ export type InvoiceAiContext = {
     contractorName: string;
     clientName: string;
     preferredPaymentMethodLabel: string | null;
-    /** Docs/feedback_backlog.md M26 — the invoice's actual resolved currency (never assume USD). */
+    /** M26 — the invoice's actual resolved currency (never assume USD). */
     currency: string;
     invoiceNumberFormat: string;
   };
@@ -87,7 +87,7 @@ export type InvoiceAiContext = {
 };
 
 /**
- * Docs/feedback_backlog.md M18 (AI-assist context + clarification) — unlike
+ * M18 (AI-assist context + clarification) — unlike
  * the single-shot party/paymentMethod path, the invoice prompt is rebuilt
  * per-call (today's real date + this project's fixed context + the form's
  * current values change every time) and its response is a discriminated

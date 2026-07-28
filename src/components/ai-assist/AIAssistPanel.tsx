@@ -23,7 +23,7 @@ import {
 import type { AiFormType, InvoiceAiContext } from "@/services/aiAssistService";
 import type { AiAssistConfigSummary } from "@/lib/ai-providers/config";
 
-/** Docs/feedback_backlog.md M18 — after this many clarifying questions with no resolved suggestion, stop looping and hand back to the user. */
+/** M18 — after this many clarifying questions with no resolved suggestion, stop looping and hand back to the user. */
 const MAX_CLARIFICATION_ROUNDS = 2;
 
 function humanizeKey(key: string): string {
@@ -55,13 +55,13 @@ function appendToTranscript(transcript: string, line: string): string {
 
 /**
  * Docs/ui_design_guide.md §14 — chat-style panel alongside the Party,
- * Payment Method, and Invoice forms (create AND edit — grilled/confirmed
- * 2026-07-15, see Docs/execution_plan.md §16 M11), never Project. Pure
+ * Payment Method, and Invoice forms (create AND edit — a confirmed
+ * 2026-07-15, see M11), never Project. Pure
  * progressive enhancement: `onApply` only ever stages field values into the
  * caller's already-open react-hook-form instance — this component never
  * submits anything itself.
  *
- * Invoice-only, Docs/feedback_backlog.md M18: `getContext` (when provided)
+ * Invoice-only, M18: `getContext` (when provided)
  * enables project + current-form-value context and a two-round clarifying-
  * question loop, via `runInvoiceAiAssistAction` instead of the plain
  * single-shot `runAiAssistAction` party/paymentMethod still use unchanged.

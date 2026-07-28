@@ -52,7 +52,7 @@ afterEach(async () => {
     });
   }
   if (createdPartyIds.length) {
-    // PaymentMethod.partyId cascades on Party delete (Docs/execution_plan.md §3).
+    // PaymentMethod.partyId cascades on Party delete.
     await prisma.party.deleteMany({
       where: { id: { in: createdPartyIds.splice(0) } },
     });

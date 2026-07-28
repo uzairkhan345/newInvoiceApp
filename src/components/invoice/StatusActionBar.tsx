@@ -57,7 +57,7 @@ export function StatusActionBar({
 }: {
   invoiceId: string;
   status: InvoiceStatus;
-  /** Docs/feedback_backlog.md M17.2 — the contractor has no preferred payment method, so a DRAFT→SENT transition would permanently lock in an empty payment snapshot. Only meaningful for the SENT transition. */
+  /** M17.2 — the contractor has no preferred payment method, so a DRAFT→SENT transition would permanently lock in an empty payment snapshot. Only meaningful for the SENT transition. */
   hasNoPaymentMethod: boolean;
 }) {
   const router = useRouter();

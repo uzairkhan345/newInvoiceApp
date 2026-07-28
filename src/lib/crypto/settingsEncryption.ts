@@ -8,7 +8,7 @@ import {
 /**
  * AES-256-GCM at-rest encryption, shared by AiProviderSetting.apiKeyCiphertext
  * (M16) and PaymentMethod.fields[].value / Invoice.paymentDetailsSnapshot
- * (M17.5, Docs/feedback_backlog.md) — one key, reused rather than adding a
+ * M17.5 — one key, reused rather than adding a
  * second secret to configure and never lose. `SETTINGS_ENCRYPTION_KEY` can be
  * any string — it's SHA-256-hashed to a stable 32-byte key rather than
  * requiring the admin to generate/paste real key material. Server-only.

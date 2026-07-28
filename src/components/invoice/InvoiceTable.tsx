@@ -25,7 +25,7 @@ export function InvoiceTable({
   hideProjectColumn,
 }: {
   invoices: InvoiceTableRow[];
-  /** Docs/feedback_backlog.md M19.3a — the Project column/line is redundant when this table is already scoped to one project. */
+  /** M19.3a — the Project column/line is redundant when this table is already scoped to one project. */
   hideProjectColumn?: boolean;
 }) {
   const gridCols = hideProjectColumn

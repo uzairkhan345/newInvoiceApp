@@ -4,7 +4,7 @@ import { documentService } from "@/services/documentService";
 import { InvoiceDocument } from "@/components/invoice/InvoiceDocument";
 
 /**
- * Docs/execution_plan.md §12 — bare markup only, no sidebar/nav (handled by
+ * Bare markup only, no sidebar/nav (handled by
  * `AppShell` detecting this path), print-friendly. This is the exact route
  * M9's PDF adapter will later navigate to and screenshot. `InvoiceDocument`
  * itself is a fixed-size A4 page (Docs/invoice_design_guidelines.md) with no

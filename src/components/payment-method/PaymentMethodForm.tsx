@@ -41,7 +41,7 @@ const typeLabels: Record<PaymentMethodInput["type"], string> = {
 };
 
 /**
- * Docs/feedback_backlog.md M17.4 — builds a PaymentMethod-shaped object from
+ * M17.4 — builds a PaymentMethod-shaped object from
  * validated input + a freshly-issued id, so an embedded `onCreated` caller
  * can use it without a round-trip refetch (mirrors PartyForm's
  * `toLocalParty`). Note: `input.fields` is plaintext here — the service
@@ -80,7 +80,7 @@ export function PaymentMethodForm({
   defaultValues?: Partial<PaymentMethodInput>;
   aiConfig?: AiAssistConfigSummary;
   /**
-   * Docs/feedback_backlog.md M17.4 — when provided, called with the created
+   * M17.4 — when provided, called with the created
    * PaymentMethod instead of navigating to the party's detail page. Lets
    * this form be embedded in a modal (e.g. Project's inline "create payment
    * method" escape hatch) without leaving the page underneath it.

@@ -45,7 +45,7 @@ export const PROVIDER_LABELS: Record<
 };
 
 /**
- * M16 (Docs/execution_plan.md) — one card per fixed provider. `apiKey`
+ * M16 — one card per fixed provider. `apiKey`
  * always starts blank (write-only, see aiProviderSettingsService) — leaving
  * it blank on submit keeps whatever key is already saved; `maskedKeyHint`
  * is the only trace of the real value that ever reaches the client.

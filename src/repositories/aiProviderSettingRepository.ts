@@ -4,7 +4,7 @@ import type { AiProviderName } from "@/lib/ai-providers/types";
 
 /**
  * Thin Prisma wrappers only — no encryption, no business rules
- * (Docs/execution_plan.md §6, M16). Fixed 3-provider set — see
+ *. Fixed 3-provider set — see
  * `KNOWN_PROVIDERS` in `@/lib/ai-providers/config`.
  */
 const KNOWN_PROVIDERS: AiProviderName[] = ["google", "anthropic", "groq"];

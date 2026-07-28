@@ -44,7 +44,7 @@ export type InvoiceDocumentData = {
 };
 
 /**
- * Docs/execution_plan.md §12 — the single view-model assembler consumed
+ * The single view-model assembler consumed
  * identically by the on-screen preview, the print route, and (M8/M9) the
  * Excel/PDF builders. Sources exclusively from the invoice's own scalar
  * fields and snapshot JSON (never a live Party/PaymentMethod lookup, even
@@ -52,17 +52,17 @@ export type InvoiceDocumentData = {
  * repository, so there is nothing here that could ever issue a live query.
  * `invoice.items` arrives pre-ordered by `sortOrder` (invoiceRepository.findById's
  * `orderBy`), so no re-sorting is needed here. `paymentDetailsSnapshot.value`
- * is stored encrypted (Docs/feedback_backlog.md M17.5 — still-encrypted at
+ * is stored encrypted (M17.5 — still-encrypted at
  * SENT, same as the live `PaymentMethod.fields` it was copied from); decrypted
  * here at render time only, via a pure function call, not a live query — this
  * mapper still never imports a repository.
- * `serviceDescription` (Docs/feedback_backlog.md M23) is a deliberate
+ * `serviceDescription` is a deliberate
  * exception to the "never live" framing above: like `Project.name` before
  * it, it's read straight off the already-loaded `invoice.project` relation,
  * not snapshotted onto Invoice — editing a Project's Service Description
  * retroactively changes the Details text on every invoice under it,
  * including already-SENT ones. Falls back to `Project.name` when unset.
- * `currency` (Docs/feedback_backlog.md M26) IS snapshotted onto `Invoice`
+ * `currency` IS snapshotted onto `Invoice`
  * (unlike `serviceDescription`) — every rate/subtotal/total figure this view
  * model exposes is denominated in it, so `InvoiceDocument.tsx`/
  * `buildInvoiceWorkbook.ts` must format every one of those figures with it,

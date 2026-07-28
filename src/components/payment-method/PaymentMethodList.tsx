@@ -15,7 +15,7 @@ import type { ProjectRef } from "@/services/projectService";
 import { PAYMENT_METHOD_TYPE_LABELS } from "@/lib/paymentMethodLabels";
 
 /**
- * Docs/execution_plan.md §16 M3 — payment-method sub-list on the party
+ * M3 — payment-method sub-list on the party
  * detail page. `deletableIds` is precomputed server-side (each method's live
  * reference check) rather than re-fetched per row.
  */
@@ -28,7 +28,7 @@ export function PaymentMethodList({
   partyId: string;
   paymentMethods: PaymentMethod[];
   deletableIds: Set<string>;
-  /** Docs/feedback_backlog.md M25 — which project(s) (if any) use each method as their preferred payment method, ACTIVE projects only; each tag links to that project's detail page. */
+  /** M25 — which project(s) (if any) use each method as their preferred payment method, ACTIVE projects only; each tag links to that project's detail page. */
   projectRefsByPaymentMethodId: Record<string, ProjectRef[]>;
 }) {
   const router = useRouter();

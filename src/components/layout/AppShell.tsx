@@ -6,11 +6,11 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileTopBar, MobileTabBar } from "@/components/layout/MobileNav";
 
 /**
- * Docs/execution_plan.md §12 — `/invoices/[id]/print` must render bare, with
+ * `/invoices/[id]/print` must render bare, with
  * zero app chrome (no sidebar, no page padding), since it's the exact markup
  * Puppeteer will later navigate to and screenshot (M9). There is only one
  * Next.js root layout in this app (no route groups in the folder structure
- * per Docs/execution_plan.md §2), so the shell is toggled here by pathname
+ * per ), so the shell is toggled here by pathname
  * rather than via a second root layout.
  *
  * Nav breakpoint is 1024px (`lg`) — M27, design_handoff_dashboard_v2/README.md

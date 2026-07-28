@@ -48,14 +48,9 @@ next-env.d.ts
 /Data_ingestion
 /scripts/ingest*.ts
 
-# Pre-implementation reference material (stale specs, UI mockups, and real
-# client invoice PDFs/screenshots used only as visual reference) — never
-# to be committed. See CLAUDE.md's ai_context/ section.
+# Maintainer-local material: pre-implementation reference files, build-history
+# notes, and AI-session context. Never committed — only current-state docs in
+# Docs/ are part of the repo.
 /ai_context
-
-# Local-only project docs: AI-session/process files and milestone/decision
-# history tracked for Claude Code sessions (public-release decision,
-# 2026-07-28). These contain session narrative and real client/business data
-# and must never be committed — only current-state docs in Docs/ are public.
 /Docs/internal
 /CLAUDE.md

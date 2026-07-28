@@ -42,7 +42,7 @@ const displayCurrencyLabels: Record<ProjectInput["displayCurrency"], string> = {
   SAR: "SAR",
 };
 
-/** Docs/feedback_backlog.md M26 — every currency choice, for `SINGLE` mode. */
+/** M26 — every currency choice, for `SINGLE` mode. */
 const ALL_CURRENCIES = Object.keys(
   displayCurrencyLabels,
 ) as ProjectInput["displayCurrency"][];
@@ -123,7 +123,7 @@ export function ProjectForm({
     }));
   }
 
-  /** Docs/feedback_backlog.md M17.4 — adds the new method to the pool and auto-selects it as Preferred, mirroring registerNewParty's auto-select-into-the-triggering-field behavior. */
+  /** M17.4 — adds the new method to the pool and auto-selects it as Preferred, mirroring registerNewParty's auto-select-into-the-triggering-field behavior. */
   function registerNewPaymentMethod(paymentMethod: PaymentMethod) {
     setPaymentMethodsByPartyId((prev) => ({
       ...prev,

@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 /**
- * Generic delete/status-transition confirmation (Docs/execution_plan.md §7).
+ * Generic delete/status-transition confirmation.
  * When `disabled`, renders a plain disabled button with a native title
  * tooltip instead of a dialog trigger — satisfies the "delete button
  * (disabled + tooltip if blocked)" pattern in one place.

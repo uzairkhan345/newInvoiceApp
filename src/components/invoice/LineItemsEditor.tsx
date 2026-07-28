@@ -13,7 +13,7 @@ import type { InvoiceInput } from "@/lib/validation/invoice";
 
 /**
  * Docs/mvp_user_stories.md Story 4.1/4.2 — line items are denominated in the
- * invoice's resolved `currency` (Docs/feedback_backlog.md M26 — always USD
+ * invoice's resolved `currency` (M26 — always USD
  * for a `DUAL`-mode project, the project's own currency for a `SINGLE`-mode
  * one); the displayed per-row/subtotal amounts here are a client-side preview only.
  * The backend recomputes amount/subtotal/total from quantity × unitPrice for
@@ -34,7 +34,7 @@ export function LineItemsEditor({
   errors: FieldErrors<InvoiceInput>;
   /** Docs/ui_design_guide.md §14 — brief flash after AI Assist replaces the item list. */
   highlighted?: boolean;
-  /** Docs/feedback_backlog.md M26 — the invoice's actual currency (project-resolved), never hardcoded "USD". */
+  /** M26 — the invoice's actual currency (project-resolved), never hardcoded "USD". */
   currency: string;
 }) {
   const { fields, append, remove } = useFieldArray({ control, name: "items" });

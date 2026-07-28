@@ -4,7 +4,7 @@ import { documentService } from "@/services/documentService";
 import { buildInvoiceWorkbook } from "@/lib/excel/buildInvoiceWorkbook";
 
 /**
- * Docs/execution_plan.md §11 — builds the workbook in-memory
+ * Builds the workbook in-memory
  * (`workbook.xlsx.writeBuffer()`); nothing is ever written to disk. Sources
  * exclusively from `documentService.assembleInvoiceDocumentData`, so a SENT
  * invoice always exports its locked snapshot, never live Party/PaymentMethod

@@ -144,7 +144,7 @@
 }
 
 /*
- * Docs/execution_plan.md §12 (M9) — without this, <body>'s own
+ * (M9) — without this, <body>'s own
  * min-h-full/bg-background (app-canvas styling, unconditional in
  * layout.tsx) bleeds into printed/PDF output: if the invoice's A4 page
  * content is even fractionally taller than one physical page, the body's
