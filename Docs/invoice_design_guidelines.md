@@ -64,14 +64,7 @@ Use these values unless the invoice owner has a brand colour:
 --invoice-background: #ffffff;
 ```
 
-For the [redacted] logo only:
-
-```css
---redacted-red: #ef3340;
---redacted-black: #111111;
-```
-
-Do not apply the red brand colour to headings, table borders, totals, or body text.
+Do not apply any brand accent colour to headings, table borders, totals, or body text — the invoice document is deliberately monochrome (and the application renders no logos at all; see `Docs/implementation_decisions.md` §14).
 
 ## 5. Typography
 
@@ -245,11 +238,11 @@ This app's notes are **invoice-level**, not per-line-item — a single note appl
 Example:
 
 ```text
-Software Development Services ([redacted-client] - March)     -   -   350
-Arrears from previous invoices                          -   -   1125
-Work done on [redacted-client] May - June 2026
+Software Development Services (Acme - March)          -   -   500
+Arrears from previous invoices                          -   -   1000
+Work done on Acme portal May - June 2026
 
-Subtotal                                                    1475
+Subtotal                                                    1500
 ```
 
 ## 11. Totals
@@ -303,9 +296,9 @@ Example:
 ```text
 Payment to be made to:
 Bank Name           Example Bank
-Bank Address        [redacted address]
+Bank Address        123 Sample Street, Springfield ST 00000
 Branch Code         000000
-Account No.         00000000
+Account No.         00012345
 Beneficiary Name    Jordan Freelancer
 ```
 

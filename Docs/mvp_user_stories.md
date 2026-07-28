@@ -1,6 +1,6 @@
 # MVP User Stories
 
-Supersedes `ai_context/01_product_specs/mvp_user_stories.md`, which is stale (see `Docs/README.md`). Use together with `Docs/product_spec.md` and `Docs/implementation_decisions.md`.
+The MVP epics, stories, and acceptance criteria. Use together with `Docs/product_spec.md` and `Docs/implementation_decisions.md`.
 
 ## MVP Scope Summary
 
@@ -351,7 +351,7 @@ As a developer, I want the app structured so a production hosting decision can b
 
 ### Acceptance Criteria
 
-- The production hosting target (Vercel, a droplet, or otherwise) is **not decided** and the app must not assume any target's constraints (see `Docs/implementation_decisions.md` §21). *(`Docs/execution_plan.md` §15 later records Vercel + Neon as the intended eventual target for planning purposes — this does not change MVP build scope: local development remains the exclusive focus, and the PDF adapter's local implementation is what's actually built and exercised during core milestones.)*
+- The production hosting target (Vercel, a droplet, or otherwise) is **not decided** and the app must not assume any target's constraints (see `Docs/implementation_decisions.md` §21).
 - The only deployment-sensitive code is the PDF browser-launch adapter (Story 7.2) — everything else works identically regardless of target, driven purely by `DATABASE_URL` and standard environment variables.
 
 ## Story 9.3: Add Single Admin Login (Deferred Beyond MVP Development)
@@ -417,7 +417,7 @@ As the admin, I want to choose which AI provider/model is used and what happens 
 ### Acceptance Criteria
 
 - Supported providers: Google (Gemini), Anthropic (Claude), Groq.
-- **Resolved during blueprint planning** (`Docs/implementation_decisions.md` §22): the primary model, the ordered fallback sequence of alternate models/providers, and the required API key(s) were originally configured via **environment variables**, not an in-app settings form; the "Configure" entry point on the AI-assist panel (Stories 11.1–11.3) showed a **read-only** summary sourced from env vars. **Superseded by M16** (still within the tracked M0–M16 MVP build, not a post-MVP change): this is now a DB-backed, in-app `/settings` page instead — see `Docs/implementation_decisions.md` §19 for the current shape.
+- The primary model, the ordered fallback sequence of alternate models/providers, and the API key(s) are configured via a DB-backed, in-app `/settings` page; the "Configure" entry point on the AI-assist panel (Stories 11.1–11.3) links there — see `Docs/implementation_decisions.md` §19 for the full shape.
 - If every configured option is unavailable (or none are configured at all), all three creation forms above continue to work perfectly by hand — there is no error state that blocks manual use.
 
 *(Note: there is deliberately no Story 11.5 "Use AI Assist to Fill the Project Form" — this form is explicitly excluded, since it's the one form that would require resolving prompt text against existing parties/payment methods, which is out of scope for MVP.)*

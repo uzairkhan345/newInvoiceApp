@@ -1,8 +1,6 @@
 # Invoice Application Architecture & Specification
 
-This supersedes `ai_context/01_product_specs/invoice_application_single_tenant_spec.md`, which is stale and should not be used going forward (see `Docs/README.md`). It reflects the schema and workflows as finalized in the pre-implementation interrogation session (2026-07-08) — see `Docs/implementation_decisions.md` for the full rationale behind each change.
-
-A handful of small schema additions surfaced later, during execution-plan/blueprint work (see `Docs/execution_plan.md` and `Docs/implementation_decisions.md` §22) — `Project.Abbreviation` and `InvoiceItem.SortOrder` — are folded directly into the tables below, flagged inline. One further post-MVP addition, `Project.ServiceDescription` (`Docs/feedback_backlog.md` M23), is folded in the same way, flagged inline — most other M17+ feedback-backlog schema changes (e.g. `Project.InvoicePeriodType`, M19.2a) are documented in `Docs/feedback_backlog.md` only, not mirrored here; this table stays the authoritative Project field reference regardless, so `ServiceDescription` is included for completeness even though the general post-MVP convention doesn't require it.
+The logical data schema and operational workflows for the application. See `Docs/implementation_decisions.md` for the rationale behind each decision.
 
 This is a database-agnostic logical schema and set of operational workflows for a **single-tenant** invoice tracking application. `Identifier`, `Text`, `Decimal`, `List`, `Boolean`, `Timestamp`, and `Date` map to whatever the target database/ORM framework calls them.
 
@@ -43,7 +41,7 @@ Defines how a contractor can receive funds, using an ordered list of custom labe
 | `IsDefault` | Boolean | Global fallback option for the contractor. |
 | `Fields` | List of Objects | Ordered `{ key, label, value }` objects — see §2 for examples. |
 
-**Invariant** *(new — see `Docs/implementation_decisions.md` §22)*: the application enforces at most one `IsDefault` `PaymentMethod` per `Party` — setting a new default un-sets any prior one.
+**Invariant**: the application enforces at most one `IsDefault` `PaymentMethod` per `Party` — setting a new default un-sets any prior one.
 
 **Deletion**: a `PaymentMethod` may be deleted only if it is not currently set as any `Project`'s `PreferredPaymentMethodId` (see §7). No historical `Invoice` ever blocks deletion, since payment details are captured into a detached `PaymentDetailsSnapshot`, never referenced live.
 
@@ -55,13 +53,15 @@ The bridge between a contractor and a client, and the home for per-engagement co
 |---|---|---|
 | `Id` | Identifier, Primary Key | Unique project identifier. |
 | `Name` | Text | Operational name of the engagement. |
-| `Abbreviation` | Text, Optional *(new — see `Docs/implementation_decisions.md` §22)* | Short code (e.g. `TQ`) sourcing the `{abbreviation}` placeholder in `InvoiceNumberFormat`. If left blank, auto-derived from the initials of `Name`. |
-| `ServiceDescription` | Text, Optional *(new — see `Docs/feedback_backlog.md` M23)* | Customer-facing text shown in the invoice document's "Details" summary column. If left blank, falls back to `Name`. Live-joined at invoice render time, never snapshotted onto `Invoice` — editing it retroactively changes the Details text on every invoice under the project, including already-SENT ones. |
+| `Abbreviation` | Text, Optional | Short code (e.g. `TQ`) sourcing the `{abbreviation}` placeholder in `InvoiceNumberFormat`. If left blank, auto-derived from the initials of `Name`. |
+| `ServiceDescription` | Text, Optional | Customer-facing text shown in the invoice document's "Details" summary column. If left blank, falls back to `Name`. Live-joined at invoice render time, never snapshotted onto `Invoice` — editing it retroactively changes the Details text on every invoice under the project, including already-SENT ones. |
 | `ClientId` | Identifier, Foreign Key → `Party.Id` | The paying party. Any party may fill this role. |
 | `ContractorId` | Identifier, Foreign Key → `Party.Id` | The billing party. Any party may fill this role — including the same party used as `ClientId` on a different project. |
 | `PreferredPaymentMethodId` | Identifier, Foreign Key, Optional → `PaymentMethod.Id` | Must belong to `ContractorId`. Defaults the payout channel for child invoices. |
 | `InvoiceNumberFormat` | Text / Configuration | Template for auto-generating invoice numbers, e.g. `{abbreviation}-{number}-{date}` or `TQ-{date}/{number}`, with configurable date format (`MM-DD-YYYY` / `DD-MM-YYYY`). `{abbreviation}` resolves from `Project.Abbreviation` above. |
-| `DisplayCurrency` | Enum: `USD`, `AUD`, `GBP` | Default `USD`. See §5 (Currency Model). Governs only whether invoices under this project additionally show a converted total — it never changes what currency the core invoice amounts are computed in (always USD). |
+| `DisplayCurrency` | Enum: `USD`, `AUD`, `GBP`, `NZD`, `AED`, `PKR`, `SAR` | Default `USD`. Its meaning depends on `CurrencyMode` — see §5 (Currency Model). |
+| `CurrencyMode` | Enum: `SINGLE`, `DUAL` | Default `SINGLE`. Whether `DisplayCurrency` denominates the whole invoice (`SINGLE`) or only adds a converted-total figure alongside USD core amounts (`DUAL`) — see §5. |
+| `InvoicePeriodType` | Enum, Optional: `WEEKLY`, `SEMI_MONTHLY`, `MONTHLY` | Drives the invoice create form's default due-date computation (+7 days, +15 days, or calendar-month arithmetic clamped to the target month's last day). Pure UI convenience — no server-side enforcement; unset means no auto-computed due date. |
 | `Status` | Text | `ACTIVE` or `ARCHIVED`. |
 
 **Deletion**: a `Project` may be deleted only if it has zero `Invoice` rows (see §7).
@@ -78,17 +78,18 @@ The immutable master ledger entry for a requested payment. Stores flat historica
 | `Status` | Text | `DRAFT`, `SENT`, `PAID`, or `VOID` — see §6 for the transition rules. |
 | `IssueDate` | Date | Date the invoice becomes active. |
 | `DueDate` | Date | Payment deadline. Must be on/after `IssueDate`. |
-| `Subtotal` | Decimal | Sum of all `InvoiceItem.Amount` values. Always USD. |
+| `Subtotal` | Decimal | Sum of all `InvoiceItem.Amount` values, denominated in `Currency`. |
 | `Total` | Decimal | Always equal to `Subtotal` — **there is no tax in MVP**, so no `Subtotal + Tax` computation exists anywhere. |
-| `ConvertedTotal` | Decimal, Optional | Manually entered by the admin when the parent project's `DisplayCurrency` is not `USD`. Not calculated by the system (no exchange-rate lookup in MVP). Snapshotted/locked at the same moment as the rest of the invoice (§6). |
+| `Currency` | Enum (same values as `DisplayCurrency`) | The currency `Subtotal`/`Total`/item rates are actually denominated in: always `USD` for a `DUAL`-mode project, the project's `DisplayCurrency` for a `SINGLE`-mode one. Derived, not user-edited; locked at `SENT` (§6). |
+| `ConvertedTotal` | Decimal, Optional | Manually entered by the admin when the parent project is `DUAL` currency mode (§5); always `null` for `SINGLE`-mode projects. Not calculated by the system (no exchange-rate lookup in MVP). Snapshotted/locked at the same moment as the rest of the invoice (§6). |
 | `ConvertedCurrency` | Text, Optional | A copy of the project's `DisplayCurrency` at the time the invoice was created/finalized — snapshotted so a later change to the project's setting doesn't retroactively relabel a historical invoice's converted amount. |
 | `FromPartySnapshot` | Object | Copy of the Contractor's Name, Email, and address fields at snapshot time. |
 | `ToPartySnapshot` | Object | Copy of the Client's Name, Email, and address fields at snapshot time. |
 | `PaymentDetailsSnapshot` | List of Objects | Copy of the chosen `PaymentMethod.Fields` array. There is **no** `PaymentMethodId` foreign key on `Invoice` — the snapshot alone is sufficient; it exists for historical record-keeping, not detailed audit trails. |
-| `ItemsNote` | Text, Optional *(new — M14)* | Free-text note describing the line items as a whole, rendered unlabeled/italic below them on the document. Plain admin-authored content, not a snapshot of live external data — ordinary `DRAFT`-editable/locked-once-`SENT` field like `InvoiceNumber`. |
-| `BottomNote` | Text, Optional *(new — M14)* | A separate, independently-optional free-text note rendered near the bottom of the document (bold label + value), below the totals. Same editability rule as `ItemsNote` — the two are unrelated fields, not a repeat of one value. |
+| `ItemsNote` | Text, Optional | Free-text note describing the line items as a whole, rendered unlabeled/italic below them on the document. Plain admin-authored content, not a snapshot of live external data — ordinary `DRAFT`-editable/locked-once-`SENT` field like `InvoiceNumber`. |
+| `BottomNote` | Text, Optional | A separate, independently-optional free-text note rendered near the bottom of the document (bold label + value), below the totals. Same editability rule as `ItemsNote` — the two are unrelated fields, not a repeat of one value. |
 
-There is no `Tax` field and no generic per-invoice `Currency` field (see §5 for why — replaced by the USD-plus-converted-total model).
+There is no `Tax` field. `Currency` records what the core amounts are denominated in — it is derived from the project's currency mode (§5), never a free per-invoice selection.
 
 ### 1.5 Entity: InvoiceItem
 
@@ -97,11 +98,11 @@ There is no `Tax` field and no generic per-invoice `Currency` field (see §5 for
 | `Id` | Identifier, Primary Key | Unique item identifier. |
 | `InvoiceId` | Identifier, Foreign Key | Parent `Invoice.Id`. |
 | `Description` | Text | Required. Statement of the task/service/product. |
-| `IsFlatAmount` | Boolean, default `false` *(new — M14)* | Per-item toggle between Hourly (`false`) and Flat (`true`) pricing mode, mixable within one invoice — see below. |
+| `IsFlatAmount` | Boolean, default `false` | Per-item toggle between Hourly (`false`) and Flat (`true`) pricing mode, mixable within one invoice — see below. |
 | `Quantity` | Decimal, Optional | Required and must be greater than `0` when `IsFlatAmount` is `false` (Hourly); always `null` when `IsFlatAmount` is `true` (Flat). |
-| `UnitPrice` | Decimal, Optional | Required and must be `>= 0` when `IsFlatAmount` is `false`; always `null` when `IsFlatAmount` is `true`. Always USD. |
+| `UnitPrice` | Decimal, Optional | Required and must be `>= 0` when `IsFlatAmount` is `false`; always `null` when `IsFlatAmount` is `true`. Denominated in the invoice's `Currency`. |
 | `Amount` | Decimal | For an Hourly item: `Quantity * UnitPrice`, calculated by the backend — never trusted from the frontend. For a Flat item: entered directly by the admin and trusted as submitted — the one narrow, deliberate exception to "amount is always backend-calculated" (there is nothing to compute it from). |
-| `SortOrder` | Integer *(new — see `Docs/implementation_decisions.md` §22)* | Preserves line-item display order; the underlying relational store has no inherent row order for a "list" of items. |
+| `SortOrder` | Integer | Preserves line-item display order; the underlying relational store has no inherent row order for a "list" of items. |
 
 ## 2. Structural Examples for Dynamic Payment Fields
 
@@ -184,11 +185,17 @@ Unchanged from the original spec: select a contractor, pick a template (`BANK_WI
 
 ## 5. Currency Model
 
-- All core financial fields (`InvoiceItem.UnitPrice`/`Amount`, `Invoice.Subtotal`/`Total`) are always denominated in **USD**. There is no per-invoice currency selection for these.
-- `Project.DisplayCurrency` (`USD`/`AUD`/`GBP`, default `USD`) is the only currency configuration point in the system.
-- When a project's `DisplayCurrency` is not `USD`, its invoices additionally display a manually-entered `ConvertedTotal` in that currency, alongside (not replacing) the USD figures.
-- No automatic exchange-rate lookup exists in MVP — the admin types the converted figure directly. Automatic rate-fetching is an explicit future enhancement.
-- Every dashboard/aggregate metric uses USD figures only; `ConvertedTotal` is a per-invoice display annotation and is never summed or aggregated.
+A project operates in one of two currency modes (`Project.CurrencyMode`):
+
+- **`SINGLE`** (default): the whole invoice — item rates, subtotal, total — is denominated in the project's one `DisplayCurrency` (which may itself be USD). No secondary/converted figure appears anywhere.
+- **`DUAL`**: every core amount is USD, and the project's `DisplayCurrency` (never USD in this mode) only adds a manually-entered `ConvertedTotal` on each invoice, displayed alongside — never replacing — the USD figures.
+
+Shared rules:
+
+- `Project.DisplayCurrency` is one of `USD`/`AUD`/`GBP`/`NZD`/`AED`/`PKR`/`SAR`, default `USD`.
+- Each invoice stores the currency its core amounts are actually denominated in (`Invoice.Currency`, derived from the project's mode at creation and locked at `SENT` like every other snapshot-timed field).
+- No automatic exchange-rate lookup exists — the admin types any converted figure directly. Automatic rate-fetching is an explicit future enhancement.
+- The dashboard's primary aggregates use USD-denominated invoices only; non-USD `SINGLE`-mode invoices are never blended into a USD sum — each non-USD currency present gets its own per-currency breakdown line instead. `ConvertedTotal` is a per-invoice display annotation and is never summed or aggregated.
 
 ## 6. Invoice Status Transition Rules
 
