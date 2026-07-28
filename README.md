@@ -1,0 +1,81 @@
+# Invoice App
+
+A **single-tenant invoice tracking application** for freelancers and contractors: manage parties, projects, and invoices with a locked snapshot lifecycle, generate pixel-identical Excel and PDF invoice documents, and get an operational dashboard that surfaces what actually needs attention.
+
+> [!WARNING]
+> **This app has no authentication — by design.** It is built for local, single-user use on your own machine. Every route (including `/settings`, which stores encrypted API keys) is open. **Do not deploy it to a public URL as-is.** Adding a simple credential gate is the documented pre-deployment requirement (`Docs/implementation_decisions.md` §8).
+
+## Features
+
+- **Parties** — one unified roster of people/organizations; any party can act as a contractor, a client, or both. Payment methods (bank wire, Zelle, Payoneer, custom) with fully custom ordered field lists, **encrypted at rest**.
+- **Projects** — the bridge between a contractor and a client: preferred payment method, invoice-number format (`{abbreviation}`/`{number}`/`{date}`/`{year}` placeholders), invoice period for due-date defaults, and single- or dual-currency mode.
+- **Invoices** — `DRAFT → SENT → PAID` lifecycle (or `→ VOID`), with party/payment details snapshotted and **permanently locked at send time** so historical invoices survive future profile edits. Hourly and flat-amount line items, invoice notes, per-project invoice numbering.
+- **Documents** — an on-screen A4 preview that is pixel-identical to the downloadable **PDF** (Puppeteer) and mirrored in the downloadable **Excel** workbook (ExcelJS). No files stored server-side; generated on demand.
+- **Currency** — a project denominates invoices entirely in one currency (`SINGLE` mode: USD/AUD/GBP/NZD/AED/PKR/SAR) or works USD-primary with a manually-entered converted total (`DUAL` mode). Dashboards never blend currencies.
+- **Dashboard** — stat cards with trend sparklines, an attention banner, and a merged priority feed (overdue → setup gaps → stale drafts → recent activity).
+- **AI-assisted data entry** *(optional)* — a chat panel on Party/Payment Method/Invoice forms that stages form fields from natural language; it never auto-submits. Bring your own API key (Google/Anthropic/Groq) via the in-app `/settings` page; without one, the app is fully usable by hand.
+
+## Tech stack
+
+Next.js (App Router) · React · TypeScript · Prisma + PostgreSQL · Tailwind CSS + shadcn-style primitives · Puppeteer (PDF) · ExcelJS (Excel) · Vitest.
+
+## Getting started
+
+**Prerequisites:** Node.js ≥ 22, [pnpm](https://pnpm.io), Docker (for the local Postgres container).
+
+```bash
+git clone https://github.com/uzairkhan345/newInvoiceApp.git
+cd newInvoiceApp
+pnpm install                       # also runs prisma generate
+
+docker compose up -d db            # local Postgres on :5432
+cp .env.local.example .env.local   # defaults work out of the box
+
+pnpm prisma migrate dev            # apply migrations
+pnpm prisma db seed                # optional: demo data
+pnpm dev                           # http://localhost:3001
+```
+
+The app runs on **port 3001** by default (change `dev`/`start` in `package.json` and `NEXT_PUBLIC_APP_URL` in `.env.local` together if you need a different port).
+
+### Optional: AI assist
+
+Open `/settings`, add an API key for Google, Anthropic, and/or Groq, and list the models you want tried in order. Keys are encrypted at rest with `SETTINGS_ENCRYPTION_KEY` from `.env.local` — set it to any string before saving keys, and don't change it afterwards (saved keys become undecryptable).
+
+## Scripts
+
+| Command | What it does |
+|---|---|
+| `pnpm dev` | Dev server on port 3001 |
+| `pnpm build` / `pnpm start` | Production build / serve |
+| `pnpm test` | Vitest suite (unit + integration — see warning below) |
+| `pnpm typecheck` | `tsc --noEmit` |
+| `pnpm lint` / `pnpm format` | ESLint / Prettier |
+
+> [!IMPORTANT]
+> **Integration tests run against the database in `DATABASE_URL`** and create/delete rows as they go. Point it at a disposable development database (the Docker one is fine) — never at a database whose data you care about.
+
+## Architecture in brief
+
+A modular monolith with strict layering — UI components never touch the database:
+
+```
+src/
+  app/            # Next.js routes (pages, API routes, server actions entry)
+  components/     # React components (layout, per-entity, ui primitives)
+  services/       # business logic (lifecycle rules, snapshots, validation)
+  repositories/   # thin Prisma wrappers — no business rules
+  lib/            # pure helpers (currency, dates, pdf/excel builders, ai providers)
+prisma/           # schema, migrations, seed
+Docs/             # design & decision documentation
+```
+
+Key design decisions — no tax fields, snapshot locking semantics, the currency model, deletion rules, why PDF generation renders the same HTML as the preview — are documented with rationale in [`Docs/implementation_decisions.md`](Docs/implementation_decisions.md), with the full data schema and workflows in [`Docs/product_spec.md`](Docs/product_spec.md). UI conventions live in [`Docs/ui_design_guide.md`](Docs/ui_design_guide.md), and the invoice document's print spec in [`Docs/invoice_design_guidelines.md`](Docs/invoice_design_guidelines.md).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Security reports: [SECURITY.md](SECURITY.md).
+
+## License
+
+[MIT](LICENSE)
