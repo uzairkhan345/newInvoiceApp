@@ -50,7 +50,7 @@ describe("invoiceNumberService.generateInvoiceNumber", () => {
     const result = generateInvoiceNumber({
       project: {
         abbreviation: "TQ",
-        name: "[redacted]",
+        name: "Torque",
         invoiceNumberFormat: "{date}",
       },
       existingInvoiceNumbers: [],
@@ -64,7 +64,7 @@ describe("invoiceNumberService.generateInvoiceNumber", () => {
     const result = generateInvoiceNumber({
       project: {
         abbreviation: "TQ",
-        name: "[redacted]",
+        name: "Torque",
         invoiceNumberFormat: "{abbreviation}-{year}-{number}",
       },
       existingInvoiceNumbers: [],
@@ -78,7 +78,7 @@ describe("invoiceNumberService.generateInvoiceNumber", () => {
     const result = generateInvoiceNumber({
       project: {
         abbreviation: "TQ",
-        name: "[redacted]",
+        name: "Torque",
         invoiceNumberFormat: "{date:DD-MM-YYYY}",
       },
       existingInvoiceNumbers: [],
@@ -92,7 +92,7 @@ describe("invoiceNumberService.generateInvoiceNumber", () => {
     const result = generateInvoiceNumber({
       project: {
         abbreviation: "TQ",
-        name: "[redacted]",
+        name: "Torque",
         invoiceNumberFormat: "{abbreviation}-{number}",
       },
       existingInvoiceNumbers: ["TQ-01", "TQ-02"],
@@ -105,7 +105,7 @@ describe("invoiceNumberService.generateInvoiceNumber", () => {
     const result = generateInvoiceNumber({
       project: {
         abbreviation: "TQ",
-        name: "[redacted]",
+        name: "Torque",
         invoiceNumberFormat: "{abbreviation}-{number}",
       },
       existingInvoiceNumbers: ["TQ-99"],

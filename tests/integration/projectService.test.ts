@@ -94,7 +94,7 @@ describe("deriveAbbreviation", () => {
   });
 
   it("falls back to the first two characters for a single-word name", () => {
-    expect(deriveAbbreviation("[redacted]")).toBe("TE");
+    expect(deriveAbbreviation("Torque")).toBe("TO");
   });
 });
 
@@ -141,7 +141,7 @@ describe("projectService", () => {
 
     const project = await projectService.create(
       baseProjectInput({
-        name: "[test] [redacted] Ventures",
+        name: "[test] Gearbox Ventures",
         contractorId: contractor.id,
         clientId: client.id,
         abbreviation: "GV",
