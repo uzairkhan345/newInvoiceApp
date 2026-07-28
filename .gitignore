@@ -42,12 +42,11 @@ next-env.d.ts
 
 /src/generated/prisma
 
-# One-time real-invoice data-ingestion source material and the script that
-# transcribed it (contains real bank account/SWIFT/ABA numbers in plaintext) —
+# One-time real-invoice data-ingestion source material and the scripts that
+# transcribed it (contain real bank account details in plaintext) —
 # never to be preserved/committed.
 /Data_ingestion
-/scripts/ingestDataIngestionInvoices.ts
-/scripts/ingest[redacted]G19.ts
+/scripts/ingest*.ts
 
 # Pre-implementation reference material (stale specs, UI mockups, and real
 # client invoice PDFs/screenshots used only as visual reference) — never
