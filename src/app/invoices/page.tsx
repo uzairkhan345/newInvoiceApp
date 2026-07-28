@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FileText } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { InvoiceTable } from "@/components/invoice/InvoiceTable";
@@ -17,13 +18,14 @@ import { toInvoiceTableRow } from "@/lib/invoiceTableRow";
  * component is explicitly M6's job (Docs/execution_plan.md §11).
  */
 
-/** Docs/feedback_backlog.md M24 — unrecognized/missing `?status=` falls back to "all". */
+/** Docs/feedback_backlog.md M24 — unrecognized/missing `?status=` falls back to "all". M27 added "void". */
 function resolveFilter(status: string | undefined): InvoiceStatusFilterValue {
   if (
     status === "overdue" ||
     status === "sent" ||
     status === "paid" ||
-    status === "draft"
+    status === "draft" ||
+    status === "void"
   ) {
     return status;
   }
@@ -54,6 +56,10 @@ const EMPTY_STATE_COPY: Record<
     title: "No draft invoices",
     description: "Invoices appear here while they're still being prepared.",
   },
+  void: {
+    title: "No void invoices",
+    description: "Invoices appear here once they've been voided.",
+  },
 };
 
 export default async function InvoicesPage({
@@ -73,7 +79,9 @@ export default async function InvoicesPage({
         ? invoiceService.listByStatus("PAID")
         : filter === "draft"
           ? invoiceService.listByStatus("DRAFT")
-          : invoiceService.list());
+          : filter === "void"
+            ? invoiceService.listByStatus("VOID")
+            : invoiceService.list());
 
   const emptyCopy = EMPTY_STATE_COPY[filter];
 
@@ -86,13 +94,14 @@ export default async function InvoicesPage({
         backLabel="Back to Dashboard"
         action={
           <Button nativeButton={false} render={<Link href="/invoices/new" />}>
-            Create Invoice
+            + New Invoice
           </Button>
         }
       />
       <InvoiceStatusFilter active={filter} fromDashboard={cameFromDashboard} />
       {invoices.length === 0 ? (
         <EmptyState
+          icon={FileText}
           title={emptyCopy.title}
           description={emptyCopy.description}
           action={

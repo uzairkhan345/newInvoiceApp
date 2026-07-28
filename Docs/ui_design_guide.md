@@ -33,11 +33,13 @@ Carried forward from the prior version, plus new items from the interrogation se
 
 **Docketly Indigo** — a Swiss-influenced, high-density operational workspace, not a marketing-style SaaS dashboard. Unchanged from the prior version:
 
-- Light theme only. Cool neutral canvas (`slate-50`) isolating pure white cards.
+- Light theme only for page content. Cool neutral canvas (`slate-50`) isolating pure white cards.
 - A single restrained brand accent (indigo), never decorative.
 - Two typefaces carry the hierarchy: geometric sans for UI text, monospace for anything numeric or identifier-shaped.
 - Density over whitespace-for-its-own-sake — this is a daily-use admin tool.
 - Every card, table, badge, and alert must support a real decision.
+
+**Nav shell exception (M27, 2026-07-28):** the sidebar/topbar/bottom-tab-bar are deliberately dark navy (`#0f172a`), not white — see §3. This is a nav-chrome-only treatment, not a reintroduction of app-wide dark mode; every page's content area stays the light theme described above.
 
 ---
 
@@ -60,15 +62,14 @@ Carried forward from the prior version, plus new items from the interrogation se
 
 ---
 
-## 3. Navigation Structure
+## 3. Navigation Structure — **superseded 2026-07-28 by M27's v2 redesign (`design_handoff_dashboard_v2/`)**
 
-Unchanged from the prior version:
+Full spec lives in `design_handoff_dashboard_v2/README.md` §1 — read that file, not this section, before touching `Sidebar.tsx`/`AppShell.tsx`. Summary for continuity:
 
-- Sidebar `260px` fixed, white, `1px` right border. Header: brand icon + name + uppercase sub-label.
-- Nav items: `13px` semibold, `16px` icons, active state = brand-light background + brand text.
-- Footer: avatar + name + muted email, truncating.
-- **Setup-alert indicator**: small count badge on the Invoices/Projects nav item when overdue invoices exist or a project is missing a preferred payment method — reuses the Tag component's small circular variant (§11). *(Not built — `Sidebar.tsx` has no such indicator as of M12. M10's dashboard covers this information via its Needs Attention panel instead; revisit as a small standalone addition if nav-level visibility is still wanted.)*
-- Mobile (`<1024px`): sidebar collapses to an overlay drawer.
+- **Desktop (≥1024px)**: sidebar is now `240px` fixed, **dark navy `#0f172a`** (not white), full height, sticky. Logo row: 30×30px indigo square + white "Invoice App" wordmark. Nav items (Dashboard/Parties/Projects/Invoices/Settings): mono-glyph icon box + label; active = `rgba(99,102,241,0.2)` bg + `#a5b4fc` text; inactive = `#94a3b8` text. Footer: circular indigo avatar + name/email, top border.
+- **Mobile (<1024px)**: the sidebar is **replaced entirely**, never just hidden — this fixes the prior behavior where it simply vanished below `768px`/`md` with nothing standing in for it, and formally supersedes the never-built "overlay drawer" plan below. A fixed `52px` dark top bar (logo + wordmark only) plus a fixed dark bottom tab bar (5 equal columns, one per nav item, mono glyph + label, same active/inactive color treatment as desktop) replace it. Main content gets top/bottom padding to clear both bars.
+- Breakpoint stays **1024px** — unchanged from the prior plan, just a different mobile replacement (bottom tab bar, not a drawer).
+- **Setup-alert indicator** (the small nav-item count badge originally planned here): still not built, superseded by the v2 design's dashboard-level Alert banner + Priority Feed (§16) as the actual "needs attention" surface instead.
 
 ---
 
@@ -77,7 +78,7 @@ Unchanged from the prior version:
 | Template | Used by | Notes |
 |---|---|---|
 | **Dashboard** | Dashboard | See §16. |
-| **List/Ledger** | Invoices list, Projects list, **Parties list (single unified roster — no role tabs, no role filter)** | Since `Party.Role` doesn't exist, the Parties page is one plain table, not a contractor/client split. |
+| **List/Ledger** | Invoices list, Projects list, **Parties list (single unified roster — no role tabs, no role filter)** | Since `Party.Role` doesn't exist, the Parties page is one plain table, not a contractor/client split. **Invoices/Projects specifically redesigned by M27 (2026-07-28)** — status/type filter chip row above the list, and a mobile (<1024px) stacked-card variant replacing the table entirely rather than a horizontally-scrolled squeeze; see `design_handoff_dashboard_v2/README.md` §3/§4 and §18 below. Parties list is unaffected — out of scope for M27. |
 | **Form/Detail — with AI assist** | Create Party, Add Payment Method, Create/Edit Draft Invoice | Uses the three-panel layout (§2/§14): form on the left, AI-assist chat on the right. |
 | **Form/Detail — no AI assist** | Create/Edit Project | Uses the plain `2fr/1fr` layout: form left, a normal supporting-info card right (e.g. existing project list) — **never an AI-assist panel here**, by explicit decision. Contractor/Client pickers each need an inline "+ Create new party" affordance for when the list is empty. |
 | **Document Preview** | Invoice detail/preview | See §15. Must support both editable (`DRAFT`) and locked (`SENT`/`PAID`/`VOID`) states. |
@@ -136,6 +137,14 @@ Unchanged — stage padding 40/16px, card padding 24px (body)/20×24px (header),
 | `PAID` | `#ecfdf5` | `#047857` |
 | `VOID` | `#fff1f2` | `#be123c` |
 | `OVERDUE` *(derived)* | `#fef2f2` | `#b91c1c` |
+
+### Nav shell + dashboard-alert tokens *(new, M27 2026-07-28)*
+
+| Token | Value | Usage |
+|---|---|---|
+| Nav-shell dark surface | `#0f172a` | Sidebar/mobile topbar/bottom-tab-bar background — reuses the existing `--text-primary` hex, not a new color. |
+| Nav active tint | `rgba(99,102,241,0.2)` bg / `#a5b4fc` text | Active nav item on the dark surface only. |
+| Dashboard alert-banner gradient | `linear-gradient(135deg, #1e1b4b, #312e81)` | Background of the new Alert banner (§16) only — not used anywhere else. |
 
 ### Semantic (validation/alert) tokens
 
@@ -272,13 +281,18 @@ Copy: "This invoice is locked. Line items, snapshots, and totals can no longer b
 
 ---
 
-## 16. Dashboard Design Rules
+## 16. Dashboard Design Rules — **superseded 2026-07-28 by M27's v2 redesign (`design_handoff_dashboard_v2/`)**
 
-- **Stats row** — counts, not a revenue ticker: **Active Projects**, **Draft Invoices** (awaiting review), **Sent/Unpaid Invoices**, **Overdue Invoices**. An outstanding-dollar figure may appear as secondary subtext (**always in USD**), never the card's headline metric, and never a "Collected This Month" card.
-- **Primary panel (2fr)**: "Needs Attention" — overdue invoices, drafts waiting on review, projects missing a preferred payment method, most urgent first.
-- **Context panel (1fr)**: "Recent Activity" — a plain log of real lifecycle events (sent, paid, voided, project created). No cron/automated-dispatch content.
-- `VOID` invoices excluded from every dashboard count and total.
-- **Currency rule**: every dashboard figure is USD. A project's converted total is a per-invoice display annotation only and must never be summed into any dashboard metric, even if every visible invoice happens to share the same non-USD `DisplayCurrency`.
+Full spec lives in `design_handoff_dashboard_v2/README.md` §2 — read that file, not this section, before touching `src/app/page.tsx`. Summary for continuity, plus the decisions made when scoping this as `Docs/feedback_backlog.md` M27 (2026-07-28):
+
+- **Stats row** — still counts, not a revenue ticker, and still exactly the same four: **Active Projects**, **Draft Invoices**, **Sent/Unpaid Invoices** (+ USD subtext, unchanged from §17), **Overdue Invoices**. New in v2: each card also gets a trend indicator (▲/▼/– + delta since ~30 days ago) and a small 5-bar sparkline, both colored green/red/grey (reusing the existing paid/overdue/muted tokens — no new hex values). **These deltas are approximated**, not exact — there's no history/audit table in the schema (statuses are derived live, not snapshotted over time), so this is explicitly not a make-or-break feature at this stage, ship the approximation rather than building new history infrastructure for it.
+- **New: Alert banner** — a full-width gradient card (`linear-gradient(135deg, #1e1b4b, #312e81)`, new token, alert-banner-only) above the stats row, rendered only when at least one Priority Feed item requires action (overdue invoice, setup gap, or stale draft — plain "activity" entries don't count). Omitted entirely when empty, never shown greyed/empty.
+- **Replaces the old two-panel "Needs Attention" + "Recent Activity" split with one merged Priority Feed** — a single urgency-sorted list: overdue invoices first, then setup gaps (project missing a preferred payment method), then stale drafts, then recent lifecycle activity (sent/paid/voided/created) chronologically. Independently scrollable past `max-height: 520px` rather than growing the page.
+- **"Stale draft" threshold is N=1 day**, implemented as a single named constant (not scattered literals) so it's changeable later without a design decision.
+- `VOID` invoices excluded from every dashboard count and total (unchanged).
+- **Currency rule unchanged from §17**: every dashboard figure is USD; a non-USD `SINGLE`-currency project's figures get their own per-currency breakdown line, never blended into the primary USD figure.
+- **Explicitly out of scope for M27** (not in the v2 design, still open future candidates if ever wanted): per-project/per-client outstanding-balance breakdowns, and aging buckets (0-30/31-60/60+ days) in place of the single flat Overdue count.
+- **M21 ("Alerts") is folded into this** — the Alert banner + Priority Feed above is considered to fully satisfy that item's "what needs attention" scope as a computed-on-load surface; M21's original richer "recurring schedule + notification delivery" framing was not carried forward and remains unbuilt. See `Docs/feedback_backlog.md`'s M21/M27 sections.
 
 ---
 
@@ -292,7 +306,11 @@ Copy: "This invoice is locked. Line items, snapshots, and totals can no longer b
 
 ## 18. Responsive Behavior
 
-Unchanged: breakpoints `640/768/1024/1280px`; `<1024px` sidebar → drawer; `<768px` `2fr/1fr` (including the three-panel AI-assist layout) collapses to a single column, with the AI-assist panel stacking below the form rather than beside it; invoice document padding `48px → 20px`; tables scroll horizontally.
+Breakpoints `640/768/1024/1280px`, unchanged. `<768px` `2fr/1fr` (including the three-panel AI-assist layout) collapses to a single column, with the AI-assist panel stacking below the form rather than beside it; invoice document padding `48px → 20px` — both unchanged.
+
+**Updated by M27 (2026-07-28)**, superseding the two bullets below:
+- `<1024px` sidebar → **replaced by a dark top bar + bottom tab bar** (§3), not an overlay drawer (the drawer was planned but never built; this formally replaces that plan).
+- **Invoices/Projects tables specifically** (§4) → **stacked cards** below `1024px`, not horizontal scroll. Every other table in the app (Parties list, etc.) keeps the unchanged horizontal-scroll behavior — this stacked-card treatment is scoped to the two redesigned list pages only.
 
 ---
 

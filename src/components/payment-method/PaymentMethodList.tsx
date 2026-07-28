@@ -12,13 +12,7 @@ import { deletePaymentMethodAction } from "@/actions/paymentMethod.actions";
 import type { PaymentMethod } from "@/generated/prisma/client";
 import type { PaymentMethodField } from "@/repositories/paymentMethodRepository";
 import type { ProjectRef } from "@/services/projectService";
-
-const typeLabels: Record<string, string> = {
-  BANK_WIRE: "Bank Wire",
-  ZELLE: "Zelle",
-  PAYONEER: "Payoneer",
-  CUSTOM: "Custom",
-};
+import { PAYMENT_METHOD_TYPE_LABELS } from "@/lib/paymentMethodLabels";
 
 /**
  * Docs/execution_plan.md §16 M3 — payment-method sub-list on the party
@@ -70,7 +64,7 @@ export function PaymentMethodList({
                     {method.label}
                   </span>
                   <Badge variant="secondary" className="uppercase">
-                    {typeLabels[method.type] ?? method.type}
+                    {PAYMENT_METHOD_TYPE_LABELS[method.type] ?? method.type}
                   </Badge>
                   {method.isDefault ? (
                     <Badge className="uppercase">Default</Badge>

@@ -128,6 +128,19 @@ function findOverdueCandidates(): Promise<InvoiceListItem[]> {
 }
 
 /**
+ * M27 dashboard Priority Feed (Docs/ui_design_guide.md §16) — drafts older
+ * than the stale-draft cutoff (`src/lib/dashboardTrend.ts`'s
+ * `STALE_DRAFT_DAYS`), oldest/most-stale first.
+ */
+function findStaleDrafts(cutoff: Date): Promise<InvoiceListItem[]> {
+  return prisma.invoice.findMany({
+    where: { status: "DRAFT", createdAt: { lte: cutoff } },
+    include: LIST_ITEM_INCLUDE,
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+/**
  * Dashboard (M10) — Recent Activity's invoice-side events. `updatedAt` only
  * changes for a non-DRAFT invoice via transitionStatus (updateDraft is
  * DRAFT-only), so it's exactly the timestamp of the most recent lifecycle
@@ -142,6 +155,57 @@ function findRecentByStatuses(
     include: LIST_ITEM_INCLUDE,
     orderBy: { updatedAt: "desc" },
     take: limit,
+  });
+}
+
+/**
+ * M27 dashboard trend (Docs/ui_design_guide.md §16) — invoices that entered
+ * `status` within the trailing window, keyed off `createdAt`. Used for the
+ * Draft Invoices stat's "entered" count.
+ */
+function findCreatedByStatusSince(
+  status: InvoiceStatus,
+  since: Date,
+): Promise<{ createdAt: Date }[]> {
+  return prisma.invoice.findMany({
+    where: { status, createdAt: { gte: since } },
+    select: { createdAt: true },
+  });
+}
+
+/**
+ * M27 dashboard trend — invoices currently in `status` whose `updatedAt`
+ * falls within the trailing window. Since `DRAFT→SENT` is the only path
+ * into SENT and `SENT→PAID` the only path into PAID, this is an exact (not
+ * approximate) proxy for "entered SENT"/"entered PAID" respectively — used
+ * for the Draft "exited to Sent" and Sent/Unpaid "entered"/"exited to Paid"
+ * counts. A stray DRAFT→VOID or SENT→VOID isn't captured by any of these
+ * (VOID can originate from either, so it's deliberately left out of both
+ * rather than guessed at) — an accepted approximation gap.
+ */
+function findUpdatedByStatusSince(
+  status: InvoiceStatus,
+  since: Date,
+): Promise<{ updatedAt: Date }[]> {
+  return prisma.invoice.findMany({
+    where: { status, updatedAt: { gte: since } },
+    select: { updatedAt: true },
+  });
+}
+
+/**
+ * M27 dashboard trend — invoices resolved (PAID or VOID) within the
+ * trailing window, with `dueDate` alongside so the caller can filter to
+ * only those that were actually overdue at resolution time
+ * (`dueDate < updatedAt`) in plain JS, since Prisma has no built-in
+ * column-to-column comparison filter.
+ */
+function findResolvedSince(
+  since: Date,
+): Promise<{ dueDate: Date; updatedAt: Date }[]> {
+  return prisma.invoice.findMany({
+    where: { status: { in: ["PAID", "VOID"] }, updatedAt: { gte: since } },
+    select: { dueDate: true, updatedAt: true },
   });
 }
 
@@ -275,4 +339,8 @@ export const invoiceRepository = {
   sumSubtotalByStatusGroupedByNonUsdCurrency,
   findOverdueCandidates,
   findRecentByStatuses,
+  findStaleDrafts,
+  findCreatedByStatusSince,
+  findUpdatedByStatusSince,
+  findResolvedSince,
 };

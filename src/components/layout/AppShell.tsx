@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { MobileTopBar, MobileTabBar } from "@/components/layout/MobileNav";
 
 /**
  * Docs/execution_plan.md §12 — `/invoices/[id]/print` must render bare, with
@@ -11,6 +12,11 @@ import { Sidebar } from "@/components/layout/Sidebar";
  * Next.js root layout in this app (no route groups in the folder structure
  * per Docs/execution_plan.md §2), so the shell is toggled here by pathname
  * rather than via a second root layout.
+ *
+ * Nav breakpoint is 1024px (`lg`) — M27, design_handoff_dashboard_v2/README.md
+ * §1: below it, Sidebar renders nothing and MobileTopBar/MobileTabBar take
+ * over instead of a collapsing drawer, so main content pads for their fixed
+ * 52px/64px heights only below that breakpoint.
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -23,9 +29,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <main className="min-w-0 flex-1">
-        <div className="mx-auto max-w-[1200px] p-4 md:p-10">{children}</div>
+      <MobileTopBar />
+      <main className="min-w-0 flex-1 pt-[52px] pb-16 lg:pt-0 lg:pb-0">
+        <div className="mx-auto max-w-[1200px] p-4 lg:p-10">{children}</div>
       </main>
+      <MobileTabBar />
     </div>
   );
 }

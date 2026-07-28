@@ -1,53 +1,102 @@
 import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import {
+  resolveTrendPresentation,
+  scaleSparklineBars,
+  type TrendSemantics,
+} from "@/lib/dashboardTrend";
+
+const TONE_TEXT: Record<"positive" | "negative" | "neutral", string> = {
+  positive: "text-[var(--status-paid-text)]",
+  negative: "text-[var(--status-overdue-text)]",
+  neutral: "text-muted-foreground",
+};
+
+const TONE_BAR: Record<"positive" | "negative" | "neutral", string> = {
+  positive: "bg-[var(--status-paid-text)]",
+  negative: "bg-[var(--status-overdue-text)]",
+  neutral: "bg-muted-foreground",
+};
+
+export type StatTrendProps = {
+  delta: number;
+  semantics: TrendSemantics;
+  sparklineCounts: number[];
+};
 
 /**
- * Dashboard stats row (M10) — Docs/ui_design_guide.md §16. Counts only; any
- * dollar figure is secondary subtext, never the headline metric. `subtext`
- * accepts a `ReactNode` (Docs/feedback_backlog.md M26), not just a string, so
- * the Sent/Unpaid card can stack per-currency breakdown lines beneath the
- * primary USD figure instead of blending currencies into one string.
+ * Dashboard stats row (M27 v2 redesign) — Docs/ui_design_guide.md §16,
+ * design_handoff_dashboard_v2/README.md §2. Counts only; any dollar figure
+ * is secondary subtext, never the headline metric. `trend` is optional so
+ * this can still render a plain stat card without a trend indicator.
  * `href` (Docs/feedback_backlog.md — dashboard card navigation) makes the
- * whole card a link into the matching filtered list, reusing the same
- * hover treatment as the invoices/new project-picker cards.
+ * whole card a link into the matching filtered list.
  */
 export function StatsCard({
   label,
   value,
   subtext,
-  icon: Icon,
   href,
+  trend,
 }: {
   label: string;
   value: number;
   subtext?: ReactNode;
-  icon: LucideIcon;
   href?: string;
+  trend?: StatTrendProps;
 }) {
+  const presentation = trend
+    ? resolveTrendPresentation(trend.delta, trend.semantics)
+    : null;
+  const bars = trend ? scaleSparklineBars(trend.sparklineCounts) : null;
+  const barColorClass = presentation
+    ? TONE_BAR[presentation.tone]
+    : "bg-muted-foreground";
+
   const card = (
-    <Card
-      className={cn(href && "transition-colors hover:bg-muted/40")}
-    >
-      <CardContent className="flex items-center justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+    <Card className={cn(href && "transition-colors hover:bg-muted/40")}>
+      <CardContent className="flex flex-col gap-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] font-bold tracking-wide text-muted-foreground uppercase">
             {label}
           </span>
-          <span className="text-2xl font-extrabold tracking-[-0.02em] text-foreground">
+          {presentation ? (
+            <span
+              className={cn(
+                "text-[11px] font-bold",
+                TONE_TEXT[presentation.tone],
+              )}
+            >
+              {presentation.arrow} {presentation.deltaText}
+            </span>
+          ) : null}
+        </div>
+        <div className="flex items-end justify-between gap-2.5">
+          <span className="font-mono text-[28px] font-bold text-foreground">
             {value}
           </span>
-          {subtext ? (
-            <div className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
-              {subtext}
+          {bars ? (
+            <div className="flex h-6 items-end gap-[3px]">
+              {bars.map((height, index) => (
+                <span
+                  key={index}
+                  className={cn(
+                    "w-1 rounded-[2px] opacity-55",
+                    barColorClass,
+                  )}
+                  style={{ height: `${height}%` }}
+                />
+              ))}
             </div>
           ) : null}
         </div>
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand">
-          <Icon className="h-4.5 w-4.5" />
-        </div>
+        {subtext ? (
+          <div className="flex flex-col gap-0.5 font-mono text-[11px] text-muted-foreground">
+            {subtext}
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );

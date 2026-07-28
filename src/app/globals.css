@@ -39,6 +39,13 @@
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);
   --color-brand-light: var(--brand-light);
+  --color-nav: var(--nav-bg);
+  --color-nav-active: var(--nav-active-bg);
+  --color-nav-active-foreground: var(--nav-active-text);
+  --color-nav-muted: var(--nav-inactive-text);
+  --color-nav-icon: var(--nav-icon-bg);
+  --color-nav-border: var(--nav-border);
+  --color-nav-email: var(--nav-email-text);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -57,6 +64,18 @@
   --text-muted: #94a3b8;
   --border-light: #e2e8f0;
   --border-heavy: #cbd5e1;
+
+  /* Nav shell (dark) tokens — M27 2026-07-28, design_handoff_dashboard_v2/,
+     Docs/ui_design_guide.md §3/§7. Chrome-only dark surface, not app-wide
+     dark mode — every page's own content stays on the light tokens above. */
+  --nav-bg: #0f172a;
+  --nav-active-bg: rgba(99, 102, 241, 0.2);
+  --nav-active-text: #a5b4fc;
+  --nav-inactive-text: #94a3b8;
+  --nav-icon-bg: rgba(255, 255, 255, 0.08);
+  --nav-border: rgba(255, 255, 255, 0.08);
+  --nav-email-text: #64748b;
+  --alert-banner-gradient: linear-gradient(135deg, #1e1b4b, #312e81);
 
   /* Status tokens (invoice lifecycle only — §7/§11), for use once StatusBadge lands (M6/M7) */
   --status-draft-bg: #f1f5f9;

@@ -6,6 +6,12 @@ import type {
 import { paymentMethodRepository } from "@/repositories/paymentMethodRepository";
 import type { ProjectInput } from "@/lib/validation/project";
 import type { Project, InvoicePeriodType } from "@/generated/prisma/client";
+import {
+  bucketCounts,
+  daysAgo,
+  TREND_WINDOW_DAYS,
+  type StatTrend,
+} from "@/lib/dashboardTrend";
 
 /**
  * Thrown when a delete is blocked by a live foreign-key reference
@@ -101,6 +107,26 @@ function countActive(): Promise<number> {
   return projectRepository.countActive();
 }
 
+/**
+ * M27 dashboard trend (Docs/ui_design_guide.md §16) — Active Projects'
+ * approximated trailing-30-day delta + sparkline. See
+ * `src/lib/dashboardTrend.ts` for why this is an approximation, not an exact
+ * history.
+ */
+async function getActiveProjectsTrend(): Promise<StatTrend> {
+  const since = daysAgo(TREND_WINDOW_DAYS);
+  const [entered, exited] = await Promise.all([
+    projectRepository.findActiveCreatedSince(since),
+    projectRepository.findArchivedSince(since),
+  ]);
+  const enteredTimestamps = entered.map((row) => row.createdAt);
+  const exitedTimestamps = exited.map((row) => row.updatedAt);
+  return {
+    delta: enteredTimestamps.length - exitedTimestamps.length,
+    sparklineCounts: bucketCounts([...enteredTimestamps, ...exitedTimestamps]),
+  };
+}
+
 /** Dashboard (M10) — Needs Attention's missing-payment-method set (Story 8.3). */
 function listMissingPreferredPaymentMethod(): Promise<ProjectWithRelations[]> {
   return projectRepository.findMissingPreferredPaymentMethod();
@@ -178,6 +204,7 @@ export const projectService = {
   isDeletable,
   delete: deleteProject,
   countActive,
+  getActiveProjectsTrend,
   listMissingPreferredPaymentMethod,
   listRecentlyCreated,
   listProjectRefsByPreferredPaymentMethod,

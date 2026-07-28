@@ -121,6 +121,30 @@ function findByPreferredPaymentMethodIds(
   });
 }
 
+/**
+ * M27 dashboard trend (Docs/ui_design_guide.md §16) — Active Projects
+ * "entered" events: projects created within the trailing window that are
+ * currently ACTIVE.
+ */
+function findActiveCreatedSince(since: Date): Promise<{ createdAt: Date }[]> {
+  return prisma.project.findMany({
+    where: { status: "ACTIVE", createdAt: { gte: since } },
+    select: { createdAt: true },
+  });
+}
+
+/**
+ * M27 dashboard trend — Active Projects "exited" events: projects currently
+ * ARCHIVED, approximating the archive timestamp via `updatedAt` (there's no
+ * separate archivedAt column/history to read the real transition time from).
+ */
+function findArchivedSince(since: Date): Promise<{ updatedAt: Date }[]> {
+  return prisma.project.findMany({
+    where: { status: "ARCHIVED", updatedAt: { gte: since } },
+    select: { updatedAt: true },
+  });
+}
+
 export const projectRepository = {
   findMany,
   findById,
@@ -132,4 +156,6 @@ export const projectRepository = {
   countActive,
   findRecentlyCreated,
   findByPreferredPaymentMethodIds,
+  findActiveCreatedSince,
+  findArchivedSince,
 };

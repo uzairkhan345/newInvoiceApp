@@ -2,81 +2,67 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Users,
-  Briefcase,
-  FileText,
-  Settings,
-} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { navItems, isActiveNavHref } from "./navItems";
 
 /**
- * App shell sidebar — Docs/ui_design_guide.md §3.
- * Nav items are added alongside their pages as milestones land — Dashboard
- * (M0), Parties (M2), Projects (M4), Invoices (M5), and Settings (M16) exist
- * so far.
+ * Desktop nav shell (≥1024px) — M27 v2 redesign,
+ * design_handoff_dashboard_v2/README.md §1, Docs/ui_design_guide.md §3.
+ * Dark navy surface, replacing the prior white sidebar. Below 1024px this
+ * renders nothing — MobileNav.tsx's top bar + bottom tab bar take over
+ * entirely rather than this collapsing to a drawer.
  */
-const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/parties", label: "Parties", icon: Users },
-  { href: "/projects", label: "Projects", icon: Briefcase },
-  { href: "/invoices", label: "Invoices", icon: FileText },
-  { href: "/settings", label: "Settings", icon: Settings },
-];
-
 export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden md:flex w-[260px] shrink-0 flex-col border-r border-border bg-sidebar">
-      <div className="flex items-center gap-2 px-5 py-5 border-b border-sidebar-border">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-brand text-sm font-bold text-white">
+    <aside className="hidden w-[240px] shrink-0 flex-col bg-nav lg:flex">
+      <div className="flex items-center gap-2.5 px-5 py-[22px]">
+        <div className="flex h-[30px] w-[30px] items-center justify-center rounded-lg bg-brand text-[13px] font-bold text-white">
           I
         </div>
-        <div className="flex flex-col leading-tight">
-          <span className="text-sm font-bold text-sidebar-foreground">
-            Invoice App
-          </span>
-          <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-            Admin
-          </span>
-        </div>
+        <span className="text-sm font-bold text-white">Invoice App</span>
       </div>
 
-      <nav className="flex-1 space-y-1 px-3 py-4">
+      <nav className="flex flex-1 flex-col gap-[3px] px-3 py-1">
         {navItems.map((item) => {
-          const isActive =
-            item.href === "/"
-              ? pathname === "/"
-              : pathname.startsWith(item.href);
+          const isActive = isActiveNavHref(pathname, item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors",
+                "flex items-center gap-2.5 rounded-lg px-3 py-[9px] text-[13px] font-semibold transition-colors",
                 isActive
-                  ? "bg-brand-light text-brand"
-                  : "text-sidebar-foreground hover:bg-muted",
+                  ? "bg-nav-active text-nav-active-foreground"
+                  : "text-nav-muted hover:bg-white/[0.06]",
               )}
             >
-              <item.icon className="h-4 w-4" />
+              <span
+                className={cn(
+                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-md",
+                  isActive
+                    ? "bg-brand text-white"
+                    : "bg-nav-icon text-nav-muted",
+                )}
+              >
+                <item.icon className="h-3 w-3" />
+              </span>
               {item.label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="flex items-center gap-2 border-t border-sidebar-border px-5 py-4">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-light text-xs font-bold text-brand">
+      <div className="flex items-center gap-2.5 border-t border-nav-border px-5 py-4">
+        <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
           A
         </div>
         <div className="flex min-w-0 flex-col leading-tight">
-          <span className="truncate text-xs font-semibold text-sidebar-foreground">
+          <span className="truncate text-xs font-semibold text-white">
             Admin
           </span>
-          <span className="truncate text-[11px] text-muted-foreground">
+          <span className="truncate text-[11px] text-nav-email">
             admin@local
           </span>
         </div>

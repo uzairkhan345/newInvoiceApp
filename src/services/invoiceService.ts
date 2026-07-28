@@ -15,6 +15,13 @@ import type {
   Invoice,
   InvoiceStatus,
 } from "@/generated/prisma/client";
+import {
+  bucketCounts,
+  daysAgo,
+  STALE_DRAFT_DAYS,
+  TREND_WINDOW_DAYS,
+  type StatTrend,
+} from "@/lib/dashboardTrend";
 
 /**
  * Thrown when a projectId doesn't resolve to a real Project — createDraft is
@@ -272,6 +279,70 @@ function listRecentActivity(limit: number): Promise<InvoiceListItem[]> {
   );
 }
 
+/** M27 dashboard Priority Feed (Docs/ui_design_guide.md §16) — drafts idle longer than the stale threshold, most-stale first. */
+function listStaleDrafts(): Promise<InvoiceListItem[]> {
+  return invoiceRepository.findStaleDrafts(daysAgo(STALE_DRAFT_DAYS));
+}
+
+/**
+ * M27 dashboard trend — Draft Invoices' approximated trailing-30-day delta +
+ * sparkline. See `src/lib/dashboardTrend.ts` for why this is an
+ * approximation, not an exact history.
+ */
+async function getDraftInvoicesTrend(): Promise<StatTrend> {
+  const since = daysAgo(TREND_WINDOW_DAYS);
+  const [entered, exitedToSent] = await Promise.all([
+    invoiceRepository.findCreatedByStatusSince("DRAFT", since),
+    invoiceRepository.findUpdatedByStatusSince("SENT", since),
+  ]);
+  const enteredTimestamps = entered.map((row) => row.createdAt);
+  const exitedTimestamps = exitedToSent.map((row) => row.updatedAt);
+  return {
+    delta: enteredTimestamps.length - exitedTimestamps.length,
+    sparklineCounts: bucketCounts([...enteredTimestamps, ...exitedTimestamps]),
+  };
+}
+
+/** M27 dashboard trend — Sent/Unpaid's approximated trailing-30-day delta + sparkline. */
+async function getSentUnpaidTrend(): Promise<StatTrend> {
+  const since = daysAgo(TREND_WINDOW_DAYS);
+  const [entered, exitedToPaid] = await Promise.all([
+    invoiceRepository.findUpdatedByStatusSince("SENT", since),
+    invoiceRepository.findUpdatedByStatusSince("PAID", since),
+  ]);
+  const enteredTimestamps = entered.map((row) => row.updatedAt);
+  const exitedTimestamps = exitedToPaid.map((row) => row.updatedAt);
+  return {
+    delta: enteredTimestamps.length - exitedTimestamps.length,
+    sparklineCounts: bucketCounts([...enteredTimestamps, ...exitedTimestamps]),
+  };
+}
+
+/**
+ * M27 dashboard trend — Overdue's approximated trailing-30-day delta +
+ * sparkline. Reuses the already-fetched `overdueInvoices` list (from
+ * `listOverdue`) rather than re-querying — "newly overdue in the window" is
+ * just that list filtered by `dueDate`. "Resolved from overdue" filters
+ * PAID/VOID invoices to only those whose `dueDate` was actually before their
+ * `updatedAt` (i.e. genuinely overdue at the moment they were resolved).
+ */
+async function getOverdueTrend(
+  overdueInvoices: InvoiceListItem[],
+): Promise<StatTrend> {
+  const since = daysAgo(TREND_WINDOW_DAYS);
+  const resolved = await invoiceRepository.findResolvedSince(since);
+  const enteredTimestamps = overdueInvoices
+    .filter((invoice) => invoice.dueDate.getTime() >= since.getTime())
+    .map((invoice) => invoice.dueDate);
+  const exitedTimestamps = resolved
+    .filter((row) => row.dueDate.getTime() < row.updatedAt.getTime())
+    .map((row) => row.updatedAt);
+  return {
+    delta: enteredTimestamps.length - exitedTimestamps.length,
+    sparklineCounts: bucketCounts([...enteredTimestamps, ...exitedTimestamps]),
+  };
+}
+
 function getById(id: string): Promise<InvoiceWithItems | null> {
   return invoiceRepository.findById(id);
 }
@@ -483,4 +554,8 @@ export const invoiceService = {
   sumSubtotalByStatusGroupedByNonUsdCurrency,
   listOverdue,
   listRecentActivity,
+  listStaleDrafts,
+  getDraftInvoicesTrend,
+  getSentUnpaidTrend,
+  getOverdueTrend,
 };
