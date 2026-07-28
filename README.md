@@ -5,6 +5,21 @@ A **single-tenant invoice tracking application** for freelancers and contractors
 > [!WARNING]
 > **This app has no authentication — by design.** It is built for local, single-user use on your own machine. Every route (including `/settings`, which stores encrypted API keys) is open. **Do not deploy it to a public URL as-is.** Adding a simple credential gate is the documented pre-deployment requirement (`Docs/implementation_decisions.md` §8).
 
+![Dashboard](Docs/screenshots/dashboard.png)
+
+<table>
+  <tr>
+    <td width="50%"><img src="Docs/screenshots/invoices.png" alt="Invoices list with status filters" /></td>
+    <td width="50%"><img src="Docs/screenshots/invoice-document.png" alt="Invoice document preview with lifecycle actions" /></td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="Docs/screenshots/dashboard-mobile.png" alt="Mobile dashboard with bottom tab bar" width="320" />
+</p>
+
+*Screenshots show the bundled demo seed data.*
+
 ## Features
 
 - **Parties** — one unified roster of people/organizations; any party can act as a contractor, a client, or both. Payment methods (bank wire, Zelle, Payoneer, custom) with fully custom ordered field lists, **encrypted at rest**.

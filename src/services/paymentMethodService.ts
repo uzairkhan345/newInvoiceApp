@@ -5,7 +5,10 @@ import type {
 } from "@/repositories/paymentMethodRepository";
 import type { PaymentMethodInput } from "@/lib/validation/paymentMethod";
 import type { PaymentMethod } from "@/generated/prisma/client";
-import { encryptSecret, decryptSecret } from "@/lib/crypto/settingsEncryption";
+import {
+  encryptSecret,
+  decryptSecretOrRaw,
+} from "@/lib/crypto/settingsEncryption";
 
 /**
  * Thrown when a delete is blocked by a live foreign-key reference
@@ -37,7 +40,7 @@ function encryptFields(fields: PaymentMethodField[]): PaymentMethodField[] {
 function decryptFields(fields: PaymentMethodField[]): PaymentMethodField[] {
   return fields.map((field) => ({
     ...field,
-    value: decryptSecret(field.value),
+    value: decryptSecretOrRaw(field.value),
   }));
 }
 

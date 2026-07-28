@@ -1,7 +1,7 @@
 import type { InvoiceStatus } from "@/generated/prisma/client";
 import type { InvoiceWithItems } from "@/repositories/invoiceRepository";
 import type { PaymentMethodField } from "@/repositories/paymentMethodRepository";
-import { decryptSecret } from "@/lib/crypto/settingsEncryption";
+import { decryptSecretOrRaw } from "@/lib/crypto/settingsEncryption";
 
 export type PartySnapshotData = {
   name: string;
@@ -84,7 +84,7 @@ function assembleInvoiceDocumentData(
     client: invoice.toPartySnapshot as unknown as PartySnapshotData,
     paymentDetails: paymentDetails.map((field) => ({
       ...field,
-      value: decryptSecret(field.value),
+      value: decryptSecretOrRaw(field.value),
     })),
     items: invoice.items.map((item) => ({
       id: item.id,

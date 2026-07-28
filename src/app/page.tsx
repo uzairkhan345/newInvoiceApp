@@ -108,7 +108,7 @@ export default async function DashboardPage() {
 
       {alertChips.length > 0 ? (
         <AlertBanner
-          headline={`${actionableCount} ${pluralize(actionableCount, "item")} need review before month-end.`}
+          headline={`${actionableCount} ${pluralize(actionableCount, "item needs", "items need")} review before month-end.`}
           chips={alertChips}
         />
       ) : null}

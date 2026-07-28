@@ -56,6 +56,22 @@ export function decryptSecret(encoded: string): string {
   ]).toString("utf8");
 }
 
+/**
+ * Tolerant variant for payment-field display paths: values written through
+ * the app are always encrypted, but seeded or externally-imported rows may
+ * hold plaintext — return the raw value rather than crashing the render.
+ * (Also covers running without SETTINGS_ENCRYPTION_KEY set at all, e.g. the
+ * fresh-clone quickstart with seed data.) Never used for AI provider keys,
+ * which are exclusively written encrypted and should fail loudly.
+ */
+export function decryptSecretOrRaw(encoded: string): string {
+  try {
+    return decryptSecret(encoded);
+  } catch {
+    return encoded;
+  }
+}
+
 /** Last 4 chars of the decrypted key, for a UI hint that never ships the full value. */
 export function maskedHint(plaintext: string): string {
   const last4 = plaintext.slice(-4);
