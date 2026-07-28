@@ -82,7 +82,7 @@ export function PaymentMethodList({
                       <Badge
                         key={project.id}
                         variant="outline"
-                        className="border-transparent bg-brand-light font-normal normal-case text-brand transition-colors hover:bg-brand hover:text-primary-foreground"
+                        className="border-transparent bg-[var(--status-paid-bg)] font-normal normal-case text-[var(--status-paid-text)] transition-colors hover:bg-[#047857] hover:text-white"
                         render={<Link href={`/projects/${project.id}`} />}
                       >
                         {project.name}
