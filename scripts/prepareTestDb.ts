@@ -8,10 +8,7 @@
 import { execSync } from "node:child_process";
 import { config } from "dotenv";
 import { PrismaClient } from "../src/generated/prisma/client";
-import {
-  DEFAULT_TEST_DATABASE_URL,
-  resolveTestDatabaseUrl,
-} from "../tests/testDatabaseUrl";
+import { resolveTestDatabaseUrl } from "../tests/testDatabaseUrl";
 
 config({ path: ".env.local" });
 
