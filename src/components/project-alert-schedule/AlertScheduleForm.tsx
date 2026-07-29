@@ -17,14 +17,7 @@ import { FormField } from "@/components/shared/FormField";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { DAY_OPTIONS, DAY_LABELS } from "@/components/project-alert-schedule/dayOfMonthLabels";
+import { DayOfMonthPicker } from "@/components/project-alert-schedule/DayOfMonthPicker";
 
 /**
  * M29 — dialog-only, never a full page (see
@@ -100,27 +93,11 @@ export function AlertScheduleForm({
           name="dayOfMonth"
           control={control}
           render={({ field }) => (
-            <Select
-              value={String(field.value)}
-              onValueChange={(value) => {
-                if (!value) return;
-                field.onChange(Number(value));
-              }}
-            >
-              <SelectTrigger id="dayOfMonth" className="w-full">
-                <SelectValue
-                  placeholder="Select a day"
-                  renderValue={(value) => DAY_LABELS[Number(value)]}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {DAY_OPTIONS.map((day) => (
-                  <SelectItem key={day} value={String(day)}>
-                    {DAY_LABELS[day]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <DayOfMonthPicker
+              id="dayOfMonth"
+              value={field.value}
+              onChange={field.onChange}
+            />
           )}
         />
       </FormField>
