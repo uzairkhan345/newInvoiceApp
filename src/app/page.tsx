@@ -6,6 +6,7 @@ import { PriorityFeed } from "@/components/dashboard/PriorityFeed";
 import { Button } from "@/components/ui/button";
 import { invoiceService } from "@/services/invoiceService";
 import { projectService } from "@/services/projectService";
+import { projectAlertScheduleService } from "@/services/projectAlertScheduleService";
 import { formatCurrency } from "@/lib/currency";
 import { buildPriorityFeed, countActionableFeedItems } from "@/lib/priorityFeed";
 import { daysSince } from "@/lib/dashboardTrend";
@@ -36,6 +37,7 @@ export default async function DashboardPage() {
     sentOutstanding,
     sentOutstandingByNonUsdCurrency,
     overdueInvoices,
+    firedAlertSchedules,
     staleDrafts,
     missingPaymentMethodProjects,
     recentInvoiceActivity,
@@ -50,6 +52,7 @@ export default async function DashboardPage() {
     invoiceService.sumSubtotalByStatus("SENT"),
     invoiceService.sumSubtotalByStatusGroupedByNonUsdCurrency("SENT"),
     invoiceService.listOverdue(),
+    projectAlertScheduleService.listFiredAcrossActiveProjects(),
     invoiceService.listStaleDrafts(),
     projectService.listMissingPreferredPaymentMethod(),
     invoiceService.listRecentActivity(RECENT_ACTIVITY_LIMIT),
@@ -62,6 +65,7 @@ export default async function DashboardPage() {
 
   const feed = buildPriorityFeed({
     overdueInvoices,
+    firedAlertSchedules,
     missingPaymentMethodProjects,
     staleDrafts,
     recentInvoiceActivity,

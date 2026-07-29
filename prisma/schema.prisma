@@ -146,10 +146,33 @@ model Project {
   updatedAt DateTime @updatedAt
 
   invoices Invoice[]
+  alertSchedules ProjectAlertSchedule[]
 
   @@index([clientId])
   @@index([contractorId])
   @@index([preferredPaymentMethodId])
+}
+
+/// Docs/product_spec.md §1.6. M29 — a day-of-month reminder for a Project,
+/// purely calendar-driven, in-app only (no email/push, no cron). `recurring`
+/// is per-schedule, not per-project (Docs/implementation_decisions.md §24).
+/// `clearedAt` is the entire "already fired" state machine: for a recurring
+/// schedule, cleared-this-month hides it and cleared-in-an-earlier-month
+/// re-arms it automatically; for a one-time schedule, any non-null value
+/// hides it permanently. See src/lib/alertScheduleFiring.ts for the exact
+/// firing logic derived from this field plus `dayOfMonth`/`recurring`.
+model ProjectAlertSchedule {
+  id String @id @default(cuid())
+  projectId String
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  dayOfMonth Int
+  recurring Boolean @default(true)
+  label String?
+  clearedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
 }
 
 /// Docs/product_spec.md §1.4. Snapshot-only — no live PaymentMethodId FK

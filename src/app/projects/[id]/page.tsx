@@ -5,6 +5,8 @@ import { ProjectForm } from "@/components/project/ProjectForm";
 import { ProjectDetailCard } from "@/components/project/ProjectDetailCard";
 import { ProjectDeleteButton } from "@/components/project/ProjectDeleteButton";
 import { InvoiceTable } from "@/components/invoice/InvoiceTable";
+import { AlertScheduleList } from "@/components/project-alert-schedule/AlertScheduleList";
+import { AddAlertScheduleButton } from "@/components/project-alert-schedule/AddAlertScheduleButton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
@@ -12,6 +14,7 @@ import { projectService } from "@/services/projectService";
 import { partyService } from "@/services/partyService";
 import { paymentMethodService } from "@/services/paymentMethodService";
 import { invoiceService } from "@/services/invoiceService";
+import { projectAlertScheduleService } from "@/services/projectAlertScheduleService";
 import { toInvoiceTableRow } from "@/lib/invoiceTableRow";
 import type { PaymentMethod } from "@/generated/prisma/client";
 
@@ -84,11 +87,13 @@ export default async function ProjectDetailPage({
     );
   }
 
-  const [isDeletable, nextInvoiceNumber, invoices] = await Promise.all([
-    projectService.isDeletable(id),
-    invoiceService.previewNextInvoiceNumber(id),
-    invoiceService.listByProject(id),
-  ]);
+  const [isDeletable, nextInvoiceNumber, invoices, alertSchedules] =
+    await Promise.all([
+      projectService.isDeletable(id),
+      invoiceService.previewNextInvoiceNumber(id),
+      invoiceService.listByProject(id),
+      projectAlertScheduleService.listForProjectWithFiringState(id),
+    ]);
 
   return (
     <>
@@ -143,6 +148,24 @@ export default async function ProjectDetailPage({
           invoices={invoices.map(toInvoiceTableRow)}
           hideProjectColumn
         />
+      )}
+
+      <div className="mt-8 mb-3 flex items-center justify-between">
+        <h2 className="text-[15px] font-bold text-foreground">
+          Alert Schedules
+        </h2>
+        {alertSchedules.length > 0 ? (
+          <AddAlertScheduleButton projectId={project.id} />
+        ) : null}
+      </div>
+      {alertSchedules.length === 0 ? (
+        <EmptyState
+          title="No alert schedules yet"
+          description="Add a day-of-month reminder for this project."
+          action={<AddAlertScheduleButton projectId={project.id} />}
+        />
+      ) : (
+        <AlertScheduleList projectId={project.id} schedules={alertSchedules} />
       )}
     </>
   );

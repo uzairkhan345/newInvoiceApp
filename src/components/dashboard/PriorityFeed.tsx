@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { ClearAlertScheduleButton } from "@/components/project-alert-schedule/ClearAlertScheduleButton";
 import type {
   PriorityFeedBarTone,
   PriorityFeedCategory,
@@ -10,6 +11,7 @@ import type {
 
 const CATEGORY_LABEL: Record<PriorityFeedCategory, string> = {
   overdue: "Overdue",
+  fired: "Alert",
   setup: "Setup",
   draft: "Draft",
   activity: "Activity",
@@ -74,46 +76,91 @@ export function PriorityFeed({ items }: { items: PriorityFeedItem[] }) {
               All caught up
             </p>
             <p className="max-w-[260px] text-[11px] text-muted-foreground">
-              No overdue invoices, drafts, activity, or setup gaps right now.
+              No overdue invoices, alerts, drafts, activity, or setup gaps
+              right now.
             </p>
           </div>
         ) : (
           items.map((item, index) => {
             const tone = TONE_STYLES[item.barTone];
+            const borderClass = index > 0 && "border-t border-muted";
+
+            const titleDetail = (
+              <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 py-3">
+                <span className="truncate text-[13px] font-semibold text-foreground">
+                  {item.title}
+                </span>
+                <span className="truncate text-[12px] text-muted-foreground">
+                  {item.detail}
+                </span>
+              </div>
+            );
+            const tag = (
+              <span
+                className={cn(
+                  "shrink-0 self-center rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase",
+                  tone.tagBg,
+                  tone.tagText,
+                )}
+              >
+                {CATEGORY_LABEL[item.category]}
+              </span>
+            );
+
+            // A `<button>` can't nest inside an `<a>`, so a "fired" item
+            // (which needs an inline Clear button) uses a plain `<div>` row
+            // with the title/detail as its own inner `<Link>`, instead of
+            // the whole-row `<Link>` every other category still uses.
+            if (item.clear) {
+              return (
+                <div
+                  key={item.id}
+                  className={cn("flex items-stretch gap-3 px-5", borderClass)}
+                >
+                  <span
+                    className={cn("w-[3px] shrink-0 self-stretch", tone.bar)}
+                  />
+                  <Link
+                    href={item.href}
+                    className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 py-3 hover:underline"
+                  >
+                    <span className="truncate text-[13px] font-semibold text-foreground">
+                      {item.title}
+                    </span>
+                    <span className="truncate text-[12px] text-muted-foreground">
+                      {item.detail}
+                    </span>
+                  </Link>
+                  {tag}
+                  <span className="shrink-0 self-center">
+                    <ClearAlertScheduleButton
+                      scheduleId={item.clear.scheduleId}
+                      projectId={item.clear.projectId}
+                    />
+                  </span>
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={item.id}
                 href={item.href}
                 className={cn(
                   "flex items-stretch gap-3 px-5 hover:bg-muted/40",
-                  index > 0 && "border-t border-muted",
+                  borderClass,
                 )}
               >
                 <span
                   className={cn("w-[3px] shrink-0 self-stretch", tone.bar)}
                 />
-                <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 py-3">
-                  <span className="truncate text-[13px] font-semibold text-foreground">
-                    {item.title}
-                  </span>
-                  <span className="truncate text-[12px] text-muted-foreground">
-                    {item.detail}
-                  </span>
-                </div>
+                {titleDetail}
                 {item.amount ? (
                   <span className="shrink-0 self-center font-mono text-[13px] font-semibold text-foreground">
                     {item.amount}
                   </span>
                 ) : null}
-                <span
-                  className={cn(
-                    "shrink-0 self-center rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase",
-                    tone.tagBg,
-                    tone.tagText,
-                  )}
-                >
-                  {CATEGORY_LABEL[item.category]}
-                </span>
+                {tag}
               </Link>
             );
           })

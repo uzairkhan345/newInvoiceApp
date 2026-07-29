@@ -104,6 +104,23 @@ There is no `Tax` field. `Currency` records what the core amounts are denominate
 | `Amount` | Decimal | For an Hourly item: `Quantity * UnitPrice`, calculated by the backend — never trusted from the frontend. For a Flat item: entered directly by the admin and trusted as submitted — the one narrow, deliberate exception to "amount is always backend-calculated" (there is nothing to compute it from). |
 | `SortOrder` | Integer | Preserves line-item display order; the underlying relational store has no inherent row order for a "list" of items. |
 
+### 1.6 Entity: ProjectAlertSchedule
+
+A day-of-month reminder for a `Project`, purely calendar-driven and in-app only (no email/push, no scheduler) — see `Docs/implementation_decisions.md` §24.
+
+| Field | Type | Description |
+|---|---|---|
+| `Id` | Identifier, Primary Key | Unique schedule identifier. |
+| `ProjectId` | Identifier, Foreign Key | Parent `Project.Id`. |
+| `DayOfMonth` | Integer (1–31) | The trigger day. Clamped to the target month's actual last day when it doesn't exist (e.g. `31` fires on Feb 28/29). |
+| `Recurring` | Boolean, default `true` | `true`: once cleared, the alert automatically re-fires on the same day next month. `false`: once cleared, the alert is permanently done and never fires again. |
+| `Label` | Text, Optional | Free-text description shown when the alert fires (e.g. `Send invoice`). Falls back to a generic "Day N reminder" when unset. |
+| `ClearedAt` | Timestamp, Optional | Set when an admin dismisses the alert's current occurrence. Interpreted together with `Recurring` and `DayOfMonth` — never read as a standalone "is cleared" flag. |
+
+**Firing**: an alert is "fired" (shown on the dashboard Priority Feed and the project's own detail page) once the current date reaches `DayOfMonth` for the current month, and it hasn't already been cleared for that occurrence. Clearing is a single action shared by both surfaces — an alert cleared from one place is reflected on the other immediately.
+
+**Deletion**: freely deletable by the admin at any time (no live reference ever blocks it); cascades automatically when the parent `Project` is deleted.
+
 ## 2. Structural Examples for Dynamic Payment Fields
 
 Unchanged from the original spec:
@@ -218,6 +235,7 @@ Deletion is governed entirely by **live** foreign-key references — never by hi
 - `Party`: deletable only while not set as any `Project`'s `ContractorId`/`ClientId`.
 - `PaymentMethod`: deletable only while not set as any `Project`'s `PreferredPaymentMethodId`.
 - `Invoice` *(resolved during blueprint planning — see `Docs/implementation_decisions.md` §22, not explicit in the original spec)*: deletable in **any** status, with an admin confirmation prompt; `InvoiceItem` rows cascade. This is the mechanism that makes the `Project` deletion rule above actually satisfiable.
+- `ProjectAlertSchedule`: deletable freely by the admin at any time — nothing ever references it live. Cascades automatically when the parent `Project` is deleted.
 
 ## 8. AI-Assisted Data Entry
 
