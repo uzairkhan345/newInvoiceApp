@@ -135,28 +135,27 @@ export default async function DashboardPage() {
           value={sentCount}
           href="/invoices?status=sent&from=dashboard"
           trend={{ ...sentUnpaidTrend, semantics: "higher-is-better" }}
-          subtext={
-            <>
-              <div>
-                {formatCurrency(sentOutstanding.toString(), "USD")} outstanding
-              </div>
-              {/* M26 — non-USD SINGLE-mode invoices are
-                  excluded from the USD sum above (blending currencies would be
-                  wrong); each currency actually present gets its own line here
-                  instead of being silently dropped. */}
-              {sentOutstandingByNonUsdCurrency.map(({ currency, total }) => (
-                <div key={currency}>
-                  + {formatCurrency(total.toString(), currency)} outstanding
-                </div>
-              ))}
-            </>
-          }
+          subtext={`${formatCurrency(sentOutstanding.toString(), "USD")} outstanding`}
+          // M26 — non-USD SINGLE-mode invoices are excluded from the USD sum
+          // above (blending currencies would be wrong); each currency
+          // actually present gets its own line here instead of being
+          // silently dropped, tucked behind the "+N more" chip so the card
+          // doesn't grow with the tenant's currency count.
+          moreItems={sentOutstandingByNonUsdCurrency.map(({ currency, total }) => (
+            <div key={currency}>
+              {formatCurrency(total.toString(), currency)} outstanding
+            </div>
+          ))}
         />
         <StatsCard
           label="Overdue Invoices"
           value={overdueInvoices.length}
           href="/invoices?status=overdue&from=dashboard"
           trend={{ ...overdueTrend, semantics: "lower-is-better" }}
+          subtext={overdueInvoices[0]?.project.name}
+          moreItems={overdueInvoices
+            .slice(1)
+            .map((invoice) => <div key={invoice.id}>{invoice.project.name}</div>)}
         />
       </div>
 
