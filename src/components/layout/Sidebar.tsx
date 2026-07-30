@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { navItems, isActiveNavHref } from "./navItems";
+import { AlertsBell } from "./AlertsBell";
 
 /**
  * Desktop nav shell (≥1024px) — M27 v2 redesign,
@@ -17,11 +18,14 @@ export function Sidebar() {
 
   return (
     <aside className="hidden w-[240px] shrink-0 flex-col bg-nav lg:flex">
-      <div className="flex items-center gap-2.5 px-5 py-[22px]">
-        <div className="flex h-[30px] w-[30px] items-center justify-center rounded-lg bg-brand text-[13px] font-bold text-white">
-          I
+      <div className="flex items-center justify-between gap-2.5 px-5 py-[22px]">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-[30px] w-[30px] items-center justify-center rounded-lg bg-brand text-[13px] font-bold text-white">
+            I
+          </div>
+          <span className="text-sm font-bold text-white">Invoice App</span>
         </div>
-        <span className="text-sm font-bold text-white">Invoice App</span>
+        <AlertsBell variant="sidebar" />
       </div>
 
       <nav className="flex flex-1 flex-col gap-[3px] px-3 py-1">

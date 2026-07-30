@@ -1,26 +1,20 @@
 import type { InvoiceListItem } from "@/repositories/invoiceRepository";
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
-import type { AlertScheduleWithProject } from "@/repositories/projectAlertScheduleRepository";
 import { formatCurrency } from "@/lib/currency";
 import { formatDisplayDate } from "@/lib/dates";
-import { DAY_LABELS } from "@/components/project-alert-schedule/dayOfMonthLabels";
 
 /**
- * Dashboard Priority Feed (M27 v2 redesign, M29 added the `fired` category)
- * — merges the old separate NeedsAttentionList + ActivityLog into one
- * urgency-sorted list: overdue invoices, then fired alert schedules
- * (self-defined "act today" triggers — as time-sensitive as overdue, just
- * user-defined rather than invoice-derived), then setup gaps (missing
- * preferred payment method), then stale drafts, then recent lifecycle
- * activity chronologically.
+ * Dashboard Priority Feed (M27 v2 redesign) — merges the old separate
+ * NeedsAttentionList + ActivityLog into one urgency-sorted list: overdue
+ * invoices, then setup gaps (missing preferred payment method), then stale
+ * drafts, then recent lifecycle activity chronologically. Fired alert
+ * schedules (M29) used to render here as an "Alert" category, but now live
+ * only in the global nav bell (`AlertsBell.tsx`) — keeping them out of this
+ * feed is what makes the "Attention needed" banner's chip count always
+ * equal its headline number (see `countActionableFeedItems`).
  * design_handoff_dashboard_v2/README.md §2, Docs/ui_design_guide.md §16.
  */
-export type PriorityFeedCategory =
-  | "overdue"
-  | "fired"
-  | "setup"
-  | "draft"
-  | "activity";
+export type PriorityFeedCategory = "overdue" | "setup" | "draft" | "activity";
 
 /** Left-edge bar / tag color — distinct from `category` since "activity" rows vary between green (positive) and indigo (neutral) sub-events. */
 export type PriorityFeedBarTone =
@@ -38,8 +32,6 @@ export type PriorityFeedItem = {
   amount?: string;
   category: PriorityFeedCategory;
   barTone: PriorityFeedBarTone;
-  /** M29 — only set on `"fired"` items; renders an inline Clear button instead of the row being a plain navigation link. */
-  clear?: { scheduleId: string; projectId: string };
 };
 
 const ACTIVITY_VERBS: Partial<Record<string, string>> = {
@@ -59,7 +51,6 @@ type ActivityFeedItem = PriorityFeedItem & { timestamp: Date };
 
 export function buildPriorityFeed(input: {
   overdueInvoices: InvoiceListItem[];
-  firedAlertSchedules: AlertScheduleWithProject[];
   missingPaymentMethodProjects: ProjectWithRelations[];
   staleDrafts: InvoiceListItem[];
   recentInvoiceActivity: InvoiceListItem[];
@@ -75,18 +66,6 @@ export function buildPriorityFeed(input: {
     category: "overdue",
     barTone: "overdue",
   }));
-
-  const fired: PriorityFeedItem[] = input.firedAlertSchedules.map(
-    (schedule) => ({
-      id: `fired-${schedule.id}`,
-      href: `/projects/${schedule.project.id}`,
-      title: schedule.label || `Day ${DAY_LABELS[schedule.dayOfMonth]} reminder`,
-      detail: `${schedule.project.name} · ${schedule.recurring ? "recurring" : "one-time"}`,
-      category: "fired",
-      barTone: "setup",
-      clear: { scheduleId: schedule.id, projectId: schedule.project.id },
-    }),
-  );
 
   const setup: PriorityFeedItem[] = input.missingPaymentMethodProjects.map(
     (project) => ({
@@ -136,7 +115,7 @@ export function buildPriorityFeed(input: {
     .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
     .slice(0, input.activityLimit);
 
-  return [...overdue, ...fired, ...setup, ...draft, ...activity];
+  return [...overdue, ...setup, ...draft, ...activity];
 }
 
 /** README §2 — the alert banner's headline count excludes plain "activity" entries. */

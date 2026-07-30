@@ -117,7 +117,7 @@ A day-of-month reminder for a `Project`, purely calendar-driven and in-app only 
 | `Label` | Text, Optional | Free-text description shown when the alert fires (e.g. `Send invoice`). Falls back to a generic "Day N reminder" when unset. |
 | `ClearedAt` | Timestamp, Optional | Set when an admin dismisses the alert's current occurrence. Interpreted together with `Recurring` and `DayOfMonth` — never read as a standalone "is cleared" flag. |
 
-**Firing**: an alert is "fired" (shown on the dashboard Priority Feed and the project's own detail page) once the current date reaches `DayOfMonth` for the current month, and it hasn't already been cleared for that occurrence. Clearing is a single action shared by both surfaces — an alert cleared from one place is reflected on the other immediately.
+**Firing**: an alert is "fired" once the current date reaches `DayOfMonth` for the current month, and it hasn't already been cleared for that occurrence. A fired alert surfaces in three places: the global nav bell (visible from every page, with a badge count), a small indicator next to the project's name on the Projects list, and the project's own detail page. Clearing is a single action shared by all three — an alert cleared from any one of them is reflected on the others immediately.
 
 **Deletion**: freely deletable by the admin at any time (no live reference ever blocks it); cascades automatically when the parent `Project` is deleted.
 

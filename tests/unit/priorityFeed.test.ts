@@ -3,7 +3,6 @@ import { Prisma } from "@/generated/prisma/client";
 import { buildPriorityFeed, countActionableFeedItems } from "@/lib/priorityFeed";
 import type { InvoiceListItem } from "@/repositories/invoiceRepository";
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
-import type { AlertScheduleWithProject } from "@/repositories/projectAlertScheduleRepository";
 
 function invoice(overrides: Partial<InvoiceListItem>): InvoiceListItem {
   return {
@@ -46,28 +45,10 @@ function project(
   } as ProjectWithRelations;
 }
 
-function alertSchedule(
-  overrides: Partial<AlertScheduleWithProject>,
-): AlertScheduleWithProject {
-  return {
-    id: "schedule-1",
-    projectId: "project-3",
-    dayOfMonth: 1,
-    recurring: true,
-    label: null,
-    clearedAt: null,
-    createdAt: new Date("2026-01-01"),
-    updatedAt: new Date("2026-01-01"),
-    project: { id: "project-3", name: "Test Project 3" },
-    ...overrides,
-  } as AlertScheduleWithProject;
-}
-
 describe("buildPriorityFeed", () => {
-  it("orders overdue, then fired alerts, then setup gaps, then stale drafts, then activity", () => {
+  it("orders overdue, then setup gaps, then stale drafts, then activity", () => {
     const feed = buildPriorityFeed({
       overdueInvoices: [invoice({ id: "overdue-1" })],
-      firedAlertSchedules: [alertSchedule({ id: "fired-1" })],
       missingPaymentMethodProjects: [project({ id: "setup-1" })],
       staleDrafts: [invoice({ id: "draft-1", status: "DRAFT" })],
       recentInvoiceActivity: [
@@ -83,7 +64,6 @@ describe("buildPriorityFeed", () => {
 
     expect(feed.map((item) => item.category)).toEqual([
       "overdue",
-      "fired",
       "setup",
       "draft",
       "activity",
@@ -93,7 +73,6 @@ describe("buildPriorityFeed", () => {
   it("sorts activity entries (invoices + projects) chronologically, most recent first", () => {
     const feed = buildPriorityFeed({
       overdueInvoices: [],
-      firedAlertSchedules: [],
       missingPaymentMethodProjects: [],
       staleDrafts: [],
       recentInvoiceActivity: [
@@ -118,7 +97,6 @@ describe("buildPriorityFeed", () => {
   it("caps activity entries at the given limit", () => {
     const feed = buildPriorityFeed({
       overdueInvoices: [],
-      firedAlertSchedules: [],
       missingPaymentMethodProjects: [],
       staleDrafts: [],
       recentInvoiceActivity: [
@@ -136,7 +114,6 @@ describe("buildPriorityFeed", () => {
   it("colors PAID activity green (positive) and SENT/VOID indigo (info)", () => {
     const feed = buildPriorityFeed({
       overdueInvoices: [],
-      firedAlertSchedules: [],
       missingPaymentMethodProjects: [],
       staleDrafts: [],
       recentInvoiceActivity: [
@@ -162,70 +139,12 @@ describe("buildPriorityFeed", () => {
 
     expect(feed.map((item) => item.barTone)).toEqual(["positive", "info", "info"]);
   });
-
-  it("gives fired alert items the setup (amber) tone, a project link, and a clear field", () => {
-    const feed = buildPriorityFeed({
-      overdueInvoices: [],
-      firedAlertSchedules: [
-        alertSchedule({
-          id: "fired-1",
-          label: "Send invoice",
-          recurring: true,
-          project: { id: "project-9", name: "Acme Co" },
-        }),
-      ],
-      missingPaymentMethodProjects: [],
-      staleDrafts: [],
-      recentInvoiceActivity: [],
-      recentProjects: [],
-      activityLimit: 8,
-    });
-
-    expect(feed).toHaveLength(1);
-    expect(feed[0]).toMatchObject({
-      category: "fired",
-      barTone: "setup",
-      href: "/projects/project-9",
-      title: "Send invoice",
-      detail: "Acme Co · recurring",
-      clear: { scheduleId: "fired-1", projectId: "project-9" },
-    });
-  });
-
-  it("falls back to a 'Day N reminder' title when the label is blank", () => {
-    const feed = buildPriorityFeed({
-      overdueInvoices: [],
-      firedAlertSchedules: [alertSchedule({ id: "fired-1", dayOfMonth: 8, label: null })],
-      missingPaymentMethodProjects: [],
-      staleDrafts: [],
-      recentInvoiceActivity: [],
-      recentProjects: [],
-      activityLimit: 8,
-    });
-
-    expect(feed[0].title).toBe("Day 8th reminder");
-  });
-
-  it("does not set `clear` on any non-fired item", () => {
-    const feed = buildPriorityFeed({
-      overdueInvoices: [invoice({ id: "overdue-1" })],
-      firedAlertSchedules: [],
-      missingPaymentMethodProjects: [project({ id: "setup-1" })],
-      staleDrafts: [invoice({ id: "draft-1", status: "DRAFT" })],
-      recentInvoiceActivity: [],
-      recentProjects: [],
-      activityLimit: 8,
-    });
-
-    expect(feed.every((item) => item.clear === undefined)).toBe(true);
-  });
 });
 
 describe("countActionableFeedItems", () => {
   it("excludes plain activity entries from the count", () => {
     const feed = buildPriorityFeed({
       overdueInvoices: [invoice({ id: "overdue-1" })],
-      firedAlertSchedules: [],
       missingPaymentMethodProjects: [project({ id: "setup-1" })],
       staleDrafts: [],
       recentInvoiceActivity: [
@@ -237,20 +156,6 @@ describe("countActionableFeedItems", () => {
     });
 
     expect(countActionableFeedItems(feed)).toBe(2);
-  });
-
-  it("includes fired alerts in the count", () => {
-    const feed = buildPriorityFeed({
-      overdueInvoices: [],
-      firedAlertSchedules: [alertSchedule({ id: "fired-1" })],
-      missingPaymentMethodProjects: [],
-      staleDrafts: [],
-      recentInvoiceActivity: [],
-      recentProjects: [],
-      activityLimit: 8,
-    });
-
-    expect(countActionableFeedItems(feed)).toBe(1);
   });
 
   it("returns 0 when the feed is empty", () => {

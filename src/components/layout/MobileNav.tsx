@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { navItems, isActiveNavHref } from "./navItems";
+import { AlertsBell } from "./AlertsBell";
 
 /**
  * Mobile nav shell (<1024px) — M27 v2 redesign,
@@ -14,11 +15,14 @@ import { navItems, isActiveNavHref } from "./navItems";
  */
 export function MobileTopBar() {
   return (
-    <div className="fixed inset-x-0 top-0 z-40 flex h-[52px] items-center gap-2 bg-nav px-4 lg:hidden">
-      <div className="flex h-[26px] w-[26px] items-center justify-center rounded-md bg-brand text-xs font-bold text-white">
-        I
+    <div className="fixed inset-x-0 top-0 z-40 flex h-[52px] items-center justify-between gap-2 bg-nav px-4 lg:hidden">
+      <div className="flex items-center gap-2">
+        <div className="flex h-[26px] w-[26px] items-center justify-center rounded-md bg-brand text-xs font-bold text-white">
+          I
+        </div>
+        <span className="text-[13px] font-bold text-white">Invoice App</span>
       </div>
-      <span className="text-[13px] font-bold text-white">Invoice App</span>
+      <AlertsBell variant="mobile" />
     </div>
   );
 }

@@ -3,19 +3,32 @@
 import { revalidatePath } from "next/cache";
 import { projectAlertScheduleService } from "@/services/projectAlertScheduleService";
 import { projectAlertScheduleSchema } from "@/lib/validation/projectAlertSchedule";
+import type { AlertScheduleWithProject } from "@/repositories/projectAlertScheduleRepository";
 
 export type ActionResult<T> =
   | { success: true; data: T }
   | { success: false; error: string; fieldErrors?: Record<string, string[]> };
 
 /**
- * Revalidates both the owning project's page and the dashboard — the
- * dashboard Priority Feed reads the same fired-alert set, so this is what
- * makes "clear from either place reflects everywhere" actually true.
+ * Revalidates every surface that reads the fired-alert set: the owning
+ * project's page, the dashboard, and the Projects list (its bell-dot
+ * indicator) — so "clear from anywhere reflects everywhere" is actually
+ * true. The global nav `AlertsBell` isn't covered by `revalidatePath` since
+ * it's a permanently-mounted Client Component with no per-page server
+ * props; it refetches its own data instead (see `listFiredAlertSchedulesAction`).
  */
 function revalidateAlertSchedulePaths(projectId: string): void {
   revalidatePath(`/projects/${projectId}`);
+  revalidatePath("/projects");
   revalidatePath("/");
+}
+
+/** Read-only — powers the global nav `AlertsBell`, which has no per-page server props to read this from otherwise. */
+export async function listFiredAlertSchedulesAction(): Promise<
+  ActionResult<AlertScheduleWithProject[]>
+> {
+  const schedules = await projectAlertScheduleService.listFiredAcrossActiveProjects();
+  return { success: true, data: schedules };
 }
 
 export async function createProjectAlertScheduleAction(

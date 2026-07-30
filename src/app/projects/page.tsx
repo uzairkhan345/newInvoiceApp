@@ -9,6 +9,7 @@ import {
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
 import { projectService } from "@/services/projectService";
+import { projectAlertScheduleService } from "@/services/projectAlertScheduleService";
 
 /** M27 v2 redesign — unrecognized/missing `?status=` falls back to "all". */
 function resolveFilter(status: string | undefined): ProjectStatusFilterValue {
@@ -44,10 +45,16 @@ export default async function ProjectsPage({
   const filter = resolveFilter(status);
   const cameFromDashboard = from === "dashboard";
 
-  const projects = await projectService.list(
-    filter === "all"
-      ? undefined
-      : { status: filter === "active" ? "ACTIVE" : "ARCHIVED" },
+  const [projects, firedAlertSchedules] = await Promise.all([
+    projectService.list(
+      filter === "all"
+        ? undefined
+        : { status: filter === "active" ? "ACTIVE" : "ARCHIVED" },
+    ),
+    projectAlertScheduleService.listFiredAcrossActiveProjects(),
+  ]);
+  const firedProjectIds = firedAlertSchedules.map(
+    (schedule) => schedule.project.id,
   );
 
   const emptyCopy = EMPTY_STATE_COPY[filter];
@@ -83,7 +90,7 @@ export default async function ProjectsPage({
           }
         />
       ) : (
-        <ProjectTable projects={projects} />
+        <ProjectTable projects={projects} firedProjectIds={firedProjectIds} />
       )}
     </>
   );

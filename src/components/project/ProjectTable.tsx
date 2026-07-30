@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, BellDot } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PAYMENT_METHOD_TYPE_LABELS } from "@/lib/paymentMethodLabels";
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
@@ -45,11 +45,25 @@ function StatusPill({ status }: { status: ProjectWithRelations["status"] }) {
   );
 }
 
+/** A fired, uncleared alert schedule exists for this project — see AlertsBell.tsx for the same data's global nav treatment. */
+function AlertDot() {
+  return (
+    <BellDot
+      className="h-3.5 w-3.5 shrink-0 text-[var(--status-overdue-text)]"
+      aria-label="Has a pending alert"
+    />
+  );
+}
+
 export function ProjectTable({
   projects,
+  firedProjectIds = [],
 }: {
   projects: ProjectWithRelations[];
+  firedProjectIds?: string[];
 }) {
+  const firedProjectIdSet = new Set(firedProjectIds);
+
   return (
     <>
       {/* Desktop table */}
@@ -84,6 +98,7 @@ export function ProjectTable({
                 <span className="truncate text-[13px] font-semibold text-foreground">
                   {project.name}
                 </span>
+                {firedProjectIdSet.has(project.id) ? <AlertDot /> : null}
               </span>
               <span className="truncate text-[13px] text-foreground">
                 {project.client.name}
@@ -124,6 +139,7 @@ export function ProjectTable({
                   <span className="truncate text-[13px] font-semibold text-foreground">
                     {project.name}
                   </span>
+                  {firedProjectIdSet.has(project.id) ? <AlertDot /> : null}
                 </span>
                 <StatusPill status={project.status} />
               </div>

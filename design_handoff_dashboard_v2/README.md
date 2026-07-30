@@ -16,7 +16,7 @@ The prototype file is self-contained (uses a lightweight templating runtime for 
 ### 1. Navigation shell (all pages)
 **Desktop (≥1024px):**
 - Fixed-width 240px sidebar, background `#0f172a` (near-black navy), full height, sticky.
-- Logo row: 30×30px indigo (`#6366f1`) square, 8px radius, white "I" mark + "Invoice App" wordmark, 14px/700 white text. Padding 22px 20px.
+- Logo row: 30×30px indigo (`#6366f1`) square, 8px radius, white "I" mark + "Invoice App" wordmark, 14px/700 white text, left-aligned; trailing right: alerts bell (30×30px, `rgba(99,102,241,0.2)` bg, `#a5b4fc` icon), badge (red, white count text) shown only when count > 0. Padding 22px 20px, `space-between`. Click opens a popover panel (right side, 320px wide) listing each fired alert with an inline Clear button.
 - Nav items: vertical stack, 3px gap, 12px horizontal padding container. Each item: 9px 12px padding, 8px radius, flex row, 10px gap.
   - Icon: 20×20px box, 6px radius, mono letter glyph, JetBrains Mono 10px/700.
   - **Active state**: item bg `rgba(99,102,241,0.2)`, text `#a5b4fc`, icon box bg `#6366f1` (white glyph).
@@ -26,7 +26,7 @@ The prototype file is self-contained (uses a lightweight templating runtime for 
 
 **Mobile (<1024px):**
 - Sidebar is replaced entirely (never just hidden).
-- Top bar: fixed, 52px tall, full width, bg `#0f172a`. Logo (26×26px) + wordmark only — no hamburger, no page title needed here.
+- Top bar: fixed, 52px tall, full width, bg `#0f172a`, `space-between`. Logo (26×26px) + wordmark on the left — no hamburger, no page title needed here; alerts bell (26×26px, same badge treatment as desktop) trailing on the right.
 - Bottom tab bar: fixed to viewport bottom, bg `#0f172a`, `display:grid` 5 equal columns, padding `6px 4px 10px` (extra bottom padding for home-indicator safe area). One tab per nav item: mono glyph letter above a 10px/600 label. Active tab text `#a5b4fc`; inactive `#64748b`.
 - Main content gets `padding-top: 52px; padding-bottom: 64px;` to clear both fixed bars.
 - Breakpoint: **1024px** (matches current app's existing sidebar collapse point — don't change it, just add the mobile replacement).
@@ -41,12 +41,12 @@ Layout: content max-width 1200px, centered, padding 40px desktop / 16-20px mobil
   - Right: pill chips per alert, `rgba(255,255,255,0.12)` bg, 999px radius, 6px/12px padding, 12px/600 white text, each linking to the relevant filtered view.
   - Empty state: banner is omitted entirely (not shown empty/greyed).
 
-- **Stat cards**: grid, 4 columns desktop / 1 column mobile, 16px gap. Each card: white bg, 1px `#e2e8f0` border, 12px radius, 16px padding, column layout, 10px gap.
-  - Top row: label (11px/700/uppercase/`0.05em`, `#94a3b8`) + trend indicator (▲/▼/– + delta, 11px/700, colored — green `#047857` favorable, red `#b91c1c` unfavorable, grey `#94a3b8` neutral).
-  - Value row: big number (JetBrains Mono, 28px/700, `#0f172a`) left, **5-bar sparkline** right (4px-wide bars, 2px radius, height 0-100% scaled, same color as trend, 55% opacity, 3px gap, 24px tall container).
-  - Optional subtext line below (11px, `#475569`, mono) — used for money amounts like "$18,450.00 outstanding".
-  - Cards: Active Projects, Draft Invoices, Sent/Unpaid (+ $ outstanding subtext), Overdue Invoices.
-  - Trend/sparkline data should reflect real trailing-30-day deltas once wired to real data; the current values are placeholders.
+- **Stat cards**: grid, 4 columns desktop / 1 column mobile, 16px gap, `align-items: stretch` (the grid default) — each card fills the full height of its row via `height: 100%`, so all four stay the same height regardless of content. Each card: white bg, 1px `#e2e8f0` border, 12px radius, 16px padding, column layout, 10px gap.
+  - Top row: label only (11px/700/uppercase/`0.05em`, `#94a3b8`) — no trend arrow/delta text.
+  - Value row: big number (JetBrains Mono, 28px/700, `#0f172a`) left, **5-bar sparkline** right (4px-wide bars, 2px radius, height 0-100% scaled, colored by trend tone — green `#047857` favorable, red `#b91c1c` unfavorable, grey `#94a3b8` neutral — 55% opacity, 3px gap, 24px tall container).
+  - Optional subtext line below (11px, `#475569`, mono), pinned to the bottom of the card (`margin-top: auto`) — used for money amounts like "$18,450.00 outstanding". Capped at one entry: any remainder (e.g. additional non-USD currencies, or additional overdue projects) renders behind a "+N more" pill that opens a small popover listing the rest, rather than stacking indefinitely and growing the card taller than its siblings.
+  - Cards: Active Projects, Draft Invoices, Sent/Unpaid (+ $ outstanding subtext, +N more currencies), Overdue Invoices (+ most-urgent project name, +N more projects).
+  - Sparkline data should reflect real trailing-30-day deltas once wired to real data; the current values are placeholders.
 
 - **Priority Feed** (new — replaces the old separate "Needs Attention" list + "Recent Activity" log with one merged, urgency-ordered list): white card, 1px `#e2e8f0` border, 12px radius.
   - Header: "Priority Feed" (15px/700) left, "Most urgent first" (11px `#94a3b8`) right, bottom border `#e2e8f0`, 18px/20px padding.
@@ -71,6 +71,7 @@ Same structural pattern as Invoices:
 - **Desktop table** columns: `1.6fr 1.2fr 1fr 1.4fr 0.7fr 0.3fr` — Project (with a 28×28px indigo-tinted initials avatar, `#ede9fe` bg / `#6366f1` text, mono 2-letter abbreviation), Client, Status (badge), Payment Method, Currency (mono), chevron.
 - Status badge: Active = `#e0e7ff` bg / `#6366f1` text; Archived = `#f1f5f9` bg / `#475569` text.
 - Payment method column: shows the method (e.g. "ACH — Chase ••4821") in `#475569` 12px, OR, if unset, "No payment method" in amber `#92400e` 12px/600 — this is a **deliberate warning surface**, not neutral empty text; it's meant to prompt the user to complete setup.
+- Project name cell: a small bell-dot icon (red, `#b91c1c`) appears immediately after the name when that project has a fired, uncleared alert schedule — same underlying data as the nav bell (§1).
 - **Mobile**: stacked cards mirroring the same fields (avatar + name + status on row 1, client below, payment/currency on a bottom bordered row).
 - **Empty state**: "No projects yet" / "Create your first project."
 
