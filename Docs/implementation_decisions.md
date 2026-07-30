@@ -169,13 +169,11 @@ This is a standing pattern, not a one-off: any future dependent-entity flow shou
 
 ## 21. Deployment Target Decision
 
-The production hosting target (Vercel, a DigitalOcean droplet, or another option) is **explicitly not decided** and should not be decided implicitly by how the code is written. Development currently focuses **exclusively on the local development environment.**
+The production hosting target is a **DigitalOcean droplet** (a persistent VM), to be deployed at a later date — not decided implicitly by how the code is written, and not required for local development, which is what the app currently runs against exclusively.
 
 The application must be built so that it runs correctly in local development without assuming any particular production target's constraints. The **only** part of the system permitted to be deployment-target-specific is the PDF browser-launch adapter (§12.2) — everything else (database access via `DATABASE_URL`, business logic, the AI-assist provider abstraction, Excel generation) is already environment-driven and needs no target-specific branching.
 
-When the hosting decision is eventually made, known tradeoffs to weigh (not a decision to make now):
-- **Vercel + Neon**: needs Neon's pooled connection string (or PgBouncer) in front of Prisma to avoid connection exhaustion under serverless concurrency; needs the Puppeteer adapter swapped to `puppeteer-core` + `@sparticuz/chromium`; function execution time limits apply to the PDF-download route.
-- **A persistent VM (e.g. DigitalOcean droplet)**: avoids all of the above serverless-specific concerns (one long-lived process, no connection-pool exhaustion risk, no bundle-size/cold-start issues for Puppeteer), at the cost of self-managed OS patching, process supervision (pm2/systemd), and TLS/reverse-proxy setup.
+A persistent VM avoids the serverless-specific concerns a platform like Vercel would introduce (connection-pool exhaustion under concurrency, Puppeteer cold-start/bundle-size limits, function execution time limits) — one long-lived process needs none of that — at the cost of self-managed OS patching, process supervision (pm2/systemd), and TLS/reverse-proxy setup, none of which is built yet. Deployment readiness (the actual droplet setup, process supervision, reverse proxy, and whatever else the DigitalOcean target specifically needs) is intentionally not scoped until it's actually being done.
 
 ## 22. Additional Resolved Decisions
 
