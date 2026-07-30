@@ -178,6 +178,11 @@ describe("projectAlertScheduleService", () => {
   });
 
   it("listFiredAcrossActiveProjects excludes an ARCHIVED project's otherwise-firing schedule", async () => {
+    // dayOfMonth must be today's actual day — a freshly-created schedule
+    // never fires for an already-passed day within its creation month (see
+    // tests/unit/alertScheduleFiring.test.ts), so a hardcoded day would
+    // only "otherwise-fire" when the suite happened to run on that date.
+    const todayDay = new Date().getUTCDate();
     const activeProject = await createTestProject(
       "[test] Active Fired Project",
       "ACTIVE",
@@ -189,11 +194,11 @@ describe("projectAlertScheduleService", () => {
 
     await projectAlertScheduleService.create(
       activeProject.id,
-      baseInput({ dayOfMonth: 1, label: "[test] active fired" }),
+      baseInput({ dayOfMonth: todayDay, label: "[test] active fired" }),
     );
     await projectAlertScheduleService.create(
       archivedProject.id,
-      baseInput({ dayOfMonth: 1, label: "[test] archived fired" }),
+      baseInput({ dayOfMonth: todayDay, label: "[test] archived fired" }),
     );
 
     const fired = await projectAlertScheduleService.listFiredAcrossActiveProjects();

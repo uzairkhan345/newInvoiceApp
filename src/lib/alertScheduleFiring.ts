@@ -27,6 +27,7 @@ export type AlertFiringInput = {
   dayOfMonth: number;
   recurring: boolean;
   clearedAt: Date | null;
+  createdAt: Date;
 };
 
 /**
@@ -38,8 +39,21 @@ export function isAlertCurrentlyFired(
   input: AlertFiringInput,
   now: Date = new Date(),
 ): boolean {
-  const dayHasArrived = now.getUTCDate() >= resolveScheduledDayThisMonth(input.dayOfMonth, now);
+  const scheduledDay = resolveScheduledDayThisMonth(input.dayOfMonth, now);
+  const dayHasArrived = now.getUTCDate() >= scheduledDay;
   if (!dayHasArrived) return false;
+
+  // A schedule created after this month's occurrence date has already
+  // passed shouldn't retroactively fire for it (e.g. creating a "7th of the
+  // month" alert on the 30th) — wait for the next real occurrence instead.
+  // Only suppresses the creation month's own occurrence; once `now` rolls
+  // into a later month this no longer applies.
+  if (
+    isSameUtcMonth(input.createdAt, now) &&
+    input.createdAt.getUTCDate() > scheduledDay
+  ) {
+    return false;
+  }
 
   if (!input.recurring) {
     return input.clearedAt === null;
