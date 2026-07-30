@@ -513,7 +513,11 @@ async function transitionStatus(
   }
 
   if (target !== "SENT") {
-    return invoiceRepository.updateStatus(id, target);
+    try {
+      return await invoiceRepository.updateStatus(id, target);
+    } catch (error) {
+      throw translateWriteError(error);
+    }
   }
 
   const project = await loadProjectOrThrow(existing.projectId);
@@ -521,12 +525,16 @@ async function transitionStatus(
   if (reasons.length > 0) throw new InvoiceSendValidationError(reasons);
 
   const isDual = project.currencyMode === "DUAL";
-  return invoiceRepository.updateStatus(id, "SENT", {
-    ...buildSnapshots(project),
-    currency: resolveInvoiceCurrency(project),
-    convertedTotal: isDual ? existing.convertedTotal : null,
-    convertedCurrency: isDual ? project.displayCurrency : null,
-  });
+  try {
+    return await invoiceRepository.updateStatus(id, "SENT", {
+      ...buildSnapshots(project),
+      currency: resolveInvoiceCurrency(project),
+      convertedTotal: isDual ? existing.convertedTotal : null,
+      convertedCurrency: isDual ? project.displayCurrency : null,
+    });
+  } catch (error) {
+    throw translateWriteError(error);
+  }
 }
 
 /** Story 5.6 — deletable in any status; this is what unblocks Project deletion. */

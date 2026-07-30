@@ -112,6 +112,8 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
           <p className={styles.itemsNote}>{data.itemsNote}</p>
         ) : null}
 
+        <div className={styles.itemsBlockRule} />
+
         <div className={styles.totals}>
           <div className={styles.totalRow}>
             <span>Subtotal</span>

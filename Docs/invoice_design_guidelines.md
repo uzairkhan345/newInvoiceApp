@@ -40,9 +40,11 @@ Recommended print CSS:
 ## 3. Visual character
 
 - Dense, restrained, formal, and highly legible
-- Primarily black text on white
+- Black text on white — labels, table headers, section headings, payment
+  field labels, and notes are all plain black, not muted blue-grey; the
+  reference invoices use no secondary text color at all, only the one dark
+  slate accent line
 - One dark slate accent line
-- Minimal use of muted blue-grey for secondary labels
 - No shadows
 - No rounded cards
 - No gradient
@@ -63,6 +65,13 @@ Use these values unless the invoice owner has a brand colour:
 --invoice-light-rule: #cfd5dc;
 --invoice-background: #ffffff;
 ```
+
+`--invoice-secondary`/`--invoice-muted` are reserved for the one case that's
+genuinely subordinate — a DUAL-mode invoice's converted-total row (§11).
+Every other text on the document (sender address, summary labels, table
+headers, the item-list note, section headings, payment field labels) is
+`--invoice-text` — confirmed against a reference invoice's own PDF/XLSX
+output, which uses no secondary text colour anywhere except the rule.
 
 Do not apply any brand accent colour to headings, table borders, totals, or body text — the invoice document is deliberately monochrome (and the application renders no logos at all; see `Docs/implementation_decisions.md` §14).
 
@@ -183,15 +192,19 @@ Suggested widths:
 
 Rules:
 
-- Header labels are bold and compact
+- Header labels are bold and compact, plain black (not muted) — see §3/§4
 - Numeric columns are right-aligned
 - Description is left-aligned
-- Use horizontal rules only
+- Exactly one horizontal rule for the whole items block — no rule under the
+  header, no rule between/under individual item rows. The rule sits at the
+  very end of the block: after the last item row if there's no items note
+  (§10), or after the items note if there is one — never directly under the
+  header. This matches reference invoices, which use a single rule
+  separating items+note from Subtotal, not a framed table.
 - Do not use full cell borders
 - No zebra striping
 - No rounded table container
 - Row height: approximately 7–9 mm
-- Use a stronger rule under the header and after the final item row
 - Keep currency formatting consistent
 
 Example CSS:
@@ -205,19 +218,24 @@ Example CSS:
 
 .invoice-table th {
   padding: 0 0 3mm;
-  border-bottom: 1px solid #596674;
   text-align: left;
 }
 
 .invoice-table td {
   padding: 3mm 0;
-  border-bottom: 0.5px solid #cfd5dc;
   vertical-align: top;
 }
 
 .invoice-table .number {
   text-align: right;
   white-space: nowrap;
+}
+
+/* Placed after the table AND the optional items note (§10) — not under the header. */
+.invoice-table-rule {
+  width: 100%;
+  height: 1px;
+  background: #596674;
 }
 ```
 
@@ -229,9 +247,9 @@ A line item may be **Hourly** (Quantity/Rate populated, Amount computed) or **Fl
 
 This app's notes are **invoice-level**, not per-line-item — a single note applies to the item list as a whole, not to one specific row:
 
-- Place directly beneath the item table (above Subtotal), not beneath any individual item
+- Place directly beneath the item table (above Subtotal, above the table's own end-of-block rule per §9), not beneath any individual item
 - Use 7.5–8.5 pt
-- Use muted grey or italic
+- Plain black, italic — the italic styling alone signals it's a note; do not also apply a muted/secondary colour
 - No label/heading — the italic styling alone signals it's a note
 - Do not create a separate card or callout
 
@@ -283,8 +301,8 @@ Note      Work done from 22 March 2026, 22 June 2026
 
 **Payment details**:
 
-- Section heading: bold, 8–9 pt
-- Use a two-column label/value structure
+- Section heading: bold, 8–9 pt, plain black, sentence case (not uppercase — e.g. "Payment to be made to:")
+- Use a two-column label/value structure, both columns plain black (field labels are not muted/secondary — see §3/§4)
 - Labels should be short and aligned
 - Avoid large boxes
 - Avoid icons

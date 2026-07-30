@@ -21,7 +21,6 @@ import type { InvoiceDocumentData } from "@/services/documentService";
  */
 
 const RULE_COLOR = "FF596674";
-const LIGHT_RULE_COLOR = "FFCFD5DC";
 const MUTED_TEXT_COLOR = "FF8A97A8";
 
 function arial(opts: {
@@ -106,7 +105,6 @@ export async function buildInvoiceWorkbook(
     ws.getCell(`${col}${row}`).font = arial({
       bold: true,
       size: 9,
-      color: MUTED_TEXT_COLOR,
     });
   });
   const summaryHeaderRow = row;
@@ -128,7 +126,7 @@ export async function buildInvoiceWorkbook(
     row += 1;
     ws.mergeCells(`A${row}:B${row}`);
     ws.getCell(`A${row}`).value = line;
-    ws.getCell(`A${row}`).font = arial({ size: 9, color: MUTED_TEXT_COLOR });
+    ws.getCell(`A${row}`).font = arial({ size: 9 });
   });
 
   row = Math.max(row, summaryHeaderRow + 4) + 2;
@@ -141,14 +139,8 @@ export async function buildInvoiceWorkbook(
   ws.getCell(`G${row}`).value = `AMOUNT (${data.currency})`;
   ["A", "E", "F", "G"].forEach((col) => {
     const cell = ws.getCell(`${col}${row}`);
-    cell.font = arial({ bold: true, size: 9, color: MUTED_TEXT_COLOR });
+    cell.font = arial({ bold: true, size: 9 });
     if (col !== "A") cell.alignment = { horizontal: "right" };
-    cell.border = { bottom: { style: "thin", color: { argb: RULE_COLOR } } };
-  });
-  ["B", "C", "D"].forEach((col) => {
-    ws.getCell(`${col}${row}`).border = {
-      bottom: { style: "thin", color: { argb: RULE_COLOR } },
-    };
   });
   row += 1;
 
@@ -167,20 +159,9 @@ export async function buildInvoiceWorkbook(
       if (["E", "F", "G"].includes(col)) {
         cell.alignment = { horizontal: "right" };
       }
-      cell.border = {
-        bottom: { style: "hair", color: { argb: LIGHT_RULE_COLOR } },
-      };
     });
     row += 1;
   });
-  // Stronger rule after the final item row.
-  ["A", "B", "C", "D", "E", "F", "G"].forEach((col) => {
-    ws.getCell(`${col}${row - 1}`).border = {
-      bottom: { style: "thin", color: { argb: RULE_COLOR } },
-    };
-  });
-
-  row += 1;
 
   // ── Items note (M14/M15) — unlabeled italic line describing the items as a whole ──
   if (data.itemsNote) {
@@ -188,10 +169,20 @@ export async function buildInvoiceWorkbook(
     ws.getCell(`A${row}`).font = arial({
       size: 8,
       italic: true,
-      color: MUTED_TEXT_COLOR,
     });
     row += 1;
   }
+
+  // Stronger rule at the end of the whole items block (header + item rows +
+  // optional note) — not directly under the header or the last item row,
+  // matching reference invoices, which use one rule separating items+note
+  // from Subtotal.
+  ["A", "B", "C", "D", "E", "F", "G"].forEach((col) => {
+    ws.getCell(`${col}${row}`).border = {
+      top: { style: "thin", color: { argb: RULE_COLOR } },
+    };
+  });
+  row += 1;
 
   // ── Totals ──
   ws.getCell(`A${row}`).value = "Subtotal";
@@ -238,12 +229,12 @@ export async function buildInvoiceWorkbook(
 
   if (data.paymentDetails.length === 0) {
     ws.getCell(`A${row}`).value = "No payment method on file";
-    ws.getCell(`A${row}`).font = arial({ color: MUTED_TEXT_COLOR });
+    ws.getCell(`A${row}`).font = arial({});
     row += 1;
   } else {
     data.paymentDetails.forEach((field) => {
       ws.getCell(`A${row}`).value = field.label;
-      ws.getCell(`A${row}`).font = arial({ color: MUTED_TEXT_COLOR });
+      ws.getCell(`A${row}`).font = arial({});
       ws.getCell(`B${row}`).value = field.value;
       ws.getCell(`B${row}`).font = arial({});
       row += 1;

@@ -62,7 +62,7 @@
   font-size: 8.5pt;
   font-weight: 400;
   line-height: 1.25;
-  color: var(--invoice-secondary);
+  color: var(--invoice-text);
 }
 
 .metaBlock {
@@ -92,7 +92,7 @@
   font-size: 8.5pt;
   font-weight: 400;
   line-height: 1.25;
-  color: var(--invoice-secondary);
+  color: var(--invoice-text);
 }
 
 .statusLine {
@@ -106,6 +106,21 @@
   text-transform: uppercase;
   color: var(--invoice-secondary);
   border: 0.5px solid var(--invoice-light-rule);
+}
+
+/*
+ * §14 — "Hide status entirely on exported invoices when it is an internal
+ * workflow field." Puppeteer's page.pdf() forces print-media CSS by
+ * default (no explicit emulateMediaType call needed — see the PDF route),
+ * so this is hidden only in the actual downloaded PDF; the in-app preview
+ * and the /print route viewed as a normal browser tab (the "Preview"
+ * button) both stay on screen media and keep showing it. Same mechanism
+ * LockedBanner.tsx already uses via Tailwind's `print:hidden`.
+ */
+@media print {
+  .statusLine {
+    display: none;
+  }
 }
 
 /* ── Rule + title ── */
@@ -142,7 +157,7 @@
   line-height: 1.2;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--invoice-muted);
+  color: var(--invoice-text);
 }
 
 .summaryContent {
@@ -158,14 +173,14 @@
   font-size: 9pt;
   font-weight: 400;
   line-height: 1.3;
-  color: var(--invoice-secondary);
+  color: var(--invoice-text);
 }
 
 /* ── Item table ── */
 
 .table {
   width: 100%;
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-1);
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -185,14 +200,13 @@
 
 .table th {
   padding: 0 0 var(--space-2);
-  border-bottom: 1px solid var(--invoice-rule);
   text-align: left;
   font-size: 8.5pt;
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--invoice-muted);
+  color: var(--invoice-text);
 }
 
 /*
@@ -208,17 +222,12 @@
 
 .table td {
   padding: var(--space-1) 0;
-  border-bottom: 0.5px solid var(--invoice-light-rule);
   vertical-align: top;
   font-size: 9pt;
   font-weight: 400;
   line-height: 1.3;
   color: var(--invoice-text);
   break-inside: avoid;
-}
-
-.table tbody tr:last-child td {
-  border-bottom: 1px solid var(--invoice-rule);
 }
 
 .numberCell {
@@ -232,16 +241,28 @@
 
 /*
  * M14/M15 — items note: an unlabeled italic line describing the line items
- * as a whole, sitting directly below the table. Reuses the guideline's §10
- * "secondary line under an item" treatment (7.5-8.5pt, muted/italic), just
- * scoped to the whole item list instead of a single row.
+ * as a whole, sitting directly below the table. Reference invoices keep
+ * this plain black (italic alone signals it's a note), not muted-grey.
  */
 .itemsNote {
-  margin: 0 0 var(--space-3);
+  margin: 0 0 var(--space-2);
   font-size: 8pt;
   line-height: 1.3;
   font-style: italic;
-  color: var(--invoice-secondary);
+  color: var(--invoice-text);
+}
+
+/*
+ * The item table's "stronger rule" sits at the end of the whole items
+ * block — after the optional itemsNote, not directly under the header or
+ * the last item row — matching reference invoices, which use a single rule
+ * separating items+note from Subtotal rather than one under the header.
+ */
+.itemsBlockRule {
+  width: 100%;
+  height: 1px;
+  margin-bottom: var(--space-2);
+  background: var(--invoice-rule);
 }
 
 /* ── Totals ── */
@@ -318,9 +339,7 @@
   font-size: 8.5pt;
   font-weight: 700;
   line-height: 1.2;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--invoice-muted);
+  color: var(--invoice-text);
 }
 
 /*
@@ -346,7 +365,7 @@
 
 .paymentLabel {
   min-width: 30mm;
-  color: var(--invoice-secondary);
+  color: var(--invoice-text);
 }
 
 .paymentValue {

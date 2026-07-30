@@ -17,7 +17,15 @@ export type ActionResult<T> =
   | { success: true; data: T }
   | { success: false; error: string; fieldErrors?: Record<string, string[]> };
 
-function friendlyErrorOrThrow(error: unknown): string {
+/**
+ * Any error not one of invoiceService's own named classes used to be
+ * re-thrown here uncaught — which Next.js surfaces to the client as an
+ * opaque "An unexpected response was received from the server," with no
+ * detail on either side. Logging it and returning a generic message keeps
+ * this consistent with every other action's `{ success, error }` shape
+ * instead of crashing the request.
+ */
+function friendlyErrorMessage(error: unknown): string {
   if (
     error instanceof ProjectNotFoundError ||
     error instanceof InvoiceNotFoundError ||
@@ -28,7 +36,8 @@ function friendlyErrorOrThrow(error: unknown): string {
   ) {
     return error.message;
   }
-  throw error;
+  console.error("Unexpected invoice action error:", error);
+  return "Something went wrong. Please try again.";
 }
 
 export async function createInvoiceDraftAction(
@@ -49,7 +58,7 @@ export async function createInvoiceDraftAction(
     revalidatePath("/invoices");
     return { success: true, data: { id: invoice.id } };
   } catch (error) {
-    return { success: false, error: friendlyErrorOrThrow(error) };
+    return { success: false, error: friendlyErrorMessage(error) };
   }
 }
 
@@ -72,7 +81,7 @@ export async function updateInvoiceDraftAction(
     revalidatePath(`/invoices/${id}`);
     return { success: true, data: { id: invoice.id } };
   } catch (error) {
-    return { success: false, error: friendlyErrorOrThrow(error) };
+    return { success: false, error: friendlyErrorMessage(error) };
   }
 }
 
@@ -86,7 +95,7 @@ export async function transitionInvoiceStatusAction(
     revalidatePath(`/invoices/${id}`);
     return { success: true, data: { id: invoice.id } };
   } catch (error) {
-    return { success: false, error: friendlyErrorOrThrow(error) };
+    return { success: false, error: friendlyErrorMessage(error) };
   }
 }
 
@@ -98,6 +107,6 @@ export async function deleteInvoiceAction(
     revalidatePath("/invoices");
     return { success: true, data: { id } };
   } catch (error) {
-    return { success: false, error: friendlyErrorOrThrow(error) };
+    return { success: false, error: friendlyErrorMessage(error) };
   }
 }
