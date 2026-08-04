@@ -160,7 +160,9 @@ function InvoicesAndAlertsTab({
   return (
     <>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-[15px] font-bold text-foreground">Invoices</h2>
+        <h2 className="text-[14px] font-normal tracking-[-0.14px] text-foreground">
+          Invoices
+        </h2>
         {invoices.length > 0 ? (
           <Button
             variant="outline"
@@ -194,7 +196,7 @@ function InvoicesAndAlertsTab({
       )}
 
       <div className="mt-8 mb-3 flex items-center justify-between">
-        <h2 className="text-[15px] font-bold text-foreground">
+        <h2 className="text-[14px] font-normal tracking-[-0.14px] text-foreground">
           Alert Schedules
         </h2>
         {alertSchedules.length > 0 ? (

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { Plus, ArrowUpRight, Clock, AlertTriangle } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -23,8 +22,8 @@ import type { PriorityFeedItem, PriorityFeedBarTone } from "@/lib/priorityFeed";
  * an enclosing `<a>` — same constraint M29's old fired-alert rows hit.
  */
 
-type MetricKey = "prepare" | "draft" | "due" | "overdue";
-type FilterKey = MetricKey | "all";
+export type MetricKey = "prepare" | "draft" | "due" | "overdue";
+export type FilterKey = MetricKey | "all";
 
 const METRIC_ORDER: MetricKey[] = ["prepare", "draft", "due", "overdue"];
 
@@ -94,11 +93,15 @@ export type ActionMetric = { count: number; amount?: string };
 export function ActionRequiredPanel({
   items,
   metrics,
+  filter,
+  onFilterChange,
 }: {
   items: PriorityFeedItem[];
   metrics: Record<MetricKey, ActionMetric>;
+  /** Controlled — lifted to DashboardActionArea.tsx so AlertBanner's "Review urgent items" button can drive the same filter as these stat cards. */
+  filter: FilterKey;
+  onFilterChange: (filter: FilterKey) => void;
 }) {
-  const [filter, setFilter] = useState<FilterKey>("all");
   const filtered =
     filter === "all" ? items : items.filter((item) => item.category === filter);
 
@@ -114,7 +117,7 @@ export function ActionRequiredPanel({
               key={key}
               type="button"
               aria-pressed={selected}
-              onClick={() => setFilter(selected ? "all" : key)}
+              onClick={() => onFilterChange(selected ? "all" : key)}
               className={cn(
                 "group relative flex flex-col gap-1 rounded-xl border border-border bg-card p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md",
                 selected && "border-brand/40 ring-2 ring-brand/15",
@@ -157,7 +160,7 @@ export function ActionRequiredPanel({
       <Card className="mt-4 gap-0 overflow-hidden py-0">
         <div className="flex items-center justify-between border-b border-border px-5 py-[18px]">
           <div>
-            <span className="text-[15px] font-bold text-foreground">
+            <span className="text-[14px] font-normal tracking-[-0.14px] text-foreground">
               Action required
             </span>
             <p className="mt-0.5 text-[11px] text-muted-foreground">
@@ -167,7 +170,7 @@ export function ActionRequiredPanel({
           {filter !== "all" ? (
             <button
               type="button"
-              onClick={() => setFilter("all")}
+              onClick={() => onFilterChange("all")}
               className="rounded-md bg-accent px-2.5 py-1.5 text-[11px] font-bold text-brand"
             >
               Clear filter ×
@@ -284,7 +287,7 @@ export function ActionRequiredPanel({
 
         <button
           type="button"
-          onClick={() => setFilter("all")}
+          onClick={() => onFilterChange("all")}
           className="w-full border-t border-border bg-muted/40 py-3 text-center text-[11px] font-bold text-brand"
         >
           View all billing actions →

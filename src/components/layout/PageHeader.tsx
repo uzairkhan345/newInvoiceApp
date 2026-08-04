@@ -37,11 +37,11 @@ export function PageHeader({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           {eyebrow ? (
-            <span className="text-[11px] font-bold tracking-wide text-muted-foreground uppercase">
+            <span className="text-[10px] font-[750] tracking-[0.1em] text-muted-foreground uppercase">
               {eyebrow}
             </span>
           ) : null}
-          <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-foreground">
+          <h1 className="text-[27px] font-normal tracking-[-0.945px] text-foreground">
             {title}
           </h1>
           {subtitle ? (

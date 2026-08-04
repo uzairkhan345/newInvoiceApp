@@ -108,6 +108,7 @@ export default async function ProjectsPage({
   return (
     <>
       <PageHeader
+        eyebrow="Invoice operations"
         title="Projects"
         subtitle="The bridge between a contractor and a client, and the home for per-engagement invoice settings."
         backHref={cameFromDashboard ? "/" : undefined}
@@ -118,28 +119,39 @@ export default async function ProjectsPage({
           </Button>
         }
       />
-      <ProjectStatusFilter active={filter} fromDashboard={cameFromDashboard} />
       {projectsForFilter.length === 0 ? (
-        <EmptyState
-          icon={Briefcase}
-          title={emptyCopy.title}
-          description={emptyCopy.description}
-          action={
-            filter === "all" ? (
-              <Button
-                nativeButton={false}
-                render={<Link href="/projects/new" />}
-              >
-                Create your first project
-              </Button>
-            ) : undefined
-          }
-        />
+        <>
+          <ProjectStatusFilter
+            active={filter}
+            fromDashboard={cameFromDashboard}
+          />
+          <EmptyState
+            icon={Briefcase}
+            title={emptyCopy.title}
+            description={emptyCopy.description}
+            action={
+              filter === "all" ? (
+                <Button
+                  nativeButton={false}
+                  render={<Link href="/projects/new" />}
+                >
+                  Create your first project
+                </Button>
+              ) : undefined
+            }
+          />
+        </>
       ) : (
         <ProjectsDirectory
           projects={projectsForFilter}
           firedProjectIds={firedProjectIds}
           billingRowByProjectId={Object.fromEntries(billingRowByProjectId)}
+          filterSlot={
+            <ProjectStatusFilter
+              active={filter}
+              fromDashboard={cameFromDashboard}
+            />
+          }
         />
       )}
     </>

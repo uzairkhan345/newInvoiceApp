@@ -1,19 +1,19 @@
-import Link from "next/link";
-
-export type AlertBannerChip = { label: string; href: string };
-
 /**
- * Dashboard alert banner (M27 v2 redesign) — design_handoff_dashboard_v2/README.md
- * §2, Docs/ui_design_guide.md §16. Renders only when there's at least one
- * actionable Priority Feed item; the caller is responsible for not rendering
- * this at all when `chips` is empty (omitted entirely, never shown empty).
+ * Dashboard alert banner (redesign v3) — a single "Review urgent items"
+ * action wired to the same client-side filter state ActionRequiredPanel's
+ * stat cards use (via DashboardActionArea.tsx), not a row of separate
+ * navigation links. Matches the reference prototype's behavior: clicking it
+ * filters the Action Required list below to the overdue category, same as
+ * clicking the Overdue stat card directly.
  */
 export function AlertBanner({
   headline,
-  chips,
+  urgentCount,
+  onReviewUrgent,
 }: {
   headline: string;
-  chips: AlertBannerChip[];
+  urgentCount: number;
+  onReviewUrgent: () => void;
 }) {
   return (
     // Plain inline style here, not a Tailwind arbitrary-value background-image class — that form didn't reliably apply for a CSS-var-backed gradient.
@@ -25,19 +25,23 @@ export function AlertBanner({
         <span className="text-[11px] font-bold tracking-[0.08em] text-[#a5b4fc] uppercase">
           Attention needed
         </span>
-        <span className="text-[15px] font-bold">{headline}</span>
+        <span className="text-[16px] font-normal">{headline}</span>
+        {urgentCount > 0 ? (
+          <span className="text-[13px] text-white/70">
+            {urgentCount} {urgentCount === 1 ? "is" : "are"} urgent and should
+            be handled today.
+          </span>
+        ) : null}
       </div>
-      <div className="flex flex-wrap gap-2">
-        {chips.map((chip) => (
-          <Link
-            key={chip.href}
-            href={chip.href}
-            className="rounded-full bg-white/[0.12] px-3 py-1.5 text-[12px] font-semibold text-white transition-colors hover:bg-white/[0.2]"
-          >
-            {chip.label}
-          </Link>
-        ))}
-      </div>
+      {urgentCount > 0 ? (
+        <button
+          type="button"
+          onClick={onReviewUrgent}
+          className="rounded-lg bg-white/[0.12] px-4 py-2.5 text-[12px] font-bold text-white transition-colors hover:bg-white/[0.2]"
+        >
+          Review urgent items →
+        </button>
+      ) : null}
     </div>
   );
 }

@@ -1,13 +1,7 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/PageHeader";
-import {
-  AlertBanner,
-  type AlertBannerChip,
-} from "@/components/dashboard/AlertBanner";
-import {
-  ActionRequiredPanel,
-  type ActionMetric,
-} from "@/components/dashboard/ActionRequiredPanel";
+import { DashboardActionArea } from "@/components/dashboard/DashboardActionArea";
+import type { ActionMetric } from "@/components/dashboard/ActionRequiredPanel";
 import { ProjectBillingStatusTable } from "@/components/dashboard/ProjectBillingStatusTable";
 import { UpcomingBillingCard } from "@/components/dashboard/UpcomingBillingCard";
 import { ReceivablesAgeingCard } from "@/components/dashboard/ReceivablesAgeingCard";
@@ -20,7 +14,6 @@ import {
   buildPriorityFeed,
   countActionableFeedItems,
 } from "@/lib/priorityFeed";
-import { DUE_SOON_WITHIN_DAYS } from "@/lib/dashboardTrend";
 import {
   buildProjectBillingRows,
   buildReceivablesAgeing,
@@ -144,37 +137,6 @@ export default async function DashboardPage() {
     };
 
   const actionableCount = countActionableFeedItems(feed);
-  const alertChips: AlertBannerChip[] = [];
-  if (overdueInvoices.length > 0) {
-    alertChips.push({
-      label: `${overdueInvoices.length} ${pluralize(overdueInvoices.length, "invoice")} overdue — ${formatCurrency(sumUsd(overdueInvoices), "USD")}`,
-      href: "/invoices?status=overdue&from=dashboard",
-    });
-  }
-  if (firedAlertSchedules.length > 0) {
-    alertChips.push({
-      label: `${firedAlertSchedules.length} ${pluralize(firedAlertSchedules.length, "invoice")} need${firedAlertSchedules.length === 1 ? "s" : ""} to be prepared`,
-      href: "/projects?from=dashboard",
-    });
-  }
-  if (staleDrafts.length > 0) {
-    alertChips.push({
-      label: `${staleDrafts.length} ${pluralize(staleDrafts.length, "draft")} awaiting review`,
-      href: "/invoices?status=draft&from=dashboard",
-    });
-  }
-  if (dueSoonInvoices.length > 0) {
-    alertChips.push({
-      label: `${dueSoonInvoices.length} ${pluralize(dueSoonInvoices.length, "invoice")} due within ${DUE_SOON_WITHIN_DAYS} days`,
-      href: "/invoices?status=sent&from=dashboard",
-    });
-  }
-  if (missingPaymentMethodProjects.length > 0) {
-    alertChips.push({
-      label: `${missingPaymentMethodProjects.length} ${pluralize(missingPaymentMethodProjects.length, "project")} missing payment method`,
-      href: "/projects?from=dashboard",
-    });
-  }
 
   return (
     <>
@@ -189,14 +151,11 @@ export default async function DashboardPage() {
         }
       />
 
-      {alertChips.length > 0 ? (
-        <AlertBanner
-          headline={`${actionableCount} ${pluralize(actionableCount, "billing action", "billing actions")} need review.`}
-          chips={alertChips}
-        />
-      ) : null}
-
-      <ActionRequiredPanel items={feed} metrics={metrics} />
+      <DashboardActionArea
+        items={feed}
+        metrics={metrics}
+        headline={`${actionableCount} ${pluralize(actionableCount, "billing action", "billing actions")} need review.`}
+      />
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1.7fr_1fr]">
         <ProjectBillingStatusTable rows={billingRows} />

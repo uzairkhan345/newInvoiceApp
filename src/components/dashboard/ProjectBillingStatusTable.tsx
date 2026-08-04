@@ -30,7 +30,7 @@ export function ProjectBillingStatusTable({
     <Card className="gap-0 overflow-hidden py-0">
       <div className="flex items-center justify-between border-b border-border px-5 py-[18px]">
         <div>
-          <span className="text-[15px] font-bold text-foreground">
+          <span className="text-[14px] font-normal tracking-[-0.14px] text-foreground">
             Project billing status
           </span>
           <p className="mt-0.5 text-[11px] text-muted-foreground">

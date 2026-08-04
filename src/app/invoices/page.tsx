@@ -115,6 +115,7 @@ export default async function InvoicesPage({
   return (
     <>
       <PageHeader
+        eyebrow="Invoice operations"
         title="Invoices"
         subtitle="Every invoice across every project, newest first."
         backHref={cameFromDashboard ? "/" : undefined}
@@ -143,25 +144,38 @@ export default async function InvoicesPage({
           note: `${paidThisMonth.length} ${pluralize(paidThisMonth.length, "invoice")}`,
         }}
       />
-      <InvoiceStatusFilter active={filter} fromDashboard={cameFromDashboard} />
       {invoices.length === 0 ? (
-        <EmptyState
-          icon={FileText}
-          title={emptyCopy.title}
-          description={emptyCopy.description}
-          action={
-            filter === "all" ? (
-              <Button
-                nativeButton={false}
-                render={<Link href="/invoices/new" />}
-              >
-                Create your first invoice
-              </Button>
-            ) : undefined
+        <>
+          <InvoiceStatusFilter
+            active={filter}
+            fromDashboard={cameFromDashboard}
+          />
+          <EmptyState
+            icon={FileText}
+            title={emptyCopy.title}
+            description={emptyCopy.description}
+            action={
+              filter === "all" ? (
+                <Button
+                  nativeButton={false}
+                  render={<Link href="/invoices/new" />}
+                >
+                  Create your first invoice
+                </Button>
+              ) : undefined
+            }
+          />
+        </>
+      ) : (
+        <InvoicesDirectory
+          invoices={invoices.map(toInvoiceTableRow)}
+          filterSlot={
+            <InvoiceStatusFilter
+              active={filter}
+              fromDashboard={cameFromDashboard}
+            />
           }
         />
-      ) : (
-        <InvoicesDirectory invoices={invoices.map(toInvoiceTableRow)} />
       )}
     </>
   );

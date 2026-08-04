@@ -108,6 +108,7 @@ export default async function PartiesPage({
   return (
     <>
       <PageHeader
+        eyebrow="Invoice operations"
         title="Parties"
         subtitle="Clients and contractors, with their billing relationship at a glance."
         action={
@@ -139,27 +140,30 @@ export default async function PartiesPage({
                 : `${pluralize(overdueRows.length, "party", "parties")} overdue`,
         }}
       />
-      <PartyRelationshipFilter active={filter} />
       {partiesForFilter.length === 0 ? (
-        <EmptyState
-          icon={Users}
-          title={emptyCopy.title}
-          description={emptyCopy.description}
-          action={
-            filter === "all" ? (
-              <Button
-                nativeButton={false}
-                render={<Link href="/parties/new" />}
-              >
-                Create your first party
-              </Button>
-            ) : undefined
-          }
-        />
+        <>
+          <PartyRelationshipFilter active={filter} />
+          <EmptyState
+            icon={Users}
+            title={emptyCopy.title}
+            description={emptyCopy.description}
+            action={
+              filter === "all" ? (
+                <Button
+                  nativeButton={false}
+                  render={<Link href="/parties/new" />}
+                >
+                  Create your first party
+                </Button>
+              ) : undefined
+            }
+          />
+        </>
       ) : (
         <PartiesDirectory
           parties={partiesForFilter}
           billingRowByPartyId={billingRowByPartyId}
+          filterSlot={<PartyRelationshipFilter active={filter} />}
         />
       )}
     </>

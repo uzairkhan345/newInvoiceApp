@@ -16,7 +16,7 @@ export function ReceivablesAgeingCard({ ageing }: { ageing: Ageing }) {
   return (
     <Card className="gap-0 overflow-hidden py-0">
       <div className="border-b border-border px-5 py-[14px]">
-        <span className="text-[13px] font-bold text-foreground">
+        <span className="text-[14px] font-normal tracking-[-0.14px] text-foreground">
           Receivables ageing
         </span>
         <p className="mt-0.5 text-[11px] text-muted-foreground">
