@@ -183,9 +183,14 @@ function InvoicesAndAlertsTab({
   return (
     <>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-[14px] font-normal tracking-[-0.14px] text-foreground">
-          Invoices
-        </h2>
+        <div>
+          <h2 className="text-[14px] font-normal tracking-[-0.14px] text-foreground">
+            Invoices
+          </h2>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Invoices created for {project.name}.
+          </p>
+        </div>
         {invoices.length > 0 ? (
           <Button
             variant="outline"
@@ -219,9 +224,14 @@ function InvoicesAndAlertsTab({
       )}
 
       <div className="mt-8 mb-3 flex items-center justify-between">
-        <h2 className="text-[14px] font-normal tracking-[-0.14px] text-foreground">
-          Alert Schedules
-        </h2>
+        <div>
+          <h2 className="text-[14px] font-normal tracking-[-0.14px] text-foreground">
+            Alert Schedules
+          </h2>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Recurring reminders for this project&apos;s billing schedule.
+          </p>
+        </div>
         {alertSchedules.length > 0 ? (
           <AddAlertScheduleButton projectId={project.id} />
         ) : null}
