@@ -17,7 +17,7 @@ export function PageHeader({
   backLabel = "Back",
 }: {
   eyebrow?: string;
-  title: string;
+  title: ReactNode;
   subtitle?: string;
   action?: ReactNode;
   backHref?: string;
@@ -41,7 +41,7 @@ export function PageHeader({
               {eyebrow}
             </span>
           ) : null}
-          <h1 className="text-[27px] font-normal tracking-[-0.945px] text-foreground">
+          <h1 className="flex items-center gap-3 text-[27px] font-normal tracking-[-0.945px] text-foreground">
             {title}
           </h1>
           {subtitle ? (

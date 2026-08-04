@@ -10,12 +10,13 @@ import {
 import { ProjectHealthCards } from "@/components/project/ProjectHealthCards";
 import { ProjectSummary } from "@/components/project/ProjectSummary";
 import { ProjectRecentActivity } from "@/components/project/ProjectRecentActivity";
+import { ProjectStatusPill } from "@/components/project/ProjectStatusPill";
 import { InvoiceTable } from "@/components/invoice/InvoiceTable";
 import { AlertScheduleList } from "@/components/project-alert-schedule/AlertScheduleList";
 import { AddAlertScheduleButton } from "@/components/project-alert-schedule/AddAlertScheduleButton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
-import { FileText } from "lucide-react";
+import { FileText, Pencil } from "lucide-react";
 import { projectService } from "@/services/projectService";
 import { partyService } from "@/services/partyService";
 import { paymentMethodService } from "@/services/paymentMethodService";
@@ -55,16 +56,38 @@ export default async function ProjectDetailPage({
   return (
     <>
       <PageHeader
-        title={project.name}
+        title={
+          <>
+            {project.name}
+            <ProjectStatusPill status={project.status} />
+          </>
+        }
         subtitle="View project details and invoicing configuration."
         backHref="/projects"
         backLabel="Back to Projects"
         action={
-          <ProjectDeleteButton
-            projectId={project.id}
-            projectName={project.name}
-            isDeletable={isDeletable}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={<Link href={`/projects/${project.id}?tab=setup`} />}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Edit project
+            </Button>
+            <Button
+              nativeButton={false}
+              render={<Link href={`/invoices/new/${project.id}`} />}
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Create invoice
+            </Button>
+            <ProjectDeleteButton
+              projectId={project.id}
+              projectName={project.name}
+              isDeletable={isDeletable}
+            />
+          </div>
         }
       />
       <ProjectDetailTabs
