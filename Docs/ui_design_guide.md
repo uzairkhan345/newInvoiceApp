@@ -1,6 +1,6 @@
 # UI Design Guide
 
-The application-chrome design system: tokens, components, page templates, and responsive rules. Two companion documents carve out their own territory: `Docs/invoice_design_guidelines.md` owns the invoice document itself (§15 below), and `design_handoff_dashboard_v2/README.md` is the authoritative pixel-level spec for the nav shell and the Dashboard/Invoices/Projects pages (§3/§4/§16 below summarize it).
+The application-chrome design system: tokens, components, page templates, and responsive rules. `Docs/invoice_design_guidelines.md` owns the invoice document itself (§15 below) — everything else in the app is described here directly. `design_handoff_dashboard_v2/README.md` is a historical pixel-level reference for the dark-navy nav shell and card/table visual language it introduced; that same visual language now covers every screen in the app (Parties/Settings included), not only Dashboard/Invoices/Projects, so this guide — not that folder — is the current source of truth for which screens exist and how they're structured.
 
 ---
 
@@ -41,10 +41,10 @@ The application-chrome design system: tokens, components, page templates, and re
 
 Full spec in `design_handoff_dashboard_v2/README.md` §1 — read that file before touching `Sidebar.tsx`/`MobileNav.tsx`/`AppShell.tsx`. Summary:
 
-- **Desktop (≥1024px)**: `240px` fixed sidebar, **dark navy `#0f172a`**, full height, sticky. Logo row: 30×30px indigo square + white "Invoice App" wordmark. Nav items (Dashboard/Parties/Projects/Invoices/Settings): icon box + label; active = `rgba(99,102,241,0.2)` bg + `#a5b4fc` text; inactive = `#94a3b8` text. Footer: circular indigo avatar + name/email, top border.
+- **Desktop (≥1024px)**: `240px` fixed sidebar, **dark navy `#0f172a`**, full height, sticky. Logo row: 30×30px indigo square + white "Invoice App" wordmark. Nav items (Dashboard/Parties/Projects/Invoices/Settings): icon box + label; active = `rgba(99,102,241,0.2)` bg + `#a5b4fc` text; inactive = `#94a3b8` text. Footer: circular indigo avatar + a single "Operational view" line, top border — deliberately not a name/email pair (this is a single-admin app, §8).
 - **Mobile (<1024px)**: the sidebar is **replaced entirely**, never just hidden. A fixed `52px` dark top bar (logo + wordmark only — no hamburger) plus a fixed dark bottom tab bar (5 equal columns, one per nav item, icon above a 10px label, same active/inactive color treatment as desktop). Main content gets top/bottom padding to clear both fixed bars.
 - Breakpoint: **1024px**.
-- **Alerts bell**: a badge-counted bell icon in the logo row (desktop sidebar) and the mobile top bar — the one nav-item indicator that does exist, visible from every page, not just the dashboard. Click opens a popover panel listing each fired `ProjectAlertSchedule` with an inline Clear button. The dashboard-level Alert banner + Priority Feed (§16) covers overdue invoices, setup gaps, and stale drafts only; fired alerts are deliberately not part of either (see §16). The Projects list (§9) additionally shows a small bell-dot next to the name of any project with a fired alert.
+- **Alerts bell**: a badge-counted bell icon in the logo row (desktop sidebar) and the mobile top bar — visible from every page, not just the dashboard. Click opens a popover panel listing each fired `ProjectAlertSchedule` with an inline Clear button. A fired schedule is also surfaced directly on the dashboard itself (§16's "Invoices to Prepare" metric + its Action Required rows) — deliberately shown in both places, unlike the plain lifecycle-activity events the dashboard dropped entirely; clearing from either the bell, the dashboard, or the project's own page is reflected everywhere at once. The Projects list additionally shows a small bell-dot next to the name of any project with a fired alert.
 
 ---
 
@@ -53,10 +53,12 @@ Full spec in `design_handoff_dashboard_v2/README.md` §1 — read that file befo
 | Template | Used by | Notes |
 |---|---|---|
 | **Dashboard** | Dashboard | See §16. |
-| **List/Ledger** | Invoices list, Projects list, **Parties list (single unified roster — no role tabs, no role filter)** | Since `Party.Role` doesn't exist, the Parties page is one plain table, not a contractor/client split. **Invoices/Projects** additionally get a status filter chip row above the list and a mobile (<1024px) stacked-card variant replacing the table entirely — see `design_handoff_dashboard_v2/README.md` §3/§4 and §18 below. The Parties list keeps the plain light table treatment (§9). |
-| **Form/Detail — with AI assist** | Create Party, Add Payment Method, Create/Edit Draft Invoice | Uses the three-panel layout (§2/§14): form on the left, AI-assist chat on the right. |
-| **Form/Detail — no AI assist** | Create/Edit Project | Uses the plain `2fr/1fr` layout: form left, a normal supporting-info card right (e.g. existing project list) — **never an AI-assist panel here**, by explicit decision. Contractor/Client pickers each need an inline "+ Create new party" affordance for when the list is empty. |
-| **Document Preview** | Invoice detail/preview | See §15. Must support both editable (`DRAFT`) and locked (`SENT`/`PAID`/`VOID`) states. |
+| **Directory** | Parties list, Projects list, Invoices list | One shared shape across all three top-level lists: a summary stat row (4 cards, §16's stat-card styling reused), a client-side search box, a server-driven filter chip row (`?type=`/`?status=` — Parties: All/Client/Contractor; Projects: All/Active/Needs attention/Archived, plus a Table/Cards view toggle; Invoices: All/Draft/Sent/Paid/Overdue/Void), and the dark-header grid/mobile-card list itself (§9). Below `1024px` every one of the three renders stacked cards instead of a table — see §18. Parties' Client/Contractor filter is display-only, derived live from `Project.ContractorId`/`ClientId` — see `Docs/implementation_decisions.md` §15. |
+| **Detail Tabs** | Project detail, Invoice detail (non-`DRAFT` only) | Three URL-driven tabs (`?tab=`, not client-side state, so a reload/share preserves the active tab): Project detail is Overview / Invoices & alerts / Billing setup; Invoice detail is Summary / Preview / Activity. A `DRAFT` invoice has no tabs — it's still the single edit-form page (next row), since there's nothing to preview/review yet. Overview/Summary tabs open on a row of 3–4 small metric cards, followed by a two-column facts panel + a supporting panel (recent activity / amount breakdown). |
+| **Form/Detail — with AI assist** | Create Party, Add Payment Method, Create/Edit Draft Invoice | Uses the three-panel layout (§2/§14): form on the left, AI-assist chat on the right. Create Invoice is gated behind a mandatory, searchable project-picker card grid first (§20's standing pattern) — the form itself only appears after a project is chosen, with a compact `ProjectContextBar` (avatar, currency, payment method, live invoice-number preview, a "Change" link back to the picker) standing in for the older two-column project-facts card. Form fields are grouped under 3 numbered section headers (Invoice details / Line items / Notes) — cosmetic grouping only, no change to validation or field behavior. |
+| **Form/Detail — no AI assist** | Create/Edit Project | Uses the plain `2fr/1fr` layout: form left, a normal supporting-info card right (e.g. existing project list) — **never an AI-assist panel here**, by explicit decision. Contractor/Client pickers each need an inline "+ Create new party" affordance for when the list is empty. On the Project detail page, this same form renders inline as the "Billing setup" tab rather than a separate route. |
+| **Settings** | AI providers (`/settings`) | A readiness banner ("N providers ready", green/muted by whether ≥1 provider is enabled + has a key + has at least one model) above a stack of exactly 3 fixed, collapsible provider cards (`Docs/implementation_decisions.md` §19 — no add/remove). Each card: a tone-colored avatar monogram, a Default/Fallback-N role badge, up/down reorder arrows, a collapse chevron (defaults expanded), an API key field with a client-side Show/Hide toggle, and a numbered, reorderable model list. |
+| **Document Preview** | Invoice detail's Preview tab (or the whole page, for a `DRAFT`) | See §15. Must support both editable (`DRAFT`) and locked (`SENT`/`PAID`/`VOID`) states. |
 
 ---
 
@@ -94,7 +96,7 @@ Stage padding 40/16px, card padding 24px (body)/20×24px (header), row-section g
 | `--color-brand-hover` | `#4f46e5` | indigo-600 | Primary button hover |
 | `--color-brand-light` | `#e0e7ff` | indigo-100 | Active-tag bg, default-method tag, date chips |
 | `--bg-main` | `#f8fafc` | slate-50 | App canvas |
-| `--bg-card` | `#ffffff` | white | Cards, light tables |
+| `--bg-card` | `#ffffff` | white | Cards, panels |
 | `--text-primary` | `#0f172a` | slate-900 | Headings, primary data |
 | `--text-secondary` | `#475569` | slate-600 | Body, labels |
 | `--text-muted` | `#94a3b8` | slate-400 | Captions, muted metadata |
@@ -115,7 +117,7 @@ Stage padding 40/16px, card padding 24px (body)/20×24px (header), row-section g
 
 | Token | Value | Usage |
 |---|---|---|
-| Nav-shell dark surface | `#0f172a` | Sidebar/mobile topbar/bottom-tab-bar background, and the Invoices/Projects table header rows — reuses the `--text-primary` hex, not a new color. |
+| Nav-shell dark surface | `#0f172a` | Sidebar/mobile topbar/bottom-tab-bar background, and every top-level list's table header row (Parties/Invoices/Projects) — reuses the `--text-primary` hex, not a new color. |
 | Nav active tint | `rgba(99,102,241,0.2)` bg / `#a5b4fc` text | Active nav item on the dark surface only. |
 | Dashboard alert-banner gradient | `linear-gradient(135deg, #1e1b4b, #312e81)` | Background of the Alert banner (§16) only — not used anywhere else. |
 
@@ -144,12 +146,9 @@ White card, `1px solid border-light`, `10px` radius, `shadow: 0 1px 2px rgba(0,0
 
 ## 9. Table Style
 
-Two table treatments exist:
+One table treatment for every top-level list (Parties, Projects, Invoices) and every embedded sub-list (e.g. a project's own Invoices & alerts tab reuses the exact same invoice table, just with its Project column hidden): a **dark-header grid table** — header row on the nav-shell dark surface (`#0f172a`, `#94a3b8` uppercase text), body rows as full-row links with a trailing chevron (Parties/Projects) or an explicit "Open invoice →" pill (Invoices — kept as literal visible link text alongside the whole-row click target, since interactive controls can't nest inside one another, and a row that's clickable everywhere still needs one explicit, discoverable "this opens something" affordance). Column specs for Invoices/Projects are in `design_handoff_dashboard_v2/README.md` §3/§4; Parties' own columns are Party (avatar + name + location) / Relationship / Contact / Active projects / Outstanding / Billing health. Below `1024px` every one of these lists renders stacked cards instead of a table (§18) — there is no separate "light table" treatment left anywhere in the app.
 
-- **Light table** (Parties list, embedded sub-lists, any generic `DataTable` usage): `.table-container` wrapper, header `14px 20px` padding/`#f8fafc` bg/`11px` bold uppercase, body cell `16px 20px`/`13px`, row hover tint, numeric/ID columns in mono, right-aligned amounts.
-- **Dark-header grid table** (top-level Invoices and Projects lists only): header row on the nav-shell dark surface (`#0f172a`, `#94a3b8` uppercase text), body rows as full-row links with a trailing chevron — full column specs in `design_handoff_dashboard_v2/README.md` §3/§4. Below `1024px` these two lists render as stacked cards instead (§18).
-
-**Parties table specifically**: one column set for everyone — no role column, no role-based badge. `Type` (`INDIVIDUAL`/`ORGANIZATION`) may appear as a neutral Tag (§11) if useful, but it's informational only, never a filter axis.
+**Parties table specifically**: `Party` still has no stored role field (`Docs/implementation_decisions.md` §15) — the Relationship column (Client / Contractor / Client & Contractor) is computed live from which side of `Project.ContractorId`/`ClientId` a party actually appears on, not read off a database column. `Type` (`INDIVIDUAL`/`ORGANIZATION`) isn't shown in this table at all (it's still on the Party form/detail page) — Relationship replaced it as the more useful at-a-glance fact here.
 
 Every list needs a defined empty state (§12) for zero rows.
 
@@ -252,14 +251,16 @@ Copy: "This invoice is locked. Line items, snapshots, and totals can no longer b
 
 ## 16. Dashboard Design Rules
 
-Full spec in `design_handoff_dashboard_v2/README.md` §2 — read that file before touching `src/app/page.tsx`. Summary:
+`design_handoff_dashboard_v2/README.md` §2 documents the original card/table visual language this page still uses; the actual content/structure below supersedes that document's §2 layout description.
 
-- **Stats row** — counts, not a revenue ticker: **Active Projects**, **Draft Invoices**, **Sent/Unpaid Invoices** (+ outstanding-amount subtext per §17), **Overdue Invoices**. Every card fills the full height of its grid row (so all four stay the same height regardless of content) and carries a small 5-bar sparkline, colored green/red/grey by whether the trailing-~30-day direction is favorable for that metric (reusing the paid/overdue/muted tokens — no new hex values; no arrow/delta text is rendered alongside it). A card's subtext is capped at one line — Sent/Unpaid's per-currency breakdown and Overdue's per-project listing both show only the first entry, with any remainder behind a "+N more" popover chip, so a variable-length subtext can never grow a card taller than its siblings. **Sparkline deltas are approximations** computed from existing `createdAt`/`updatedAt` timestamps — there is no history/audit table, and building one for this feature was deliberately rejected.
-- **Alert banner** — a full-width gradient card (§7's alert-banner gradient) above the stats row, rendered only when at least one Priority Feed item requires action (overdue invoice, setup gap, or stale draft — plain "activity" entries don't count; fired alerts are surfaced separately, via the nav bell, §3). Omitted entirely when empty, never shown greyed-out.
-- **Priority Feed** — one merged, urgency-sorted list (not separate "needs attention" and "activity" panels): overdue invoices first, then setup gaps (project missing a preferred payment method), then stale drafts, then recent lifecycle activity (sent/paid/voided/created) chronologically. Independently scrollable past `max-height: 520px` rather than growing the page.
-- **"Stale draft" threshold is 1 day**, implemented as a single named constant (`STALE_DRAFT_DAYS`) so it's changeable without touching multiple call sites.
+- **Stats row** — 4 action-oriented counts, not a revenue ticker: **Invoices to Prepare**, **Drafts to Send**, **Due within 7 Days**, **Overdue**. Each card: uppercase label, a small icon chip top-right, a large number, and a one-line muted subtext (amount/context) — capped at one line via the same "+N more" popover-chip pattern as any other variable-length subtext (e.g. a multi-currency breakdown), so a card's height never depends on its content.
+- **Attention Needed banner** — a full-width gradient card (§7's alert-banner gradient) above the stats row, headlined "N billing actions need review" with a row of small chips (one per category present: overdue invoices, drafts awaiting review, invoices due soon, projects missing a payment method) and a "Review urgent items →" button. Rendered only when the count is non-zero; omitted entirely when empty, never shown greyed-out.
+- **Action Required panel** — one merged, urgency-sorted list across 5 categories: overdue invoices, invoices to prepare (a fired `ProjectAlertSchedule`), stale drafts, invoices due soon, and projects missing a payment method. Each row: a tone tag (`CRITICAL`/`HIGH`/`UPCOMING`), the project + client name, a one-line description, an amount/date, and 1–2 action buttons (e.g. "View invoice", "Create invoice", "Review & send", "Complete setup"). **"Send reminder" always renders disabled with an explanatory tooltip** — no email/notification-sending infrastructure exists anywhere in this app; this is a real, acknowledged gap, not a bug. A "View all billing actions →" footer link is the only way to see beyond the panel's own row cap.
+- **Below the fold**: a `2fr/1fr` row — **Project billing status** (the dark-header grid table, §9, scoped to active projects: Project / Billing / Last invoice / Next invoice / Exposure / Status) alongside two stacked cards, **Upcoming billing** (next 14 days) and **Receivables ageing** (a single stacked bar bucketed Not yet due / 1–30 days / 31+ days, USD-only per §17).
+- **No recent-activity/lifecycle rows anywhere on this page** — the Action Required panel is action-only; a plain "invoice was sent" or "project was created" event never appears here. This is a deliberate scope cut, not an oversight.
+- **"Stale draft" threshold is 1 day**, **"due soon" window is 7 days**, both single named constants (`STALE_DRAFT_DAYS`, `DUE_SOON_WITHIN_DAYS`) so either is changeable without touching multiple call sites.
 - `VOID` invoices are excluded from every dashboard count and total.
-- **Currency rule per §17**: the primary outstanding figure sums USD-denominated invoices only; each non-USD currency present gets its own per-currency breakdown line, never blended into the USD figure.
+- **Currency rule per §17**: every USD-blended figure on this page sums USD-denominated invoices only; each non-USD currency present gets its own per-currency breakdown line, never blended in.
 
 ---
 
@@ -277,7 +278,7 @@ Full spec in `design_handoff_dashboard_v2/README.md` §2 — read that file befo
 Breakpoints `640/768/1024/1280px`.
 
 - `<1024px`: the sidebar is replaced by the dark top bar + bottom tab bar (§3).
-- `<1024px`: the top-level **Invoices/Projects** tables render as stacked cards (§4/§9). Every other table (Parties list, etc.) keeps horizontal scroll.
+- `<1024px`: every top-level list — **Parties, Projects, Invoices** — renders stacked cards instead of its table (§4/§9). Smaller embedded/dashboard tables (e.g. Project billing status, §16) keep horizontal scroll inside their own `overflow-x-auto` wrapper instead of switching to cards.
 - `<768px`: `2fr/1fr` layouts (including the three-panel AI-assist layout) collapse to a single column, with the AI-assist panel stacking below the form rather than beside it.
 - Invoice document padding `48px → 20px` on small screens (preview context only — print/PDF output is always the fixed A4 geometry, §15).
 
