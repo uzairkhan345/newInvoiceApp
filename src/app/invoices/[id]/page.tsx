@@ -85,7 +85,7 @@ export default async function InvoiceDetailPage({
 
   const aiConfig = await getAiAssistConfigSummary();
   const headerAction = (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3">
       <StatusBadge status={invoice.status} dueDate={invoice.dueDate} />
       <Button
         variant="outline"

@@ -339,14 +339,14 @@ export function ProviderSettingsCard({
             render={({ field }) => (
               <div className="-mx-4 -mb-4 mt-2 flex items-center justify-between border-t border-border bg-muted/20 px-4 py-3">
                 <label className="flex cursor-pointer items-center gap-2.5">
-                  <span className="relative inline-flex h-[18px] w-[31px] shrink-0 items-center rounded-full bg-muted transition-colors">
+                  <span className="relative inline-flex h-[18px] w-[31px] shrink-0 items-center">
                     <input
                       type="checkbox"
                       className="peer sr-only"
                       checked={field.value}
                       onChange={(event) => field.onChange(event.target.checked)}
                     />
-                    <span className="absolute inset-0 rounded-full bg-brand opacity-0 transition-opacity peer-checked:opacity-100" />
+                    <span className="absolute inset-0 rounded-full bg-muted transition-colors peer-checked:bg-brand peer-focus-visible:ring-3 peer-focus-visible:ring-ring/50" />
                     <span className="absolute left-0.5 h-3.5 w-3.5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-[13px]" />
                   </span>
                   <span>

@@ -34,7 +34,7 @@ export function PageHeader({
           {backLabel}
         </Link>
       ) : null}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           {eyebrow ? (
             <span className="text-[11px] font-bold tracking-wide text-muted-foreground uppercase">
@@ -48,7 +48,9 @@ export function PageHeader({
             <p className="text-[13px] text-muted-foreground">{subtitle}</p>
           ) : null}
         </div>
-        {action ? <div className="shrink-0">{action}</div> : null}
+        {action ? (
+          <div className="w-full shrink-0 sm:w-auto">{action}</div>
+        ) : null}
       </div>
     </div>
   );
