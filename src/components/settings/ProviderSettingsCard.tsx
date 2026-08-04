@@ -25,16 +25,11 @@ import {
 } from "@/actions/aiProviderSettings.actions";
 import type { ProviderSettingDisplay } from "@/services/aiProviderSettingsService";
 import type { AiProviderName } from "@/lib/ai-providers/types";
+import { PROVIDER_LABELS } from "@/lib/aiProviderLabels";
 import { FormField } from "@/components/shared/FormField";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-export const PROVIDER_LABELS: Record<AiProviderName, string> = {
-  google: "Google (Gemini)",
-  anthropic: "Anthropic (Claude)",
-  groq: "Groq",
-};
 
 /**
  * Redesign v3 milestone 7 (ui_redesign_handoff_v3

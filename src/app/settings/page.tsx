@@ -1,9 +1,7 @@
 import { Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import {
-  ProviderSettingsCard,
-  PROVIDER_LABELS,
-} from "@/components/settings/ProviderSettingsCard";
+import { ProviderSettingsCard } from "@/components/settings/ProviderSettingsCard";
+import { PROVIDER_LABELS } from "@/lib/aiProviderLabels";
 import { cn } from "@/lib/utils";
 import { aiProviderSettingsService } from "@/services/aiProviderSettingsService";
 
