@@ -8,8 +8,8 @@ import type { ProjectWithRelations } from "@/repositories/projectRepository";
  * Projects list — M27 v2 redesign (design_handoff_dashboard_v2/README.md §4,
  * Docs/ui_design_guide.md §4). Same dual-layout pattern as InvoiceTable.tsx:
  * a dark-header grid table at `≥1024px`, replaced entirely by stacked cards
- * below that. Bespoke markup, not the shared `DataTable` — scoped to
- * Invoices/Projects only, Parties list is unaffected.
+ * below that. Bespoke markup, not the shared `DataTable` — PartyTable.tsx
+ * (milestone 6) now follows the same convention.
  */
 const DESKTOP_GRID = "grid-cols-[1.6fr_1.2fr_1fr_1.4fr_0.7fr_28px]";
 

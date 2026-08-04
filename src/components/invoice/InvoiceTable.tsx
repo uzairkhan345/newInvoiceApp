@@ -11,9 +11,8 @@ import type { InvoiceTableRow } from "@/lib/invoiceTableRow";
  * Docs/ui_design_guide.md §4). Two independent layouts, not one table that
  * squeezes: a dark-header grid table at `≥1024px`, replaced entirely by
  * stacked cards below that — same breakpoint the nav shell uses. Deliberately
- * bespoke markup (not the shared `DataTable`/`ui/table.tsx` primitives used
- * elsewhere) since this treatment is scoped to Invoices/Projects only — the
- * Parties list is explicitly unaffected by this redesign.
+ * bespoke markup (not the shared `DataTable`/`ui/table.tsx` primitives) —
+ * PartyTable.tsx (milestone 6) now follows the same convention.
  */
 const DESKTOP_GRID_WITH_PROJECT =
   "grid-cols-[1.1fr_1.3fr_1.3fr_0.9fr_0.9fr_0.9fr_120px]";
