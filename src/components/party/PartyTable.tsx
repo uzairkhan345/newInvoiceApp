@@ -19,7 +19,7 @@ import type {
  */
 const DESKTOP_GRID = "grid-cols-[1.6fr_1fr_1.4fr_1fr_1fr_1.1fr_28px]";
 
-const RELATIONSHIP_LABELS: Record<PartyRelationship, string> = {
+export const RELATIONSHIP_LABELS: Record<PartyRelationship, string> = {
   client: "Client",
   contractor: "Contractor",
   both: "Client & Contractor",
@@ -41,7 +41,7 @@ function initialsFor(name: string): string {
   return (words[0][0] + words[1][0]).toUpperCase();
 }
 
-function PartyAvatar({ name }: { name: string }) {
+export function PartyAvatar({ name }: { name: string }) {
   return (
     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#ede9fe] font-mono text-[11px] font-bold text-brand">
       {initialsFor(name)}
@@ -49,14 +49,14 @@ function PartyAvatar({ name }: { name: string }) {
   );
 }
 
-function formatOutstanding(row: PartyBillingRow): string {
+export function formatOutstanding(row: PartyBillingRow): string {
   if (row.outstandingByCurrency.length === 0) return "—";
   const [first, ...rest] = row.outstandingByCurrency;
   const primary = formatCurrency(first.total, first.currency);
   return rest.length > 0 ? `${primary} +${rest.length} more` : primary;
 }
 
-function HealthPill({ row }: { row: PartyBillingRow }) {
+export function HealthPill({ row }: { row: PartyBillingRow }) {
   return (
     <span
       className={cn(

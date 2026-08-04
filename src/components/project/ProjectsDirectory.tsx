@@ -1,43 +1,17 @@
 "use client";
 
-import { useState, useSyncExternalStore, type ReactNode } from "react";
-import { Search, LayoutGrid, Rows3 } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import { FiltersButton } from "@/components/shared/FiltersButton";
+import { ViewToggle } from "@/components/shared/ViewToggle";
+import { useViewPreference } from "@/lib/useViewPreference";
 import { ProjectTable } from "@/components/project/ProjectTable";
 import { ProjectCardGrid } from "@/components/project/ProjectCardGrid";
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
 import type { ProjectBillingRow } from "@/lib/projectBillingStatus";
 
-type View = "table" | "cards";
 const VIEW_STORAGE_KEY = "projects-view";
-
-/**
- * `useSyncExternalStore` — the hydration-safe way to read a browser-only
- * value like localStorage: the server snapshot ("table") and the client's
- * first-paint snapshot are allowed to differ without React warning about a
- * mismatch, unlike reading it in a `useState` lazy initializer or a plain
- * `useEffect` + `setState` (the latter also trips the
- * `react-hooks/set-state-in-effect` lint rule). `notify` lets `selectView`
- * below announce same-tab writes — `storage` events only fire cross-tab.
- */
-const viewListeners = new Set<() => void>();
-function subscribeToView(callback: () => void) {
-  viewListeners.add(callback);
-  return () => viewListeners.delete(callback);
-}
-function notifyViewChanged() {
-  viewListeners.forEach((callback) => callback());
-}
-function getViewSnapshot(): View {
-  return window.localStorage.getItem(VIEW_STORAGE_KEY) === "cards"
-    ? "cards"
-    : "table";
-}
-function getServerViewSnapshot(): View {
-  return "table";
-}
 
 /**
  * Projects list toolbar + table/card view switch (ui_redesign_handoff_v3
@@ -59,16 +33,7 @@ export function ProjectsDirectory({
   filterSlot?: ReactNode;
 }) {
   const [query, setQuery] = useState("");
-  const view = useSyncExternalStore(
-    subscribeToView,
-    getViewSnapshot,
-    getServerViewSnapshot,
-  );
-
-  function selectView(next: View) {
-    window.localStorage.setItem(VIEW_STORAGE_KEY, next);
-    notifyViewChanged();
-  }
+  const [view, setView] = useViewPreference(VIEW_STORAGE_KEY);
 
   const filtered = projects.filter((project) => {
     if (!query.trim()) return true;
@@ -92,38 +57,7 @@ export function ProjectsDirectory({
         </div>
         {filterSlot}
         <div className="ml-auto flex items-center gap-3">
-          <div className="flex items-center gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5">
-            <button
-              type="button"
-              aria-label="Table view"
-              aria-pressed={view === "table"}
-              onClick={() => selectView("table")}
-              className={cn(
-                "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-semibold",
-                view === "table"
-                  ? "bg-card text-brand shadow-sm"
-                  : "text-muted-foreground",
-              )}
-            >
-              <Rows3 className="h-3.5 w-3.5" />
-              Table
-            </button>
-            <button
-              type="button"
-              aria-label="Card view"
-              aria-pressed={view === "cards"}
-              onClick={() => selectView("cards")}
-              className={cn(
-                "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-semibold",
-                view === "cards"
-                  ? "bg-card text-brand shadow-sm"
-                  : "text-muted-foreground",
-              )}
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-              Cards
-            </button>
-          </div>
+          <ViewToggle view={view} onChange={setView} />
           <FiltersButton />
         </div>
       </div>

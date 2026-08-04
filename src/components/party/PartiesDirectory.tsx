@@ -4,16 +4,23 @@ import { useState, type ReactNode } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { FiltersButton } from "@/components/shared/FiltersButton";
+import { ViewToggle } from "@/components/shared/ViewToggle";
+import { useViewPreference } from "@/lib/useViewPreference";
 import { PartyTable } from "@/components/party/PartyTable";
+import { PartyCardGrid } from "@/components/party/PartyCardGrid";
 import type { Party } from "@/generated/prisma/client";
 import type { PartyBillingRow } from "@/lib/partyBillingStatus";
 
+const VIEW_STORAGE_KEY = "parties-view";
+
 /**
- * Parties list toolbar + search — redesign v3 milestone 6, same
- * client-side-only reasoning as InvoicesDirectory.tsx/ProjectsDirectory.tsx.
- * `filterSlot` (the Client/Contractor chips) renders in the same row as
- * search, matching the reference's single-row toolbar rather than stacking
- * search and filters on separate lines.
+ * Parties list toolbar + search + table/card view switch — redesign v3
+ * milestone 6, card view added later matching ProjectsDirectory.tsx's
+ * pattern exactly (same ViewToggle/useViewPreference, same
+ * "table" | "cards" state shape) for consistency between the two
+ * directories. `filterSlot` (the Client/Contractor chips) renders in the
+ * same row as search, matching the reference's single-row toolbar rather
+ * than stacking search and filters on separate lines.
  */
 export function PartiesDirectory({
   parties,
@@ -25,6 +32,7 @@ export function PartiesDirectory({
   filterSlot?: ReactNode;
 }) {
   const [query, setQuery] = useState("");
+  const [view, setView] = useViewPreference(VIEW_STORAGE_KEY);
 
   const filtered = parties.filter((party) => {
     if (!query.trim()) return true;
@@ -46,14 +54,22 @@ export function PartiesDirectory({
           />
         </div>
         {filterSlot}
-        <FiltersButton className="ml-auto" />
+        <div className="ml-auto flex items-center gap-3">
+          <ViewToggle view={view} onChange={setView} />
+          <FiltersButton />
+        </div>
       </div>
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-border bg-card px-6 py-12 text-center text-[12px] text-muted-foreground">
           No parties match “{query}”.
         </div>
-      ) : (
+      ) : view === "table" ? (
         <PartyTable
+          parties={filtered}
+          billingRowByPartyId={billingRowByPartyId}
+        />
+      ) : (
+        <PartyCardGrid
           parties={filtered}
           billingRowByPartyId={billingRowByPartyId}
         />
