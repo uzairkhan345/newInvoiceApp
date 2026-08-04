@@ -13,9 +13,10 @@ import type { ProjectWithRelations } from "@/repositories/projectRepository";
  */
 const DESKTOP_GRID = "grid-cols-[1.6fr_1.2fr_1fr_1.4fr_0.7fr_28px]";
 
-function paymentMethodSummary(
-  project: ProjectWithRelations,
-): { text: string; missing: boolean } {
+export function paymentMethodSummary(project: ProjectWithRelations): {
+  text: string;
+  missing: boolean;
+} {
   const method = project.preferredPaymentMethod;
   if (!method) return { text: "No payment method", missing: true };
   const typeLabel = PAYMENT_METHOD_TYPE_LABELS[method.type] ?? method.type;

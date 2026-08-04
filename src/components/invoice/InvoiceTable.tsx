@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { StatusBadge } from "@/components/invoice/StatusBadge";
 import { formatCurrency } from "@/lib/currency";
 import { formatDisplayDate } from "@/lib/dates";
@@ -16,9 +16,9 @@ import type { InvoiceTableRow } from "@/lib/invoiceTableRow";
  * Parties list is explicitly unaffected by this redesign.
  */
 const DESKTOP_GRID_WITH_PROJECT =
-  "grid-cols-[1.1fr_1.3fr_1.3fr_0.9fr_0.9fr_0.9fr_28px]";
+  "grid-cols-[1.1fr_1.3fr_1.3fr_0.9fr_0.9fr_0.9fr_120px]";
 const DESKTOP_GRID_WITHOUT_PROJECT =
-  "grid-cols-[1.1fr_1.3fr_0.9fr_0.9fr_0.9fr_28px]";
+  "grid-cols-[1.1fr_1.3fr_0.9fr_0.9fr_0.9fr_120px]";
 
 export function InvoiceTable({
   invoices,
@@ -78,7 +78,10 @@ export function InvoiceTable({
               {formatDisplayDate(invoice.dueDate)}
             </span>
             <StatusBadge status={invoice.status} dueDate={invoice.dueDate} />
-            <ChevronRight className="h-4 w-4 shrink-0 text-[var(--border-heavy)]" />
+            <span className="flex shrink-0 items-center justify-center gap-1 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-[11px] font-semibold text-brand">
+              Open invoice
+              <ArrowRight className="h-3 w-3" />
+            </span>
           </Link>
         ))}
       </div>

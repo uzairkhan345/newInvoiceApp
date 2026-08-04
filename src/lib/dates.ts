@@ -54,3 +54,9 @@ export function startOfTodayUTC(): Date {
 export function isOverdue(dueDate: Date): boolean {
   return dueDate.getTime() < startOfTodayUTC().getTime();
 }
+
+/** Midnight UTC on the 1st of the current calendar month — Invoices list "Paid this month" stat. */
+export function startOfMonthUTC(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+}

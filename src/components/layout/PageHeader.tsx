@@ -3,16 +3,20 @@ import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
 
 /**
- * Page header — optional back link + title + optional subtitle + optional
- * primary action. Typography per Docs/ui_design_guide.md §5.
+ * Page header — optional back link + optional eyebrow + title + optional
+ * subtitle + optional primary action. Typography per Docs/ui_design_guide.md
+ * §5. The eyebrow label reuses StatsCard's existing uppercase label
+ * treatment rather than introducing a second one.
  */
 export function PageHeader({
+  eyebrow,
   title,
   subtitle,
   action,
   backHref,
   backLabel = "Back",
 }: {
+  eyebrow?: string;
   title: string;
   subtitle?: string;
   action?: ReactNode;
@@ -32,6 +36,11 @@ export function PageHeader({
       ) : null}
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
+          {eyebrow ? (
+            <span className="text-[11px] font-bold tracking-wide text-muted-foreground uppercase">
+              {eyebrow}
+            </span>
+          ) : null}
           <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-foreground">
             {title}
           </h1>

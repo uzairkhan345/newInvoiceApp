@@ -1,9 +1,8 @@
 import type { InvoicePeriodType } from "@/generated/prisma/client";
 
 /**
- * M19.2a — labels for the ProjectForm dropdown and
- * ProjectDetailCard's read-only display. Each value's math (see
- * computeDueDate) is fixed and not user-configurable.
+ * M19.2a — labels for the ProjectForm (Billing setup tab) dropdown. Each
+ * value's math (see computeDueDate) is fixed and not user-configurable.
  */
 export const INVOICE_PERIOD_LABELS: Record<InvoicePeriodType, string> = {
   WEEKLY: "Weekly (7 days)",

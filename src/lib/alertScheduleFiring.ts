@@ -13,13 +13,20 @@ function daysInUtcMonth(year: number, monthIndex0: number): number {
 }
 
 /** The day this month a schedule's `dayOfMonth` resolves to, clamped to the month's last day (e.g. 31 -> Feb 28/29). */
-export function resolveScheduledDayThisMonth(dayOfMonth: number, now: Date): number {
-  return Math.min(dayOfMonth, daysInUtcMonth(now.getUTCFullYear(), now.getUTCMonth()));
+export function resolveScheduledDayThisMonth(
+  dayOfMonth: number,
+  now: Date,
+): number {
+  return Math.min(
+    dayOfMonth,
+    daysInUtcMonth(now.getUTCFullYear(), now.getUTCMonth()),
+  );
 }
 
 function isSameUtcMonth(a: Date, b: Date): boolean {
   return (
-    a.getUTCFullYear() === b.getUTCFullYear() && a.getUTCMonth() === b.getUTCMonth()
+    a.getUTCFullYear() === b.getUTCFullYear() &&
+    a.getUTCMonth() === b.getUTCMonth()
   );
 }
 
@@ -29,6 +36,36 @@ export type AlertFiringInput = {
   clearedAt: Date | null;
   createdAt: Date;
 };
+
+/**
+ * Project detail Overview tab's "Next alert" health card — the next date
+ * this schedule will occur, or `null` for a one-time schedule whose day has
+ * already passed this month (it's done; a recurring schedule always has a
+ * next occurrence, this month or next).
+ */
+export function resolveNextOccurrence(
+  input: Pick<AlertFiringInput, "dayOfMonth" | "recurring">,
+  now: Date = new Date(),
+): Date | null {
+  const dayThisMonth = resolveScheduledDayThisMonth(input.dayOfMonth, now);
+  if (now.getUTCDate() <= dayThisMonth) {
+    return new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), dayThisMonth),
+    );
+  }
+  if (!input.recurring) return null;
+  const nextMonthIndex0 = now.getUTCMonth() + 1;
+  const nextYear = now.getUTCFullYear() + Math.floor(nextMonthIndex0 / 12);
+  const normalizedMonthIndex0 = ((nextMonthIndex0 % 12) + 12) % 12;
+  const nextMonthAnchor = new Date(
+    Date.UTC(nextYear, normalizedMonthIndex0, 1),
+  );
+  const dayNextMonth = resolveScheduledDayThisMonth(
+    input.dayOfMonth,
+    nextMonthAnchor,
+  );
+  return new Date(Date.UTC(nextYear, normalizedMonthIndex0, dayNextMonth));
+}
 
 /**
  * Whether this alert schedule is currently "fired and uncleared."

@@ -60,16 +60,11 @@ export function Sidebar() {
 
       <div className="flex items-center gap-2.5 border-t border-nav-border px-5 py-4">
         <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
-          A
+          Z
         </div>
-        <div className="flex min-w-0 flex-col leading-tight">
-          <span className="truncate text-xs font-semibold text-white">
-            Admin
-          </span>
-          <span className="truncate text-[11px] text-nav-email">
-            admin@local
-          </span>
-        </div>
+        <span className="truncate text-xs font-semibold text-white">
+          Operational view
+        </span>
       </div>
     </aside>
   );

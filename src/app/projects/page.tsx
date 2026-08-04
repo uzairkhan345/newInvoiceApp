@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Briefcase } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { ProjectTable } from "@/components/project/ProjectTable";
+import { ProjectsDirectory } from "@/components/project/ProjectsDirectory";
 import {
   ProjectStatusFilter,
   type ProjectStatusFilterValue,
@@ -9,11 +9,19 @@ import {
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
 import { projectService } from "@/services/projectService";
+import { invoiceService } from "@/services/invoiceService";
 import { projectAlertScheduleService } from "@/services/projectAlertScheduleService";
+import { buildProjectBillingRows } from "@/lib/projectBillingStatus";
 
 /** M27 v2 redesign — unrecognized/missing `?status=` falls back to "all". */
 function resolveFilter(status: string | undefined): ProjectStatusFilterValue {
-  if (status === "active" || status === "archived") return status;
+  if (
+    status === "active" ||
+    status === "archived" ||
+    status === "needs-attention"
+  ) {
+    return status;
+  }
   return "all";
 }
 
@@ -30,6 +38,11 @@ const EMPTY_STATE_COPY: Record<
     title: "No active projects",
     description: "Projects appear here while they're active.",
   },
+  "needs-attention": {
+    title: "Nothing needs attention",
+    description:
+      "Active projects with an overdue, due-soon, or draft invoice appear here.",
+  },
   archived: {
     title: "No archived projects",
     description: "Projects appear here once they've been archived.",
@@ -45,14 +58,47 @@ export default async function ProjectsPage({
   const filter = resolveFilter(status);
   const cameFromDashboard = from === "dashboard";
 
-  const [projects, firedAlertSchedules] = await Promise.all([
-    projectService.list(
-      filter === "all"
-        ? undefined
-        : { status: filter === "active" ? "ACTIVE" : "ARCHIVED" },
-    ),
+  const [
+    allProjects,
+    activeProjects,
+    allInvoices,
+    overdueInvoices,
+    staleDrafts,
+    firedAlertSchedules,
+  ] = await Promise.all([
+    projectService.list(),
+    projectService.list({ status: "ACTIVE" }),
+    invoiceService.list(),
+    invoiceService.listOverdue(),
+    invoiceService.listStaleDrafts(),
     projectAlertScheduleService.listFiredAcrossActiveProjects(),
   ]);
+
+  const billingRows = buildProjectBillingRows({
+    activeProjects,
+    allInvoices,
+    overdueInvoices,
+    staleDrafts,
+    firedAlertSchedules,
+  });
+  const billingRowByProjectId = new Map(
+    billingRows.map((row) => [row.projectId, row]),
+  );
+
+  const projectsForFilter = (() => {
+    if (filter === "active") return activeProjects;
+    if (filter === "archived") {
+      return allProjects.filter((project) => project.status === "ARCHIVED");
+    }
+    if (filter === "needs-attention") {
+      return activeProjects.filter(
+        (project) =>
+          billingRowByProjectId.get(project.id)?.statusTone !== "positive",
+      );
+    }
+    return allProjects;
+  })();
+
   const firedProjectIds = firedAlertSchedules.map(
     (schedule) => schedule.project.id,
   );
@@ -73,7 +119,7 @@ export default async function ProjectsPage({
         }
       />
       <ProjectStatusFilter active={filter} fromDashboard={cameFromDashboard} />
-      {projects.length === 0 ? (
+      {projectsForFilter.length === 0 ? (
         <EmptyState
           icon={Briefcase}
           title={emptyCopy.title}
@@ -90,7 +136,11 @@ export default async function ProjectsPage({
           }
         />
       ) : (
-        <ProjectTable projects={projects} firedProjectIds={firedProjectIds} />
+        <ProjectsDirectory
+          projects={projectsForFilter}
+          firedProjectIds={firedProjectIds}
+          billingRowByProjectId={Object.fromEntries(billingRowByProjectId)}
+        />
       )}
     </>
   );

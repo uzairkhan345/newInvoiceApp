@@ -242,6 +242,74 @@ describe("invoiceService dashboard aggregates", () => {
     expect(overdueIds).not.toContain(futureDue.id);
   });
 
+  it("listDueSoon returns only SENT invoices due soon, not overdue or already-paid", async () => {
+    const { project } = await createTestProject();
+    const soonDate = new Date();
+    soonDate.setDate(soonDate.getDate() + 3);
+    const soonDateStr = soonDate.toISOString().slice(0, 10);
+
+    const dueSoon = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({
+        invoiceNumber: "TP-DS1",
+        issueDate: "2020-01-01",
+        dueDate: soonDateStr,
+      }),
+    );
+    createdInvoiceIds.push(dueSoon.id);
+    await invoiceService.transitionStatus(dueSoon.id, "SENT");
+
+    const overdue = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({
+        invoiceNumber: "TP-DS2",
+        issueDate: "2020-01-01",
+        dueDate: "2020-01-15",
+      }),
+    );
+    createdInvoiceIds.push(overdue.id);
+    await invoiceService.transitionStatus(overdue.id, "SENT");
+
+    const farOut = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({
+        invoiceNumber: "TP-DS3",
+        issueDate: "2020-01-01",
+        dueDate: "2099-01-15",
+      }),
+    );
+    createdInvoiceIds.push(farOut.id);
+    await invoiceService.transitionStatus(farOut.id, "SENT");
+
+    const dueSoonIds = (await invoiceService.listDueSoon()).map((i) => i.id);
+    expect(dueSoonIds).toContain(dueSoon.id);
+    expect(dueSoonIds).not.toContain(overdue.id);
+    expect(dueSoonIds).not.toContain(farOut.id);
+  });
+
+  it("listPaidThisMonth includes a freshly-paid invoice but not a still-SENT one", async () => {
+    const { project } = await createTestProject();
+
+    const paid = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ invoiceNumber: "TP-PM1" }),
+    );
+    createdInvoiceIds.push(paid.id);
+    await invoiceService.transitionStatus(paid.id, "SENT");
+    await invoiceService.transitionStatus(paid.id, "PAID");
+
+    const stillSent = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ invoiceNumber: "TP-PM2" }),
+    );
+    createdInvoiceIds.push(stillSent.id);
+    await invoiceService.transitionStatus(stillSent.id, "SENT");
+
+    const paidIds = (await invoiceService.listPaidThisMonth()).map((i) => i.id);
+    expect(paidIds).toContain(paid.id);
+    expect(paidIds).not.toContain(stillSent.id);
+  });
+
   it("listRecentActivity includes SENT/PAID/VOID invoices but never DRAFT", async () => {
     const { project } = await createTestProject();
     const draft = await invoiceService.createDraft(

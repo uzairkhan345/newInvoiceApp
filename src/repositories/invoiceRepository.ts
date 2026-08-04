@@ -140,17 +140,56 @@ function findStaleDrafts(cutoff: Date): Promise<InvoiceListItem[]> {
 }
 
 /**
- * Dashboard (M10) — Recent Activity's invoice-side events. `updatedAt` only
- * changes for a non-DRAFT invoice via transitionStatus (updateDraft is
- * DRAFT-only), so it's exactly the timestamp of the most recent lifecycle
- * transition into that status — no separate event log needed.
+ * Dashboard Action Required panel — SENT invoices due within the window
+ * ending at `cutoff` but not yet overdue (`dueDate >= today`), soonest-due
+ * first. Mirrors findOverdueCandidates/findStaleDrafts's shape.
+ */
+function findDueSoon(cutoff: Date): Promise<InvoiceListItem[]> {
+  return prisma.invoice.findMany({
+    where: {
+      status: "SENT",
+      dueDate: { gte: startOfTodayUTC(), lte: cutoff },
+    },
+    include: LIST_ITEM_INCLUDE,
+    orderBy: { dueDate: "asc" },
+  });
+}
+
+/**
+ * Invoices list "Paid this month" stat — full rows (not just timestamps
+ * like findUpdatedByStatusSince) for a given status updated since `since`.
+ * Reliable for PAID specifically: a PAID invoice is terminal, so its
+ * updatedAt is exactly the moment it became PAID, never overwritten again.
+ */
+function findByStatusSince(
+  status: InvoiceStatus,
+  since: Date,
+): Promise<InvoiceListItem[]> {
+  return prisma.invoice.findMany({
+    where: { status, updatedAt: { gte: since } },
+    include: LIST_ITEM_INCLUDE,
+    orderBy: { updatedAt: "desc" },
+  });
+}
+
+/**
+ * Recent Activity's invoice-side events (M10, dashboard-wide; reused by the
+ * project detail Overview tab's Recent activity panel, scoped via
+ * `projectId`). `updatedAt` only changes for a non-DRAFT invoice via
+ * transitionStatus (updateDraft is DRAFT-only), so it's exactly the
+ * timestamp of the most recent lifecycle transition into that status — no
+ * separate event log needed.
  */
 function findRecentByStatuses(
   statuses: InvoiceStatus[],
   limit: number,
+  projectId?: string,
 ): Promise<InvoiceListItem[]> {
   return prisma.invoice.findMany({
-    where: { status: { in: statuses } },
+    where: {
+      status: { in: statuses },
+      ...(projectId ? { projectId } : {}),
+    },
     include: LIST_ITEM_INCLUDE,
     orderBy: { updatedAt: "desc" },
     take: limit,
@@ -339,6 +378,8 @@ export const invoiceRepository = {
   findOverdueCandidates,
   findRecentByStatuses,
   findStaleDrafts,
+  findDueSoon,
+  findByStatusSince,
   findCreatedByStatusSince,
   findUpdatedByStatusSince,
   findResolvedSince,

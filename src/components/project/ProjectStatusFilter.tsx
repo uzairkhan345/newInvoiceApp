@@ -3,6 +3,7 @@ import { FilterChips } from "@/components/shared/FilterChips";
 const FILTERS = [
   { value: "all", label: "All" },
   { value: "active", label: "Active" },
+  { value: "needs-attention", label: "Needs attention" },
   { value: "archived", label: "Archived" },
 ] as const;
 

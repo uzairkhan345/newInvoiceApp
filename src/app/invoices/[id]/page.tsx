@@ -1,29 +1,89 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Eye, Download, FileText } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { InvoiceForm } from "@/components/invoice/InvoiceForm";
 import { StatusBadge } from "@/components/invoice/StatusBadge";
 import { StatusActionBar } from "@/components/invoice/StatusActionBar";
-import { InvoiceDocument } from "@/components/invoice/InvoiceDocument";
+import {
+  InvoiceDetailTabs,
+  type InvoiceDetailTab,
+} from "@/components/invoice/InvoiceDetailTabs";
+import { InvoiceOverdueBanner } from "@/components/invoice/InvoiceOverdueBanner";
+import { InvoiceSummaryTab } from "@/components/invoice/InvoiceSummaryTab";
+import { InvoicePreviewTab } from "@/components/invoice/InvoicePreviewTab";
+import { InvoiceActivityTab } from "@/components/invoice/InvoiceActivityTab";
+import { Eye, Download, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { invoiceService } from "@/services/invoiceService";
 import { documentService } from "@/services/documentService";
-import { toDateInputValue } from "@/lib/dates";
+import { toDateInputValue, isOverdue } from "@/lib/dates";
+import { buildInvoiceActivity } from "@/lib/invoiceActivity";
 import { getAiAssistConfigSummary } from "@/lib/ai-providers/config";
+
+function resolveTab(value: string | undefined): InvoiceDetailTab {
+  if (value === "preview" || value === "activity") return value;
+  return "summary";
+}
 
 export default async function InvoiceDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   const { id } = await params;
+  const { tab: tabParam } = await searchParams;
   const invoice = await invoiceService.getById(id);
   if (!invoice) {
     notFound();
   }
-  const aiConfig = await getAiAssistConfigSummary();
 
+  if (invoice.status !== "DRAFT") {
+    const tab = resolveTab(tabParam);
+    const data = documentService.assembleInvoiceDocumentData(invoice);
+    const events = buildInvoiceActivity(invoice);
+    const overdue = invoice.status === "SENT" && isOverdue(invoice.dueDate);
+
+    return (
+      <>
+        <PageHeader
+          title={invoice.invoiceNumber}
+          subtitle={`${invoice.project.client.name} · ${invoice.project.name}`}
+          action={
+            <div className="flex items-center gap-3">
+              <StatusBadge status={invoice.status} dueDate={invoice.dueDate} />
+              <StatusActionBar
+                invoiceId={invoice.id}
+                status={invoice.status}
+                hasNoPaymentMethod={!invoice.project.preferredPaymentMethod}
+              />
+            </div>
+          }
+          backHref="/invoices"
+          backLabel="Back to Invoices"
+        />
+        {overdue ? <InvoiceOverdueBanner dueDate={invoice.dueDate} /> : null}
+        <InvoiceDetailTabs
+          invoiceId={invoice.id}
+          active={tab}
+          activityCount={events.length}
+        />
+        {tab === "summary" ? (
+          <InvoiceSummaryTab invoice={invoice} data={data} />
+        ) : tab === "preview" ? (
+          <InvoicePreviewTab invoiceId={invoice.id} data={data} />
+        ) : (
+          <InvoiceActivityTab
+            invoiceNumber={invoice.invoiceNumber}
+            events={events}
+          />
+        )}
+      </>
+    );
+  }
+
+  const aiConfig = await getAiAssistConfigSummary();
   const headerAction = (
     <div className="flex items-center gap-3">
       <StatusBadge status={invoice.status} dueDate={invoice.dueDate} />
@@ -58,27 +118,6 @@ export default async function InvoiceDetailPage({
       />
     </div>
   );
-
-  if (invoice.status !== "DRAFT") {
-    const data = documentService.assembleInvoiceDocumentData(invoice);
-    return (
-      <>
-        <PageHeader
-          title={invoice.invoiceNumber}
-          subtitle={invoice.project.name}
-          action={headerAction}
-          backHref="/invoices"
-          backLabel="Back to Invoices"
-        />
-        {/* Docs/invoice_design_guidelines.md §15 — the A4 page has fixed
-            physical dimensions; on narrow viewports it scrolls horizontally
-            rather than reflowing. */}
-        <div className="overflow-x-auto">
-          <InvoiceDocument data={data} />
-        </div>
-      </>
-    );
-  }
 
   return (
     <>
