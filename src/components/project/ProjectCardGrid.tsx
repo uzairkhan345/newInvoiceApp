@@ -3,6 +3,7 @@ import { BellDot } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { paymentMethodSummary } from "@/components/project/ProjectTable";
 import { formatCurrency } from "@/lib/currency";
+import { formatShortDate } from "@/lib/dates";
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
 import {
   BILLING_TONE_ACCENT,
@@ -101,11 +102,7 @@ export function ProjectCardGrid({
                 </dt>
                 <dd className="mt-1 text-foreground">
                   {billingRow?.nextInvoiceDate
-                    ? new Intl.DateTimeFormat("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        timeZone: "UTC",
-                      }).format(billingRow.nextInvoiceDate)
+                    ? formatShortDate(billingRow.nextInvoiceDate)
                     : "Not scheduled"}
                 </dd>
               </div>

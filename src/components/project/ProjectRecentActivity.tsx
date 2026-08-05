@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
-import { formatDisplayDate } from "@/lib/dates";
+import { formatShortDate } from "@/lib/dates";
 import type { InvoiceListItem } from "@/repositories/invoiceRepository";
 
 const VERB: Partial<Record<string, string>> = {
@@ -11,9 +12,9 @@ const VERB: Partial<Record<string, string>> = {
 };
 
 const DOT_TONE: Partial<Record<string, string>> = {
-  PAID: "bg-[var(--status-paid-text)]",
-  SENT: "bg-brand",
-  VOID: "bg-muted-foreground",
+  PAID: "border-[var(--status-paid-text)]",
+  SENT: "border-brand",
+  VOID: "border-muted-foreground",
 };
 
 /**
@@ -45,28 +46,42 @@ export function ProjectRecentActivity({
           </p>
         ) : (
           <div className="flex flex-col gap-3">
-            {invoices.map((invoice) => (
-              <Link
-                key={invoice.id}
-                href={`/invoices/${invoice.id}`}
-                className="flex items-start gap-2.5 hover:opacity-80"
-              >
-                <span
-                  className={`mt-1 h-2 w-2 shrink-0 rounded-full ${DOT_TONE[invoice.status] ?? "bg-muted-foreground"}`}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-semibold text-foreground">
-                    Invoice {invoice.invoiceNumber}{" "}
-                    {VERB[invoice.status] ?? invoice.status.toLowerCase()}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {formatCurrency(invoice.total.toString(), invoice.currency)}
-                  </p>
-                </div>
-                <span className="shrink-0 text-[10px] text-muted-foreground">
-                  {formatDisplayDate(invoice.updatedAt)}
-                </span>
-              </Link>
+            {invoices.map((invoice, index) => (
+              <div key={invoice.id} className="relative">
+                {index < invoices.length - 1 ? (
+                  <span
+                    aria-hidden="true"
+                    className="absolute top-[13px] bottom-[-13px] left-[5px] w-px bg-border"
+                  />
+                ) : null}
+                <Link
+                  href={`/invoices/${invoice.id}`}
+                  className="flex items-start gap-2.5 hover:opacity-80"
+                >
+                  <span
+                    className={cn(
+                      "relative z-10 mt-0.5 h-[11px] w-[11px] shrink-0 rounded-full border-[3px] bg-card",
+                      DOT_TONE[invoice.status] ?? "border-muted-foreground",
+                    )}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-semibold text-foreground">
+                      Invoice{" "}
+                      {VERB[invoice.status] ?? invoice.status.toLowerCase()}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {invoice.invoiceNumber} ·{" "}
+                      {formatCurrency(
+                        invoice.total.toString(),
+                        invoice.currency,
+                      )}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-[10px] text-muted-foreground">
+                    {formatShortDate(invoice.updatedAt)}
+                  </span>
+                </Link>
+              </div>
             ))}
           </div>
         )}
