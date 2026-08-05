@@ -44,6 +44,8 @@ export default async function NewInvoiceProjectPickerPage() {
   return (
     <>
       <PageHeader
+        backHref="/invoices"
+        backLabel="Back to Invoices"
         eyebrow="New draft invoice"
         title="Choose a project"
         subtitle="Project settings provide the client, contractor, payment method, currency and invoice numbering."

@@ -54,6 +54,22 @@ function billingLabelFor(project: ProjectWithRelations): string {
 
 export type BillingStatusTone = "overdue" | "prepare" | "draft" | "positive";
 
+/** Shared left-border accent classes for billing-status project cards (ProjectCardGrid, InvoiceProjectPicker). */
+export const BILLING_TONE_ACCENT: Record<BillingStatusTone, string> = {
+  overdue: "bg-[var(--status-overdue-text)]",
+  prepare: "bg-[var(--status-sent-text)]",
+  draft: "bg-brand",
+  positive: "bg-[var(--status-paid-text)]",
+};
+
+/** Shared status-pill classes for billing-status project cards (ProjectCardGrid, InvoiceProjectPicker). */
+export const BILLING_TONE_PILL: Record<BillingStatusTone, string> = {
+  overdue: "bg-[var(--status-overdue-bg)] text-[var(--status-overdue-text)]",
+  prepare: "bg-[var(--status-sent-bg)] text-[var(--status-sent-text)]",
+  draft: "bg-brand-light text-brand",
+  positive: "bg-[var(--status-paid-bg)] text-[var(--status-paid-text)]",
+};
+
 export type ProjectBillingRow = {
   projectId: string;
   projectName: string;

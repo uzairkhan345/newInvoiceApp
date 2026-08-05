@@ -4,21 +4,11 @@ import { cn } from "@/lib/utils";
 import { paymentMethodSummary } from "@/components/project/ProjectTable";
 import { formatCurrency } from "@/lib/currency";
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
-import type { ProjectBillingRow } from "@/lib/projectBillingStatus";
-
-const TONE_ACCENT: Record<ProjectBillingRow["statusTone"], string> = {
-  overdue: "bg-[var(--status-overdue-text)]",
-  prepare: "bg-[var(--status-sent-text)]",
-  draft: "bg-brand",
-  positive: "bg-[var(--status-paid-text)]",
-};
-
-const TONE_PILL: Record<ProjectBillingRow["statusTone"], string> = {
-  overdue: "bg-[var(--status-overdue-bg)] text-[var(--status-overdue-text)]",
-  prepare: "bg-[var(--status-sent-bg)] text-[var(--status-sent-text)]",
-  draft: "bg-brand-light text-brand",
-  positive: "bg-[var(--status-paid-bg)] text-[var(--status-paid-text)]",
-};
+import {
+  BILLING_TONE_ACCENT,
+  BILLING_TONE_PILL,
+  type ProjectBillingRow,
+} from "@/lib/projectBillingStatus";
 
 /**
  * Projects list — alternative card view (ui_redesign_handoff_v3
@@ -43,7 +33,7 @@ export function ProjectCardGrid({
         const billingRow = billingRowByProjectId[project.id];
         const paymentMethod = paymentMethodSummary(project);
         const accent = billingRow
-          ? TONE_ACCENT[billingRow.statusTone]
+          ? BILLING_TONE_ACCENT[billingRow.statusTone]
           : "bg-border";
 
         return (
@@ -81,7 +71,7 @@ export function ProjectCardGrid({
                 className={cn(
                   "rounded-md px-2 py-1 text-[10px] font-bold whitespace-nowrap uppercase",
                   billingRow
-                    ? TONE_PILL[billingRow.statusTone]
+                    ? BILLING_TONE_PILL[billingRow.statusTone]
                     : "bg-muted text-muted-foreground",
                 )}
               >

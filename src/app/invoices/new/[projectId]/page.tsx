@@ -31,8 +31,11 @@ export default async function NewInvoiceForProjectPage({
   return (
     <>
       <PageHeader
-        title="Create Invoice"
-        subtitle={`New draft invoice for ${project.name}.`}
+        backHref="/invoices/new"
+        backLabel="Change project"
+        eyebrow="New draft invoice"
+        title="Create invoice"
+        subtitle={`For ${project.name} · ${project.client.name}`}
       />
       <InvoiceForm
         mode="create"
