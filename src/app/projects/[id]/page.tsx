@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ProjectForm } from "@/components/project/ProjectForm";
+import { ProjectDetailCard } from "@/components/project/ProjectDetailCard";
 import { ProjectDeleteButton } from "@/components/project/ProjectDeleteButton";
 import {
   ProjectDetailTabs,
@@ -36,11 +37,12 @@ export default async function ProjectDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; edit?: string }>;
 }) {
   const { id } = await params;
-  const { tab: tabParam } = await searchParams;
+  const { tab: tabParam, edit } = await searchParams;
   const tab = resolveTab(tabParam);
+  const isEditingSetup = tab === "setup" && edit === "1";
 
   const project = await projectService.getById(id);
   if (!project) {
@@ -70,7 +72,9 @@ export default async function ProjectDetailPage({
             <Button
               variant="outline"
               nativeButton={false}
-              render={<Link href={`/projects/${project.id}?tab=setup`} />}
+              render={
+                <Link href={`/projects/${project.id}?tab=setup&edit=1`} />
+              }
             >
               <Pencil className="h-3.5 w-3.5" />
               Edit project
@@ -105,7 +109,7 @@ export default async function ProjectDetailPage({
           alertSchedules={alertSchedules}
         />
       ) : (
-        <BillingSetupTab project={project} />
+        <BillingSetupTab project={project} isEditing={isEditingSetup} />
       )}
     </>
   );
@@ -251,9 +255,24 @@ function InvoicesAndAlertsTab({
 
 async function BillingSetupTab({
   project,
+  isEditing,
 }: {
   project: NonNullable<Awaited<ReturnType<typeof projectService.getById>>>;
+  isEditing: boolean;
 }) {
+  if (!isEditing) {
+    const nextInvoiceNumber = await invoiceService.previewNextInvoiceNumber(
+      project.id,
+    );
+    return (
+      <ProjectDetailCard
+        project={project}
+        editHref={`/projects/${project.id}?tab=setup&edit=1`}
+        nextInvoiceNumber={nextInvoiceNumber}
+      />
+    );
+  }
+
   const parties = await partyService.list();
   const paymentMethodEntries = await Promise.all(
     parties.map(
@@ -265,23 +284,43 @@ async function BillingSetupTab({
     Object.fromEntries(paymentMethodEntries);
 
   return (
-    <ProjectForm
-      mode="edit"
-      projectId={project.id}
-      initialParties={parties}
-      initialPaymentMethodsByPartyId={paymentMethodsByPartyId}
-      defaultValues={{
-        name: project.name,
-        abbreviation: project.abbreviation ?? "",
-        serviceDescription: project.serviceDescription ?? "",
-        clientId: project.clientId,
-        contractorId: project.contractorId,
-        preferredPaymentMethodId: project.preferredPaymentMethodId ?? "",
-        invoiceNumberFormat: project.invoiceNumberFormat,
-        invoicePeriodType: project.invoicePeriodType ?? "",
-        displayCurrency: project.displayCurrency,
-        status: project.status,
-      }}
-    />
+    <>
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <h2 className="text-[14px] font-normal tracking-[-0.14px] text-foreground">
+            Edit billing setup
+          </h2>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Update {project.name}&rsquo;s invoicing configuration.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          className="h-8 px-3 text-[12px]"
+          nativeButton={false}
+          render={<Link href={`/projects/${project.id}?tab=setup`} />}
+        >
+          Cancel
+        </Button>
+      </div>
+      <ProjectForm
+        mode="edit"
+        projectId={project.id}
+        initialParties={parties}
+        initialPaymentMethodsByPartyId={paymentMethodsByPartyId}
+        defaultValues={{
+          name: project.name,
+          abbreviation: project.abbreviation ?? "",
+          serviceDescription: project.serviceDescription ?? "",
+          clientId: project.clientId,
+          contractorId: project.contractorId,
+          preferredPaymentMethodId: project.preferredPaymentMethodId ?? "",
+          invoiceNumberFormat: project.invoiceNumberFormat,
+          invoicePeriodType: project.invoicePeriodType ?? "",
+          displayCurrency: project.displayCurrency,
+          status: project.status,
+        }}
+      />
+    </>
   );
 }
