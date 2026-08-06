@@ -34,6 +34,15 @@ export function formatDisplayDate(date: Date): string {
   }).format(date);
 }
 
+/** Compact month/day date (no year) for space-constrained widgets — card facts, activity timelines. */
+export function formatShortDate(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
+
 /**
  * "today" as a UTC-midnight Date, matching how
  * `@db.Date` columns are stored/read. Shared by isOverdue and, from M10, the
@@ -53,4 +62,10 @@ export function startOfTodayUTC(): Date {
  */
 export function isOverdue(dueDate: Date): boolean {
   return dueDate.getTime() < startOfTodayUTC().getTime();
+}
+
+/** Midnight UTC on the 1st of the current calendar month — Invoices list "Paid this month" stat. */
+export function startOfMonthUTC(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 }

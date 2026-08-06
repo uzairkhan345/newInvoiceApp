@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -49,61 +50,104 @@ export type InvoiceFormProjectInfo = {
  * method, and invoice-number format are inherited from the project and never
  * re-entered here; this panel is read-only, sourced from live project data
  * (not the invoice's own snapshot, which only exists once a draft is saved).
+ * Redesign v3 (ui_redesign_handoff_v3 screenshots/16) — a compact single-row
+ * context bar instead of a full facts card; "Change project" only makes
+ * sense in create mode (an existing draft's project is fixed).
  */
-function ProjectInfoPanel({ project }: { project: InvoiceFormProjectInfo }) {
+function ProjectContextBar({
+  project,
+  invoiceNumber,
+  showChangeProjectLink,
+}: {
+  project: InvoiceFormProjectInfo;
+  invoiceNumber: string;
+  showChangeProjectLink: boolean;
+}) {
   return (
-    <Card className="mb-4">
-      <CardContent className="grid grid-cols-1 gap-3 pt-6 text-[13px] sm:grid-cols-2">
-        <div>
-          <p className="text-[11px] font-bold tracking-[0.05em] text-muted-foreground uppercase">
-            Project
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-brand-light bg-brand-light/20 px-4 py-3">
+      <div className="flex min-w-0 items-center gap-2.5">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-light font-mono text-[11px] font-bold text-brand">
+          {project.name.slice(0, 2).toUpperCase()}
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-[13px] font-bold text-foreground">
+            {project.name}
           </p>
-          <p className="font-medium text-foreground">{project.name}</p>
+          <p className="truncate text-[11px] text-muted-foreground">
+            {project.clientName}
+          </p>
         </div>
+      </div>
+      <dl className="flex flex-wrap items-center gap-x-6 gap-y-1 text-[11px]">
         <div>
-          <p className="text-[11px] font-bold tracking-[0.05em] text-muted-foreground uppercase">
+          <dt className="font-bold tracking-wide text-muted-foreground uppercase">
             Currency
-          </p>
-          <p className="font-mono text-foreground">
+          </dt>
+          <dd className="mt-0.5 font-mono text-foreground">
             {project.currency}
-            {project.currencyMode === "DUAL" ? (
-              <span className="ml-1 font-sans text-[11px] text-muted-foreground">
-                + converted total in {project.displayCurrency}
-              </span>
-            ) : null}
-          </p>
+            {project.currencyMode === "DUAL"
+              ? ` (+ ${project.displayCurrency})`
+              : ""}
+          </dd>
         </div>
         <div>
-          <p className="text-[11px] font-bold tracking-[0.05em] text-muted-foreground uppercase">
-            Contractor
-          </p>
-          <p className="text-foreground">{project.contractorName}</p>
-        </div>
-        <div>
-          <p className="text-[11px] font-bold tracking-[0.05em] text-muted-foreground uppercase">
-            Client
-          </p>
-          <p className="text-foreground">{project.clientName}</p>
-        </div>
-        <div className="sm:col-span-2">
-          <p className="text-[11px] font-bold tracking-[0.05em] text-muted-foreground uppercase">
-            Preferred Payment Method
-          </p>
-          <p className="text-foreground">
+          <dt className="font-bold tracking-wide text-muted-foreground uppercase">
+            Payment method
+          </dt>
+          <dd className="mt-0.5 text-foreground">
             {project.preferredPaymentMethodLabel ?? (
-              <span className="text-muted-foreground">
-                None set on the project
+              <span className="font-semibold text-[var(--alert-warning-text)]">
+                None set
               </span>
             )}
-          </p>
-          {project.preferredPaymentMethodLabel === null ? (
-            <p className="mt-1 inline-block rounded-full bg-[var(--alert-warning-bg)] px-2 py-0.5 text-[11px] font-semibold text-[var(--alert-warning-text)]">
-              This invoice will be generated with no payment details
-            </p>
-          ) : null}
+          </dd>
         </div>
-      </CardContent>
-    </Card>
+        <div>
+          <dt className="font-bold tracking-wide text-muted-foreground uppercase">
+            Number
+          </dt>
+          <dd className="mt-0.5 font-mono text-foreground">
+            {invoiceNumber || "—"}
+          </dd>
+        </div>
+      </dl>
+      {showChangeProjectLink ? (
+        <Link
+          href="/invoices/new"
+          className="text-[11px] font-bold text-brand hover:underline"
+        >
+          Change
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
+/** Redesign v3 — purely visual grouping of the existing form fields into numbered sections; no field/validation changes. */
+function FormSectionHeader({
+  number,
+  title,
+  subtitle,
+  action,
+}: {
+  number: number;
+  title: string;
+  subtitle: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="mt-6 mb-3 flex items-center justify-between border-t border-muted pt-5 first:mt-0 first:border-t-0 first:pt-0">
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-light text-[11px] font-bold text-brand">
+          {number}
+        </span>
+        <div>
+          <p className="text-[12px] font-bold text-foreground">{title}</p>
+          <p className="text-[10px] text-muted-foreground">{subtitle}</p>
+        </div>
+      </div>
+      {action}
+    </div>
   );
 }
 
@@ -236,11 +280,33 @@ export function InvoiceForm({
 
   return (
     <>
-      <ProjectInfoPanel project={project} />
+      <ProjectContextBar
+        project={project}
+        invoiceNumber={watch("invoiceNumber")}
+        showChangeProjectLink={mode === "create"}
+      />
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[2fr_1fr]">
         <Card>
           <CardContent className="pt-6">
             <form onSubmit={onSubmit} noValidate>
+              <FormSectionHeader
+                number={1}
+                title="Invoice details"
+                subtitle="Number and payment dates"
+                action={
+                  mode === "create" && autofillData ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-7 px-2 text-[11px]"
+                      onClick={handleAutofill}
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Use Last Invoice
+                    </Button>
+                  ) : undefined
+                }
+              />
               <FormField
                 label="Invoice Number"
                 htmlFor="invoiceNumber"
@@ -303,20 +369,11 @@ export function InvoiceForm({
                 </FormField>
               ) : null}
 
-              {mode === "create" && autofillData ? (
-                <div className="mb-4 flex justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-7 px-2 text-[11px]"
-                    onClick={handleAutofill}
-                  >
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Autofill from Last Invoice
-                  </Button>
-                </div>
-              ) : null}
-
+              <FormSectionHeader
+                number={2}
+                title="Line items"
+                subtitle="Services, hours and rates"
+              />
               <LineItemsEditor
                 control={control}
                 register={register}
@@ -325,6 +382,11 @@ export function InvoiceForm({
                 currency={project.currency}
               />
 
+              <FormSectionHeader
+                number={3}
+                title="Notes"
+                subtitle="Optional information shown on the invoice"
+              />
               <FormField
                 label="Items Note"
                 htmlFor="itemsNote"

@@ -4,120 +4,197 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { ProjectForm } from "@/components/project/ProjectForm";
 import { ProjectDetailCard } from "@/components/project/ProjectDetailCard";
 import { ProjectDeleteButton } from "@/components/project/ProjectDeleteButton";
+import {
+  ProjectDetailTabs,
+  type ProjectDetailTab,
+} from "@/components/project/ProjectDetailTabs";
+import { ProjectHealthCards } from "@/components/project/ProjectHealthCards";
+import { ProjectSummary } from "@/components/project/ProjectSummary";
+import { ProjectRecentActivity } from "@/components/project/ProjectRecentActivity";
+import { ProjectStatusPill } from "@/components/project/ProjectStatusPill";
 import { InvoiceTable } from "@/components/invoice/InvoiceTable";
 import { AlertScheduleList } from "@/components/project-alert-schedule/AlertScheduleList";
 import { AddAlertScheduleButton } from "@/components/project-alert-schedule/AddAlertScheduleButton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
-import { FileText } from "lucide-react";
+import { FileText, Pencil } from "lucide-react";
 import { projectService } from "@/services/projectService";
 import { partyService } from "@/services/partyService";
 import { paymentMethodService } from "@/services/paymentMethodService";
 import { invoiceService } from "@/services/invoiceService";
 import { projectAlertScheduleService } from "@/services/projectAlertScheduleService";
+import { buildProjectBillingRows } from "@/lib/projectBillingStatus";
 import { toInvoiceTableRow } from "@/lib/invoiceTableRow";
 import type { PaymentMethod } from "@/generated/prisma/client";
+
+function resolveTab(value: string | undefined): ProjectDetailTab {
+  if (value === "invoices" || value === "setup") return value;
+  return "overview";
+}
 
 export default async function ProjectDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ edit?: string }>;
+  searchParams: Promise<{ tab?: string; edit?: string }>;
 }) {
   const { id } = await params;
-  const { edit } = await searchParams;
-  const isEditing = edit === "1";
+  const { tab: tabParam, edit } = await searchParams;
+  const tab = resolveTab(tabParam);
+  const isEditingSetup = tab === "setup" && edit === "1";
 
   const project = await projectService.getById(id);
   if (!project) {
     notFound();
   }
 
-  if (isEditing) {
-    const parties = await partyService.list();
-    const paymentMethodEntries = await Promise.all(
-      parties.map(
-        async (party) =>
-          [
-            party.id,
-            await paymentMethodService.listForParty(party.id),
-          ] as const,
-      ),
-    );
-    const paymentMethodsByPartyId: Record<string, PaymentMethod[]> =
-      Object.fromEntries(paymentMethodEntries);
-
-    return (
-      <>
-        <PageHeader
-          title={project.name}
-          subtitle="Edit project details and invoicing configuration."
-          backHref="/projects"
-          backLabel="Back to Projects"
-          action={
-            <Button
-              variant="outline"
-              nativeButton={false}
-              render={<Link href={`/projects/${project.id}`} />}
-            >
-              Cancel
-            </Button>
-          }
-        />
-        <ProjectForm
-          mode="edit"
-          projectId={project.id}
-          initialParties={parties}
-          initialPaymentMethodsByPartyId={paymentMethodsByPartyId}
-          defaultValues={{
-            name: project.name,
-            abbreviation: project.abbreviation ?? "",
-            serviceDescription: project.serviceDescription ?? "",
-            clientId: project.clientId,
-            contractorId: project.contractorId,
-            preferredPaymentMethodId: project.preferredPaymentMethodId ?? "",
-            invoiceNumberFormat: project.invoiceNumberFormat,
-            invoicePeriodType: project.invoicePeriodType ?? "",
-            displayCurrency: project.displayCurrency,
-            status: project.status,
-          }}
-        />
-      </>
-    );
-  }
-
-  const [isDeletable, nextInvoiceNumber, invoices, alertSchedules] =
-    await Promise.all([
-      projectService.isDeletable(id),
-      invoiceService.previewNextInvoiceNumber(id),
-      invoiceService.listByProject(id),
-      projectAlertScheduleService.listForProjectWithFiringState(id),
-    ]);
+  const [isDeletable, invoices, alertSchedules] = await Promise.all([
+    projectService.isDeletable(id),
+    invoiceService.listByProject(id),
+    projectAlertScheduleService.listForProjectWithFiringState(id),
+  ]);
 
   return (
     <>
       <PageHeader
-        title={project.name}
+        title={
+          <>
+            {project.name}
+            <ProjectStatusPill status={project.status} />
+          </>
+        }
         subtitle="View project details and invoicing configuration."
         backHref="/projects"
         backLabel="Back to Projects"
         action={
-          <ProjectDeleteButton
-            projectId={project.id}
-            projectName={project.name}
-            isDeletable={isDeletable}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={
+                <Link href={`/projects/${project.id}?tab=setup&edit=1`} />
+              }
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Edit project
+            </Button>
+            <Button
+              nativeButton={false}
+              render={<Link href={`/invoices/new/${project.id}`} />}
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Create invoice
+            </Button>
+            <ProjectDeleteButton
+              projectId={project.id}
+              projectName={project.name}
+              isDeletable={isDeletable}
+            />
+          </div>
         }
       />
-      <ProjectDetailCard
-        project={project}
-        editHref={`/projects/${project.id}?edit=1`}
-        nextInvoiceNumber={nextInvoiceNumber}
+      <ProjectDetailTabs
+        projectId={project.id}
+        active={tab}
+        invoicesCount={invoices.length}
       />
 
-      <div className="mt-8 mb-3 flex items-center justify-between">
-        <h2 className="text-[15px] font-bold text-foreground">Invoices</h2>
+      {tab === "overview" ? (
+        <OverviewTab projectId={project.id} project={project} />
+      ) : tab === "invoices" ? (
+        <InvoicesAndAlertsTab
+          project={project}
+          invoices={invoices}
+          alertSchedules={alertSchedules}
+        />
+      ) : (
+        <BillingSetupTab project={project} isEditing={isEditingSetup} />
+      )}
+    </>
+  );
+}
+
+async function OverviewTab({
+  projectId,
+  project,
+}: {
+  projectId: string;
+  project: NonNullable<Awaited<ReturnType<typeof projectService.getById>>>;
+}) {
+  const [recentActivity, alertSchedules] = await Promise.all([
+    invoiceService.listRecentActivity(5, projectId),
+    projectAlertScheduleService.listForProjectWithFiringState(projectId),
+  ]);
+
+  if (project.status !== "ACTIVE") {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-[12px] text-muted-foreground">
+          This project is archived — billing health isn&rsquo;t tracked for
+          archived projects.
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.25fr_0.75fr]">
+          <ProjectSummary project={project} />
+          <ProjectRecentActivity invoices={recentActivity} />
+        </div>
+      </div>
+    );
+  }
+
+  const [allInvoices, overdueInvoices, staleDrafts, firedAlertSchedules] =
+    await Promise.all([
+      invoiceService.list(),
+      invoiceService.listOverdue(),
+      invoiceService.listStaleDrafts(),
+      projectAlertScheduleService.listFiredAcrossActiveProjects(),
+    ]);
+
+  const [row] = buildProjectBillingRows({
+    activeProjects: [project],
+    allInvoices,
+    overdueInvoices,
+    staleDrafts,
+    firedAlertSchedules,
+  });
+
+  return (
+    <div className="flex flex-col gap-4">
+      <ProjectHealthCards
+        projectId={projectId}
+        billingRow={row}
+        alertSchedules={alertSchedules}
+      />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.25fr_0.75fr]">
+        <ProjectSummary project={project} />
+        <ProjectRecentActivity invoices={recentActivity} />
+      </div>
+    </div>
+  );
+}
+
+function InvoicesAndAlertsTab({
+  project,
+  invoices,
+  alertSchedules,
+}: {
+  project: NonNullable<Awaited<ReturnType<typeof projectService.getById>>>;
+  invoices: Awaited<ReturnType<typeof invoiceService.listByProject>>;
+  alertSchedules: Awaited<
+    ReturnType<typeof projectAlertScheduleService.listForProjectWithFiringState>
+  >;
+}) {
+  return (
+    <>
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <h2 className="text-[14px] font-normal tracking-[-0.14px] text-foreground">
+            Invoices
+          </h2>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Invoices created for {project.name}.
+          </p>
+        </div>
         {invoices.length > 0 ? (
           <Button
             variant="outline"
@@ -151,9 +228,14 @@ export default async function ProjectDetailPage({
       )}
 
       <div className="mt-8 mb-3 flex items-center justify-between">
-        <h2 className="text-[15px] font-bold text-foreground">
-          Alert Schedules
-        </h2>
+        <div>
+          <h2 className="text-[14px] font-normal tracking-[-0.14px] text-foreground">
+            Alert Schedules
+          </h2>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Recurring reminders for this project&apos;s billing schedule.
+          </p>
+        </div>
         {alertSchedules.length > 0 ? (
           <AddAlertScheduleButton projectId={project.id} />
         ) : null}
@@ -167,6 +249,78 @@ export default async function ProjectDetailPage({
       ) : (
         <AlertScheduleList projectId={project.id} schedules={alertSchedules} />
       )}
+    </>
+  );
+}
+
+async function BillingSetupTab({
+  project,
+  isEditing,
+}: {
+  project: NonNullable<Awaited<ReturnType<typeof projectService.getById>>>;
+  isEditing: boolean;
+}) {
+  if (!isEditing) {
+    const nextInvoiceNumber = await invoiceService.previewNextInvoiceNumber(
+      project.id,
+    );
+    return (
+      <ProjectDetailCard
+        project={project}
+        editHref={`/projects/${project.id}?tab=setup&edit=1`}
+        nextInvoiceNumber={nextInvoiceNumber}
+      />
+    );
+  }
+
+  const parties = await partyService.list();
+  const paymentMethodEntries = await Promise.all(
+    parties.map(
+      async (party) =>
+        [party.id, await paymentMethodService.listForParty(party.id)] as const,
+    ),
+  );
+  const paymentMethodsByPartyId: Record<string, PaymentMethod[]> =
+    Object.fromEntries(paymentMethodEntries);
+
+  return (
+    <>
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <h2 className="text-[14px] font-normal tracking-[-0.14px] text-foreground">
+            Edit billing setup
+          </h2>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Update {project.name}&rsquo;s invoicing configuration.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          className="h-8 px-3 text-[12px]"
+          nativeButton={false}
+          render={<Link href={`/projects/${project.id}?tab=setup`} />}
+        >
+          Cancel
+        </Button>
+      </div>
+      <ProjectForm
+        mode="edit"
+        projectId={project.id}
+        initialParties={parties}
+        initialPaymentMethodsByPartyId={paymentMethodsByPartyId}
+        defaultValues={{
+          name: project.name,
+          abbreviation: project.abbreviation ?? "",
+          serviceDescription: project.serviceDescription ?? "",
+          clientId: project.clientId,
+          contractorId: project.contractorId,
+          preferredPaymentMethodId: project.preferredPaymentMethodId ?? "",
+          invoiceNumberFormat: project.invoiceNumberFormat,
+          invoicePeriodType: project.invoicePeriodType ?? "",
+          displayCurrency: project.displayCurrency,
+          status: project.status,
+        }}
+      />
     </>
   );
 }

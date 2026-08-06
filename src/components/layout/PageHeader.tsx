@@ -3,17 +3,21 @@ import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
 
 /**
- * Page header — optional back link + title + optional subtitle + optional
- * primary action. Typography per Docs/ui_design_guide.md §5.
+ * Page header — optional back link + optional eyebrow + title + optional
+ * subtitle + optional primary action. Typography per Docs/ui_design_guide.md
+ * §5. The eyebrow label reuses StatsCard's existing uppercase label
+ * treatment rather than introducing a second one.
  */
 export function PageHeader({
+  eyebrow,
   title,
   subtitle,
   action,
   backHref,
   backLabel = "Back",
 }: {
-  title: string;
+  eyebrow?: string;
+  title: ReactNode;
   subtitle?: string;
   action?: ReactNode;
   backHref?: string;
@@ -30,16 +34,23 @@ export function PageHeader({
           {backLabel}
         </Link>
       ) : null}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-foreground">
+          {eyebrow ? (
+            <span className="text-[10px] font-[750] tracking-[0.1em] text-muted-foreground uppercase">
+              {eyebrow}
+            </span>
+          ) : null}
+          <h1 className="flex items-center gap-3 text-[27px] font-normal tracking-[-0.945px] text-foreground">
             {title}
           </h1>
           {subtitle ? (
             <p className="text-[13px] text-muted-foreground">{subtitle}</p>
           ) : null}
         </div>
-        {action ? <div className="shrink-0">{action}</div> : null}
+        {action ? (
+          <div className="w-full shrink-0 sm:w-auto">{action}</div>
+        ) : null}
       </div>
     </div>
   );

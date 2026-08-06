@@ -21,6 +21,9 @@
 /** M27 — "stale draft" threshold, deliberately a single named constant so it's changeable later without a design decision. */
 export const STALE_DRAFT_DAYS = 1;
 
+/** Dashboard Action Required panel — "due soon" window, same single-named-constant convention as STALE_DRAFT_DAYS. */
+export const DUE_SOON_WITHIN_DAYS = 7;
+
 export const TREND_WINDOW_DAYS = 30;
 export const SPARKLINE_BUCKETS = 5;
 
@@ -28,6 +31,10 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function daysAgo(days: number, now = new Date()): Date {
   return new Date(now.getTime() - days * DAY_MS);
+}
+
+export function daysFromNow(days: number, now = new Date()): Date {
+  return new Date(now.getTime() + days * DAY_MS);
 }
 
 /** Whole days elapsed since `date` — used for the stale-draft alert chip's "N+ days" text. */

@@ -115,7 +115,7 @@ No logo support anywhere in MVP — no `LogoUrl` field on `Party`, no per-projec
 
 `Party` does **not** store a `Role` field. There is no `CONTRACTOR` / `CLIENT` / `BOTH` enum anywhere in the schema. Any existing `Party` record can be freely selected as a `Project`'s contractor or as its client — including the same party in both slots — with no validation tying a stored role to how the party is actually used. `Party.Type` (`INDIVIDUAL` / `ORGANIZATION`) is unaffected and remains the only classification field on `Party`.
 
-Consequence for the UI: there is no role-based filtering anywhere (no separate "Contractors" vs "Clients" list) — a single party roster, and both the contractor and client pickers on the Project form draw from the same full list.
+Consequence for the UI: the contractor and client pickers on the Project form always draw from the same full, unfiltered party list — there is no separate "Contractors" vs "Clients" picker anywhere. The Parties directory's Client/Contractor filter is a display-only convenience layered on top of this decision, not an exception to it: a party's relationship is derived live, per page load, by checking which side of `Project.ContractorId`/`ClientId` it actually appears on — nothing is stored, and a party used as both is labeled accordingly rather than forced into one bucket.
 
 ## 16. Address Model Decision
 

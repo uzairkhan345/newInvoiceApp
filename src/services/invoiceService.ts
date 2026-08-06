@@ -18,10 +18,13 @@ import type {
 import {
   bucketCounts,
   daysAgo,
+  daysFromNow,
+  DUE_SOON_WITHIN_DAYS,
   STALE_DRAFT_DAYS,
   TREND_WINDOW_DAYS,
   type StatTrend,
 } from "@/lib/dashboardTrend";
+import { startOfMonthUTC } from "@/lib/dates";
 
 /**
  * Thrown when a projectId doesn't resolve to a real Project — createDraft is
@@ -271,17 +274,31 @@ function listOverdue(): Promise<InvoiceListItem[]> {
   return invoiceRepository.findOverdueCandidates();
 }
 
-/** Dashboard (M10) — Recent Activity's invoice-side lifecycle events. */
-function listRecentActivity(limit: number): Promise<InvoiceListItem[]> {
+/** Recent Activity's invoice-side lifecycle events — optionally scoped to one project (Project detail Overview tab). */
+function listRecentActivity(
+  limit: number,
+  projectId?: string,
+): Promise<InvoiceListItem[]> {
   return invoiceRepository.findRecentByStatuses(
     ["SENT", "PAID", "VOID"],
     limit,
+    projectId,
   );
 }
 
 /** M27 dashboard Priority Feed (Docs/ui_design_guide.md §16) — drafts idle longer than the stale threshold, most-stale first. */
 function listStaleDrafts(): Promise<InvoiceListItem[]> {
   return invoiceRepository.findStaleDrafts(daysAgo(STALE_DRAFT_DAYS));
+}
+
+/** Dashboard Action Required panel — SENT invoices due within DUE_SOON_WITHIN_DAYS but not yet overdue. */
+function listDueSoon(): Promise<InvoiceListItem[]> {
+  return invoiceRepository.findDueSoon(daysFromNow(DUE_SOON_WITHIN_DAYS));
+}
+
+/** Invoices list "Paid this month" stat. */
+function listPaidThisMonth(): Promise<InvoiceListItem[]> {
+  return invoiceRepository.findByStatusSince("PAID", startOfMonthUTC());
 }
 
 /**
@@ -563,6 +580,8 @@ export const invoiceService = {
   listOverdue,
   listRecentActivity,
   listStaleDrafts,
+  listDueSoon,
+  listPaidThisMonth,
   getDraftInvoicesTrend,
   getSentUnpaidTrend,
   getOverdueTrend,

@@ -163,7 +163,7 @@ export function LineItemsEditor({
             ) : (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <FormField
-                  label="Quantity"
+                  label="Quantity / Hours"
                   htmlFor={`items.${index}.quantity`}
                   error={errors.items?.[index]?.quantity?.message}
                   className="mb-0"

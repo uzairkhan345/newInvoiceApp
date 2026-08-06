@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileText, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -37,9 +37,11 @@ const STATUS_LABELS: Record<ProjectWithRelations["status"], string> = {
 };
 
 /**
- * Read-only view of a Project — the default landing state at
- * /projects/[id], per M10.5. Mirrors every field
- * ProjectForm edits.
+ * Read-only view of a Project's billing setup — the default landing state
+ * for the Billing setup tab, pre-dating (and restored after) the v3
+ * redesign's brief switch to landing directly on the editable form. Mirrors
+ * every field ProjectForm edits. No "Create Invoice" action here (unlike
+ * the pre-v3 original) since the page header already has one.
  */
 export function ProjectDetailCard({
   project,
@@ -48,25 +50,15 @@ export function ProjectDetailCard({
 }: {
   project: ProjectWithRelations;
   editHref: string;
-  /** M19.3b — same preview call the invoice create form already uses. */
   nextInvoiceNumber: string;
 }) {
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-[15px] font-bold text-foreground">
-          Details
+          Billing setup
         </CardTitle>
-        <CardAction className="flex gap-2">
-          <Button
-            variant="outline"
-            className="h-8 px-3 text-[12px]"
-            nativeButton={false}
-            render={<Link href={`/invoices/new/${project.id}`} />}
-          >
-            <FileText className="h-3.5 w-3.5" />
-            Create Invoice
-          </Button>
+        <CardAction>
           <Button
             variant="outline"
             className="h-8 px-3 text-[12px]"
@@ -83,7 +75,9 @@ export function ProjectDetailCard({
         <DetailField label="Abbreviation" value={project.abbreviation ?? "—"} />
         <DetailField
           label="Service Description"
-          value={project.serviceDescription ?? `${project.name} (from project name)`}
+          value={
+            project.serviceDescription ?? `${project.name} (from project name)`
+          }
         />
         <DetailField label="Contractor" value={project.contractor.name} />
         <DetailField label="Client" value={project.client.name} />

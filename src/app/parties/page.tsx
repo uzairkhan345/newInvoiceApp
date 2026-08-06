@@ -1,36 +1,170 @@
 import Link from "next/link";
+import { Users } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { PartyTable } from "@/components/party/PartyTable";
+import { PartiesDirectory } from "@/components/party/PartiesDirectory";
+import { PartySummaryStats } from "@/components/party/PartySummaryStats";
+import {
+  PartyRelationshipFilter,
+  type PartyRelationshipFilterValue,
+} from "@/components/party/PartyRelationshipFilter";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
 import { partyService } from "@/services/partyService";
+import { projectService } from "@/services/projectService";
+import { invoiceService } from "@/services/invoiceService";
+import { buildPartyBillingRows } from "@/lib/partyBillingStatus";
+import { formatCurrency } from "@/lib/currency";
 
-export default async function PartiesPage() {
-  const parties = await partyService.list();
+function pluralize(count: number, singular: string, plural = `${singular}s`) {
+  return count === 1 ? singular : plural;
+}
+
+/** Unrecognized/missing `?type=` falls back to "all". */
+function resolveFilter(type: string | undefined): PartyRelationshipFilterValue {
+  if (type === "client" || type === "contractor") return type;
+  return "all";
+}
+
+const EMPTY_STATE_COPY: Record<
+  PartyRelationshipFilterValue,
+  { title: string; description: string }
+> = {
+  all: {
+    title: "No parties yet",
+    description:
+      "Create your first party to use it as a contractor or client on a project.",
+  },
+  client: {
+    title: "No clients yet",
+    description: "Parties appear here once a project lists them as its client.",
+  },
+  contractor: {
+    title: "No contractors yet",
+    description:
+      "Parties appear here once a project lists them as its contractor.",
+  },
+};
+
+export default async function PartiesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ type?: string }>;
+}) {
+  const { type } = await searchParams;
+  const filter = resolveFilter(type);
+
+  const [parties, allProjects, allInvoices] = await Promise.all([
+    partyService.list(),
+    projectService.list(),
+    invoiceService.list(),
+  ]);
+
+  const billingRows = buildPartyBillingRows({
+    parties,
+    allProjects,
+    allInvoices,
+  });
+  const billingRowByPartyId = Object.fromEntries(
+    billingRows.map((row) => [row.partyId, row]),
+  );
+
+  const partiesForFilter = parties.filter((party) => {
+    if (filter === "all") return true;
+    const relationship = billingRowByPartyId[party.id].relationship;
+    return filter === "client"
+      ? relationship === "client" || relationship === "both"
+      : relationship === "contractor" || relationship === "both";
+  });
+
+  const clientCount = billingRows.filter(
+    (row) => row.relationship === "client" || row.relationship === "both",
+  ).length;
+  const contractorCount = billingRows.filter(
+    (row) => row.relationship === "contractor" || row.relationship === "both",
+  ).length;
+  const activeRelationshipCount = billingRows.filter(
+    (row) => row.activeProjectCount > 0,
+  ).length;
+  const receivableRows = billingRows.filter(
+    (row) => row.outstandingByCurrency.length > 0,
+  );
+  const openReceivablesUsd = receivableRows.reduce(
+    (sum, row) =>
+      sum +
+      Number(
+        row.outstandingByCurrency.find((bucket) => bucket.currency === "USD")
+          ?.total ?? 0,
+      ),
+    0,
+  );
+  const overdueRows = billingRows.filter((row) => row.healthTone === "overdue");
+  const overdueParty =
+    overdueRows.length === 1
+      ? parties.find((party) => party.id === overdueRows[0].partyId)
+      : undefined;
+
+  const emptyCopy = EMPTY_STATE_COPY[filter];
 
   return (
     <>
       <PageHeader
+        eyebrow="Invoice operations"
         title="Parties"
-        subtitle="Every contractor and client in one unified roster."
+        subtitle="Clients and contractors, with their billing relationship at a glance."
         action={
           <Button nativeButton={false} render={<Link href="/parties/new" />}>
             Create Party
           </Button>
         }
       />
-      {parties.length === 0 ? (
-        <EmptyState
-          title="No parties yet"
-          description="Create your first party to use it as a contractor or client on a project."
-          action={
-            <Button nativeButton={false} render={<Link href="/parties/new" />}>
-              Create your first party
-            </Button>
-          }
-        />
+      <PartySummaryStats
+        totalParties={{
+          value: parties.length.toString(),
+          note: `${clientCount} ${pluralize(clientCount, "client")} · ${contractorCount} ${pluralize(contractorCount, "contractor")}`,
+        }}
+        activeRelationships={{
+          value: activeRelationshipCount.toString(),
+          note: "With active projects",
+        }}
+        openReceivables={{
+          value: formatCurrency(openReceivablesUsd, "USD"),
+          note: `Across ${receivableRows.length} ${pluralize(receivableRows.length, "client")}`,
+        }}
+        needsAttention={{
+          value: overdueRows.length.toString(),
+          note:
+            overdueRows.length === 0
+              ? "Nothing overdue"
+              : overdueParty
+                ? `${overdueParty.name} · overdue`
+                : `${pluralize(overdueRows.length, "party", "parties")} overdue`,
+        }}
+      />
+      {partiesForFilter.length === 0 ? (
+        <>
+          <PartyRelationshipFilter active={filter} />
+          <EmptyState
+            icon={Users}
+            title={emptyCopy.title}
+            description={emptyCopy.description}
+            action={
+              filter === "all" ? (
+                <Button
+                  nativeButton={false}
+                  render={<Link href="/parties/new" />}
+                >
+                  Create your first party
+                </Button>
+              ) : undefined
+            }
+          />
+        </>
       ) : (
-        <PartyTable parties={parties} />
+        <PartiesDirectory
+          parties={partiesForFilter}
+          billingRowByPartyId={billingRowByPartyId}
+          filterSlot={<PartyRelationshipFilter active={filter} />}
+        />
       )}
     </>
   );

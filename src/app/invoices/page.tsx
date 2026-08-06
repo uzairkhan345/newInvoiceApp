@@ -2,7 +2,8 @@ import Link from "next/link";
 import { FileText } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { InvoiceTable } from "@/components/invoice/InvoiceTable";
+import { InvoicesDirectory } from "@/components/invoice/InvoicesDirectory";
+import { InvoiceSummaryStats } from "@/components/invoice/InvoiceSummaryStats";
 import {
   InvoiceStatusFilter,
   type InvoiceStatusFilterValue,
@@ -10,6 +11,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { invoiceService } from "@/services/invoiceService";
 import { toInvoiceTableRow } from "@/lib/invoiceTableRow";
+import { formatCurrency } from "@/lib/currency";
+import { DUE_SOON_WITHIN_DAYS } from "@/lib/dashboardTrend";
+
+function pluralize(count: number, singular: string, plural = `${singular}s`) {
+  return count === 1 ? singular : plural;
+}
+
+function sumUsd(invoices: { currency: string; total: unknown }[]): number {
+  return invoices
+    .filter((invoice) => invoice.currency === "USD")
+    .reduce((sum, invoice) => sum + Number(invoice.total), 0);
+}
 
 /**
  * Top-level invoices list — every invoice across every project, newest
@@ -71,23 +84,38 @@ export default async function InvoicesPage({
   const filter = resolveFilter(status);
   const cameFromDashboard = from === "dashboard";
 
-  const invoices = await (filter === "overdue"
-    ? invoiceService.listOverdue()
-    : filter === "sent"
-      ? invoiceService.listByStatus("SENT")
-      : filter === "paid"
-        ? invoiceService.listByStatus("PAID")
-        : filter === "draft"
-          ? invoiceService.listByStatus("DRAFT")
-          : filter === "void"
-            ? invoiceService.listByStatus("VOID")
-            : invoiceService.list());
+  const [
+    invoices,
+    sentOutstanding,
+    sentCount,
+    dueSoonInvoices,
+    overdueInvoices,
+    paidThisMonth,
+  ] = await Promise.all([
+    filter === "overdue"
+      ? invoiceService.listOverdue()
+      : filter === "sent"
+        ? invoiceService.listByStatus("SENT")
+        : filter === "paid"
+          ? invoiceService.listByStatus("PAID")
+          : filter === "draft"
+            ? invoiceService.listByStatus("DRAFT")
+            : filter === "void"
+              ? invoiceService.listByStatus("VOID")
+              : invoiceService.list(),
+    invoiceService.sumSubtotalByStatus("SENT"),
+    invoiceService.countByStatus("SENT"),
+    invoiceService.listDueSoon(),
+    invoiceService.listOverdue(),
+    invoiceService.listPaidThisMonth(),
+  ]);
 
   const emptyCopy = EMPTY_STATE_COPY[filter];
 
   return (
     <>
       <PageHeader
+        eyebrow="Invoice operations"
         title="Invoices"
         subtitle="Every invoice across every project, newest first."
         backHref={cameFromDashboard ? "/" : undefined}
@@ -98,25 +126,56 @@ export default async function InvoicesPage({
           </Button>
         }
       />
-      <InvoiceStatusFilter active={filter} fromDashboard={cameFromDashboard} />
+      <InvoiceSummaryStats
+        outstanding={{
+          amount: formatCurrency(sentOutstanding.toString(), "USD"),
+          note: `${sentCount} open ${pluralize(sentCount, "invoice")}`,
+        }}
+        dueSoon={{
+          amount: formatCurrency(sumUsd(dueSoonInvoices), "USD"),
+          note: `Within the next ${DUE_SOON_WITHIN_DAYS} days`,
+        }}
+        overdue={{
+          amount: formatCurrency(sumUsd(overdueInvoices), "USD"),
+          note: `${overdueInvoices.length} ${pluralize(overdueInvoices.length, "invoice")}`,
+        }}
+        paidThisMonth={{
+          amount: formatCurrency(sumUsd(paidThisMonth), "USD"),
+          note: `${paidThisMonth.length} ${pluralize(paidThisMonth.length, "invoice")}`,
+        }}
+      />
       {invoices.length === 0 ? (
-        <EmptyState
-          icon={FileText}
-          title={emptyCopy.title}
-          description={emptyCopy.description}
-          action={
-            filter === "all" ? (
-              <Button
-                nativeButton={false}
-                render={<Link href="/invoices/new" />}
-              >
-                Create your first invoice
-              </Button>
-            ) : undefined
+        <>
+          <InvoiceStatusFilter
+            active={filter}
+            fromDashboard={cameFromDashboard}
+          />
+          <EmptyState
+            icon={FileText}
+            title={emptyCopy.title}
+            description={emptyCopy.description}
+            action={
+              filter === "all" ? (
+                <Button
+                  nativeButton={false}
+                  render={<Link href="/invoices/new" />}
+                >
+                  Create your first invoice
+                </Button>
+              ) : undefined
+            }
+          />
+        </>
+      ) : (
+        <InvoicesDirectory
+          invoices={invoices.map(toInvoiceTableRow)}
+          filterSlot={
+            <InvoiceStatusFilter
+              active={filter}
+              fromDashboard={cameFromDashboard}
+            />
           }
         />
-      ) : (
-        <InvoiceTable invoices={invoices.map(toInvoiceTableRow)} />
       )}
     </>
   );
