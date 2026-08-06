@@ -54,3 +54,7 @@ next-env.d.ts
 /ai_context
 /Docs/internal
 /CLAUDE.md
+
+# UI redesign handoff package: screenshots/rendered HTML/prototype source
+# contain real client names, invoice numbers, amounts and payment details.
+/ui_redesign_handoff_v3
