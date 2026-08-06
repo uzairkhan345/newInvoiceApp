@@ -56,6 +56,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # pdfAdapter.test.ts launches a real Chromium. puppeteer's postinstall
+      # script normally downloads it, but on a pnpm store cache hit that
+      # script gets skipped entirely — the download only ever happens on a
+      # cache miss, and the browser binary lives outside the pnpm store
+      # (~/.cache/puppeteer), so a cache hit silently leaves it missing.
+      # This step is idempotent and cache-independent: a no-op if already
+      # present, a real download if not.
+      - name: Ensure Puppeteer Chrome is installed
+        run: pnpm exec puppeteer browsers install chrome
+
       - name: Typecheck
         run: pnpm typecheck
 
