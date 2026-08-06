@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    # A disposable Postgres for this run only — same role as the local
+    # `docker compose up -d db` container, torn down when the job ends.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: newinvoice
+          POSTGRES_PASSWORD: newinvoice
+          POSTGRES_DB: newinvoice
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U newinvoice"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      # Matches .env.local.example's documented defaults. TEST_DATABASE_URL
+      # is intentionally left unset — scripts/prepareTestDb.ts (the pretest
+      # hook) already defaults it to newinvoice_test on this same server.
+      DATABASE_URL: postgresql://newinvoice:newinvoice@localhost:5432/newinvoice?schema=public
+      NEXT_PUBLIC_APP_URL: http://localhost:3001
+      PDF_ADAPTER: local
+      # CI-only placeholder — never used to encrypt anything real, just
+      # needs to be a non-empty string for /settings-related code paths.
+      SETTINGS_ENCRYPTION_KEY: ci-placeholder-key-not-used-in-production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      # Migrates the main DATABASE_URL database — pnpm build prerenders
+      # data-fetching pages (e.g. the dashboard) at build time, so the
+      # schema needs to exist before that step. pnpm test's own pretest
+      # hook separately creates and migrates newinvoice_test.
+      - name: Apply migrations
+        run: pnpm prisma migrate deploy
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
