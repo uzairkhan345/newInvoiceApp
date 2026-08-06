@@ -24,6 +24,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { INVOICE_PERIOD_LABELS } from "@/lib/invoicePeriod";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CircleHelp } from "lucide-react";
 import type { Party, PaymentMethod } from "@/generated/prisma/client";
 
 /** Sentinel for "no preferred payment method" — Select items can't carry an empty-string value. */
@@ -104,6 +111,8 @@ export function ProjectForm({
       invoicePeriodType: "",
       currencyMode: "SINGLE",
       displayCurrency: "USD",
+      referralCreditEnabled: false,
+      referralCreditLabel: "",
       status: "ACTIVE",
       ...defaultValues,
     },
@@ -112,6 +121,7 @@ export function ProjectForm({
   const contractorId = watch("contractorId");
   const availablePaymentMethods = paymentMethodsByPartyId[contractorId] ?? [];
   const currencyMode = watch("currencyMode");
+  const referralCreditEnabled = watch("referralCreditEnabled");
 
   function registerNewParty(party: Party) {
     setParties((prev) =>
@@ -359,6 +369,56 @@ export function ProjectForm({
               never enforced.
             </p>
           </FormField>
+
+          <div className="mb-4">
+            <div className="flex items-center gap-2">
+              <Controller
+                name="referralCreditEnabled"
+                control={control}
+                render={({ field }) => (
+                  <Checkbox
+                    id="referralCreditEnabled"
+                    checked={field.value}
+                    onCheckedChange={(checked) => field.onChange(checked)}
+                  />
+                )}
+              />
+              <label
+                htmlFor="referralCreditEnabled"
+                className="text-[13px] font-medium text-foreground"
+              >
+                Referral Credit
+              </label>
+              <Popover>
+                <PopoverTrigger
+                  type="button"
+                  aria-label="What does Referral Credit do?"
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <CircleHelp className="h-3.5 w-3.5" />
+                </PopoverTrigger>
+                <PopoverContent className="w-64 text-[11px] text-muted-foreground">
+                  Adds an &ldquo;Add Referral Credit&rdquo; button on this
+                  project&rsquo;s invoices, for a one-off deduction from the
+                  total (e.g. a referral commission owed to a third party).
+                </PopoverContent>
+              </Popover>
+            </div>
+            {referralCreditEnabled ? (
+              <FormField
+                label="Referral Credit Label"
+                htmlFor="referralCreditLabel"
+                error={errors.referralCreditLabel?.message}
+                className="mt-2 mb-0"
+              >
+                <Input
+                  id="referralCreditLabel"
+                  placeholder='Defaults to "Referral Credit (Thank you!)"'
+                  {...register("referralCreditLabel")}
+                />
+              </FormField>
+            ) : null}
+          </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField

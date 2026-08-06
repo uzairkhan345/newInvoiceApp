@@ -43,6 +43,10 @@ export type InvoiceFormProjectInfo = {
   invoiceNumberFormat: string;
   /** M19.2b — drives the create form's live due-date recompute only; unused in edit mode. */
   invoicePeriodType: InvoicePeriodType | null;
+  /** M35 — gates the "Add Referral Credit" button on LineItemsEditor. */
+  referralCreditEnabled: boolean;
+  /** M35 — project.referralCreditLabel already resolved against its default. */
+  referralCreditDefaultLabel: string;
 };
 
 /**
@@ -195,6 +199,7 @@ export function InvoiceForm({
         {
           description: "",
           isFlatAmount: false,
+          isReferralCredit: false,
           quantity: "1",
           unitPrice: "0",
           amount: "",
@@ -380,6 +385,8 @@ export function InvoiceForm({
                 errors={errors}
                 highlighted={highlightedKeys.has("items")}
                 currency={project.currency}
+                referralCreditEnabled={project.referralCreditEnabled}
+                referralCreditDefaultLabel={project.referralCreditDefaultLabel}
               />
 
               <FormSectionHeader

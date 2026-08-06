@@ -65,6 +65,7 @@ function baseProjectInput(overrides: Partial<ProjectInput>): ProjectInput {
     invoiceNumberFormat: "{abbreviation}-{number}",
     currencyMode: "SINGLE",
     displayCurrency: "USD",
+    referralCreditEnabled: false,
     status: "ACTIVE",
     ...overrides,
   };

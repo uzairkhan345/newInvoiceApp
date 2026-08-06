@@ -62,6 +62,8 @@ The bridge between a contractor and a client, and the home for per-engagement co
 | `DisplayCurrency` | Enum: `USD`, `AUD`, `GBP`, `NZD`, `AED`, `PKR`, `SAR` | Default `USD`. Its meaning depends on `CurrencyMode` — see §5 (Currency Model). |
 | `CurrencyMode` | Enum: `SINGLE`, `DUAL` | Default `SINGLE`. Whether `DisplayCurrency` denominates the whole invoice (`SINGLE`) or only adds a converted-total figure alongside USD core amounts (`DUAL`) — see §5. |
 | `InvoicePeriodType` | Enum, Optional: `WEEKLY`, `SEMI_MONTHLY`, `MONTHLY` | Drives the invoice create form's default due-date computation (+7 days, +15 days, or calendar-month arithmetic clamped to the target month's last day). Pure UI convenience — no server-side enforcement; unset means no auto-computed due date. |
+| `ReferralCreditEnabled` | Boolean, default `false` | Whether the invoice form shows an "Add Referral Credit" button for this project — see §1.5's `IsReferralCredit`. |
+| `ReferralCreditLabel` | Text, Optional | Overrides the referral-credit line item's default description ("Referral Credit (Thank you!)"). Only meaningful when `ReferralCreditEnabled` is true; freely editable per-invoice afterward, same fallback shape as `ServiceDescription`. |
 | `Status` | Text | `ACTIVE` or `ARCHIVED`. |
 
 **Deletion**: a `Project` may be deleted only if it has zero `Invoice` rows (see §7).
@@ -99,10 +101,11 @@ There is no `Tax` field. `Currency` records what the core amounts are denominate
 | `InvoiceId` | Identifier, Foreign Key | Parent `Invoice.Id`. |
 | `Description` | Text | Required. Statement of the task/service/product. |
 | `IsFlatAmount` | Boolean, default `false` | Per-item toggle between Hourly (`false`) and Flat (`true`) pricing mode, mixable within one invoice — see below. |
+| `IsReferralCredit` | Boolean, default `false` | Marks at most one item per invoice (app-enforced, not a DB constraint) as a referral-credit deduction. Implies the same null-`Quantity`/`UnitPrice`, direct-`Amount` shape as `IsFlatAmount` (also set true alongside it). The admin only ever types a positive magnitude — negated server-side before storage, so `Amount` is the one negative figure on the invoice. Always rendered last in the document regardless of `SortOrder`. |
 | `Quantity` | Decimal, Optional | Required and must be greater than `0` when `IsFlatAmount` is `false` (Hourly); always `null` when `IsFlatAmount` is `true` (Flat). |
 | `UnitPrice` | Decimal, Optional | Required and must be `>= 0` when `IsFlatAmount` is `false`; always `null` when `IsFlatAmount` is `true`. Denominated in the invoice's `Currency`. |
-| `Amount` | Decimal | For an Hourly item: `Quantity * UnitPrice`, calculated by the backend — never trusted from the frontend. For a Flat item: entered directly by the admin and trusted as submitted — the one narrow, deliberate exception to "amount is always backend-calculated" (there is nothing to compute it from). |
-| `SortOrder` | Integer | Preserves line-item display order; the underlying relational store has no inherent row order for a "list" of items. |
+| `Amount` | Decimal | For an Hourly item: `Quantity * UnitPrice`, calculated by the backend — never trusted from the frontend. For a Flat item: entered directly by the admin and trusted as submitted — the one narrow, deliberate exception to "amount is always backend-calculated" (there is nothing to compute it from). For a referral-credit item: the admin's submitted positive magnitude, negated. |
+| `SortOrder` | Integer | Preserves line-item display order; the underlying relational store has no inherent row order for a "list" of items. A referral-credit item ignores this at render time (see `IsReferralCredit`). |
 
 ### 1.6 Entity: ProjectAlertSchedule
 

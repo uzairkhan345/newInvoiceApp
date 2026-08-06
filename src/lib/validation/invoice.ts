@@ -23,6 +23,16 @@ function isValidDecimal(value: string, allowZero: boolean): boolean {
 export const invoiceItemBaseSchema = z.object({
   description: z.string().trim().min(1, "Description is required"),
   isFlatAmount: z.boolean(),
+  /**
+   * M35 — implies the same null-quantity/unitPrice, direct-`amount` shape as
+   * `isFlatAmount` on its own. Optional (not `.default()`) so its zod input
+   * and output types stay identical — a `.default()` here would give
+   * `zodResolver` an input-shaped type that no longer matches `InvoiceInput`
+   * (the schema's output type), which `useForm<InvoiceInput>` requires.
+   * An AI-generated item, which never includes this key, still validates
+   * fine as `undefined` — every read site treats that the same as `false`.
+   */
+  isReferralCredit: z.boolean().optional(),
   quantity: z.string().trim(),
   unitPrice: z.string().trim(),
   amount: z.string().trim(),
@@ -30,6 +40,16 @@ export const invoiceItemBaseSchema = z.object({
 
 export const invoiceItemSchema = invoiceItemBaseSchema.superRefine(
   (item, ctx) => {
+    if (item.isReferralCredit) {
+      if (!isValidDecimal(item.amount, true)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["amount"],
+          message: "Amount must be zero or greater",
+        });
+      }
+      return;
+    }
     if (item.isFlatAmount) {
       if (!isValidDecimal(item.amount, true)) {
         ctx.addIssue({
@@ -66,8 +86,10 @@ export const invoiceItemSchema = invoiceItemBaseSchema.superRefine(
  * the backend-enforced "must have ≥1 item before send" gate is also M6.
  * `itemsNote`/`bottomNote` (M14) are both independently optional, plain
  * admin-authored content — not a snapshot of live external data.
+ * `invoiceBaseSchema` is exported unrefined, same reason as
+ * `invoiceItemBaseSchema` above, so aiSuggestions.ts can `.partial()` it.
  */
-export const invoiceSchema = z.object({
+export const invoiceBaseSchema = z.object({
   invoiceNumber: z.string().trim().min(1, "Invoice number is required"),
   issueDate: z.string().trim().min(1, "Issue date is required"),
   dueDate: z.string().trim().min(1, "Due date is required"),
@@ -82,6 +104,17 @@ export const invoiceSchema = z.object({
   itemsNote: z.string().trim().optional().or(z.literal("")),
   bottomNote: z.string().trim().optional().or(z.literal("")),
   items: z.array(invoiceItemSchema).min(1, "Add at least one line item"),
+});
+
+export const invoiceSchema = invoiceBaseSchema.superRefine((data, ctx) => {
+  // M35 — app-enforced only, no DB constraint (may be relaxed later).
+  if (data.items.filter((item) => item.isReferralCredit).length > 1) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["items"],
+      message: "Only one referral credit line item is allowed.",
+    });
+  }
 });
 
 export type InvoiceInput = z.infer<typeof invoiceSchema>;

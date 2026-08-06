@@ -187,4 +187,91 @@ describe("invoiceSchema", () => {
     );
     expect(result.success).toBe(false);
   });
+
+  it("accepts a referral-credit item with a positive magnitude, no quantity/unitPrice", () => {
+    const result = invoiceSchema.safeParse(
+      baseInput({
+        items: [
+          {
+            description: "Consulting",
+            isFlatAmount: false,
+            quantity: "1",
+            unitPrice: "100",
+            amount: "",
+          },
+          {
+            description: "Referral Credit (Thank you!)",
+            isFlatAmount: true,
+            isReferralCredit: true,
+            quantity: "",
+            unitPrice: "",
+            amount: "150",
+          },
+        ],
+      }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts a zero-amount referral-credit item at draft-save time (blocked only at send)", () => {
+    const result = invoiceSchema.safeParse(
+      baseInput({
+        items: [
+          {
+            description: "Referral Credit (Thank you!)",
+            isFlatAmount: true,
+            isReferralCredit: true,
+            quantity: "",
+            unitPrice: "",
+            amount: "0",
+          },
+        ],
+      }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a negative referral-credit amount — the user only ever types a positive magnitude", () => {
+    const result = invoiceSchema.safeParse(
+      baseInput({
+        items: [
+          {
+            description: "Referral Credit (Thank you!)",
+            isFlatAmount: true,
+            isReferralCredit: true,
+            quantity: "",
+            unitPrice: "",
+            amount: "-150",
+          },
+        ],
+      }),
+    );
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a second referral-credit item on the same invoice", () => {
+    const result = invoiceSchema.safeParse(
+      baseInput({
+        items: [
+          {
+            description: "Referral Credit (Thank you!)",
+            isFlatAmount: true,
+            isReferralCredit: true,
+            quantity: "",
+            unitPrice: "",
+            amount: "100",
+          },
+          {
+            description: "Another Referral Credit",
+            isFlatAmount: true,
+            isReferralCredit: true,
+            quantity: "",
+            unitPrice: "",
+            amount: "50",
+          },
+        ],
+      }),
+    );
+    expect(result.success).toBe(false);
+  });
 });

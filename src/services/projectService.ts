@@ -79,6 +79,8 @@ function toWriteInput(input: ProjectInput): ProjectWriteInput {
       | null,
     currencyMode: input.currencyMode,
     displayCurrency: input.displayCurrency,
+    referralCreditEnabled: input.referralCreditEnabled,
+    referralCreditLabel: nullIfEmpty(input.referralCreditLabel),
     status: input.status,
   };
 }

@@ -152,10 +152,25 @@ function buildSnapshots(project: ProjectWithRelations) {
  */
 function computeItems(items: InvoiceInput["items"]): InvoiceItemWriteInput[] {
   return items.map((item, index) => {
+    if (item.isReferralCredit) {
+      // M35 — the client only ever submits a positive magnitude (validated
+      // "zero or greater" like a Flat item); negated here so the stored
+      // amount is the one negative figure that makes sumAmounts subtract it.
+      return {
+        description: item.description,
+        isFlatAmount: true,
+        isReferralCredit: true,
+        quantity: null,
+        unitPrice: null,
+        amount: new Prisma.Decimal(item.amount).negated(),
+        sortOrder: index,
+      };
+    }
     if (item.isFlatAmount) {
       return {
         description: item.description,
         isFlatAmount: true,
+        isReferralCredit: false,
         quantity: null,
         unitPrice: null,
         amount: new Prisma.Decimal(item.amount),
@@ -167,6 +182,7 @@ function computeItems(items: InvoiceInput["items"]): InvoiceItemWriteInput[] {
     return {
       description: item.description,
       isFlatAmount: false,
+      isReferralCredit: false,
       quantity,
       unitPrice,
       amount: quantity.times(unitPrice),
@@ -388,6 +404,7 @@ export type InvoiceAutofillData = {
   items: {
     description: string;
     isFlatAmount: boolean;
+    isReferralCredit: boolean;
     quantity: string;
     unitPrice: string;
     amount: string;
@@ -414,9 +431,18 @@ async function getAutofillDataForProject(
     items: invoice.items.map((item) => ({
       description: item.description,
       isFlatAmount: item.isFlatAmount,
+      // M35 — the row itself is a reminder to add a credit, not the stale
+      // figure; carried over regardless of the project's current
+      // referralCreditEnabled toggle, matching this function's otherwise
+      // unconditional "copy everything" behavior.
+      isReferralCredit: item.isReferralCredit,
       quantity: item.quantity?.toString() ?? "",
       unitPrice: item.unitPrice?.toString() ?? "",
-      amount: item.isFlatAmount ? item.amount.toString() : "",
+      amount: item.isReferralCredit
+        ? ""
+        : item.isFlatAmount
+          ? item.amount.toString()
+          : "",
     })),
     itemsNote: invoice.itemsNote ?? "",
     bottomNote: invoice.bottomNote ?? "",
@@ -495,6 +521,14 @@ function collectSendValidationReasons(
   if (project.currencyMode === "DUAL" && existing.convertedTotal == null) {
     reasons.push(
       `Enter a converted total in ${project.displayCurrency} before sending.`,
+    );
+  }
+  const referralCredit = existing.items.find(
+    (item) => item.isReferralCredit,
+  );
+  if (referralCredit && referralCredit.amount.isZero()) {
+    reasons.push(
+      "Enter a nonzero amount for the referral credit line item before sending, or remove it.",
     );
   }
 

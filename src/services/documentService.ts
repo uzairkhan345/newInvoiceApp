@@ -19,6 +19,8 @@ export type InvoiceDocumentLineItem = {
   id: string;
   description: string;
   isFlatAmount: boolean;
+  /** M35 — always rendered last (see the sort in assembleInvoiceDocumentData below), amount is negative. */
+  isReferralCredit: boolean;
   quantity: string | null;
   unitPrice: string | null;
   amount: string;
@@ -67,6 +69,9 @@ export type InvoiceDocumentData = {
  * model exposes is denominated in it, so `InvoiceDocument.tsx`/
  * `buildInvoiceWorkbook.ts` must format every one of those figures with it,
  * never a hardcoded `"USD"`.
+ * `items` is stable-sorted so any `isReferralCredit` row renders last
+ * regardless of its stored `sortOrder` (M35) — the only re-sorting this
+ * mapper ever does, everything else stays in the Prisma-supplied order.
  */
 function assembleInvoiceDocumentData(
   invoice: InvoiceWithItems,
@@ -86,14 +91,17 @@ function assembleInvoiceDocumentData(
       ...field,
       value: decryptSecretOrRaw(field.value),
     })),
-    items: invoice.items.map((item) => ({
-      id: item.id,
-      description: item.description,
-      isFlatAmount: item.isFlatAmount,
-      quantity: item.quantity?.toString() ?? null,
-      unitPrice: item.unitPrice?.toString() ?? null,
-      amount: item.amount.toString(),
-    })),
+    items: [...invoice.items]
+      .sort((a, b) => Number(a.isReferralCredit) - Number(b.isReferralCredit))
+      .map((item) => ({
+        id: item.id,
+        description: item.description,
+        isFlatAmount: item.isFlatAmount,
+        isReferralCredit: item.isReferralCredit,
+        quantity: item.quantity?.toString() ?? null,
+        unitPrice: item.unitPrice?.toString() ?? null,
+        amount: item.amount.toString(),
+      })),
     itemsNote: invoice.itemsNote,
     subtotal: invoice.subtotal.toString(),
     total: invoice.total.toString(),

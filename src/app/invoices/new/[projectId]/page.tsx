@@ -53,6 +53,9 @@ export default async function NewInvoiceForProjectPage({
           currency: invoiceService.resolveInvoiceCurrency(project),
           invoiceNumberFormat: project.invoiceNumberFormat,
           invoicePeriodType: project.invoicePeriodType,
+          referralCreditEnabled: project.referralCreditEnabled,
+          referralCreditDefaultLabel:
+            project.referralCreditLabel ?? "Referral Credit (Thank you!)",
         }}
         defaultValues={{
           invoiceNumber: suggestedInvoiceNumber,

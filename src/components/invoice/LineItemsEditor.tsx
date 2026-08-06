@@ -28,6 +28,8 @@ export function LineItemsEditor({
   errors,
   highlighted,
   currency,
+  referralCreditEnabled,
+  referralCreditDefaultLabel,
 }: {
   control: Control<InvoiceInput>;
   register: UseFormRegister<InvoiceInput>;
@@ -36,12 +38,25 @@ export function LineItemsEditor({
   highlighted?: boolean;
   /** M26 — the invoice's actual currency (project-resolved), never hardcoded "USD". */
   currency: string;
+  /** M35 — gates whether the "Add Referral Credit" button renders at all. */
+  referralCreditEnabled: boolean;
+  /** M35 — project.referralCreditLabel, already resolved against its default by the caller. */
+  referralCreditDefaultLabel: string;
 }) {
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
   const watchedItems = useWatch({ control, name: "items" });
+  const hasReferralCredit = (watchedItems ?? []).some(
+    (item) => item?.isReferralCredit,
+  );
 
   function rowAmount(index: number): number {
     const row = watchedItems?.[index];
+    if (row?.isReferralCredit) {
+      // M35 — the field holds a user-typed positive magnitude; the stored
+      // amount is negated server-side, so the preview mirrors that here.
+      const amount = Number(row.amount);
+      return Number.isFinite(amount) ? -amount : 0;
+    }
     if (row?.isFlatAmount) {
       const amount = Number(row.amount);
       return Number.isFinite(amount) ? amount : 0;
@@ -69,23 +84,47 @@ export function LineItemsEditor({
         <span className="text-[11px] font-bold tracking-[0.05em] text-muted-foreground uppercase">
           Line Items <span className="text-destructive">*</span>
         </span>
-        <Button
-          type="button"
-          variant="outline"
-          className="h-7 px-2 text-[11px]"
-          onClick={() =>
-            append({
-              description: "",
-              isFlatAmount: false,
-              quantity: "1",
-              unitPrice: "0",
-              amount: "",
-            })
-          }
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Add Line Item
-        </Button>
+        <div className="flex items-center gap-2">
+          {referralCreditEnabled ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-7 px-2 text-[11px]"
+              disabled={hasReferralCredit}
+              onClick={() =>
+                append({
+                  description: referralCreditDefaultLabel,
+                  isFlatAmount: true,
+                  isReferralCredit: true,
+                  quantity: "",
+                  unitPrice: "",
+                  amount: "",
+                })
+              }
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add Referral Credit
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            className="h-7 px-2 text-[11px]"
+            onClick={() =>
+              append({
+                description: "",
+                isFlatAmount: false,
+                isReferralCredit: false,
+                quantity: "1",
+                unitPrice: "0",
+                amount: "",
+              })
+            }
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add Line Item
+          </Button>
+        </div>
       </div>
 
       {errors.items?.message ? (
@@ -127,27 +166,48 @@ export function LineItemsEditor({
               />
             </FormField>
 
-            <div className="mb-3 flex items-center gap-2">
-              <Controller
-                name={`items.${index}.isFlatAmount` as const}
-                control={control}
-                render={({ field }) => (
-                  <Checkbox
-                    id={`items.${index}.isFlatAmount`}
-                    checked={field.value}
-                    onCheckedChange={(checked) => field.onChange(checked)}
-                  />
-                )}
-              />
-              <label
-                htmlFor={`items.${index}.isFlatAmount`}
-                className="text-[12px] font-medium text-foreground"
-              >
-                Flat amount (no quantity/rate)
-              </label>
-            </div>
+            {watchedItems?.[index]?.isReferralCredit ? null : (
+              <div className="mb-3 flex items-center gap-2">
+                <Controller
+                  name={`items.${index}.isFlatAmount` as const}
+                  control={control}
+                  render={({ field }) => (
+                    <Checkbox
+                      id={`items.${index}.isFlatAmount`}
+                      checked={field.value}
+                      onCheckedChange={(checked) => field.onChange(checked)}
+                    />
+                  )}
+                />
+                <label
+                  htmlFor={`items.${index}.isFlatAmount`}
+                  className="text-[12px] font-medium text-foreground"
+                >
+                  Flat amount (no quantity/rate)
+                </label>
+              </div>
+            )}
 
-            {watchedItems?.[index]?.isFlatAmount ? (
+            {watchedItems?.[index]?.isReferralCredit ? (
+              <>
+                <FormField
+                  label={`Credit Amount (${currency})`}
+                  htmlFor={`items.${index}.amount`}
+                  error={errors.items?.[index]?.amount?.message}
+                  className="mb-0"
+                >
+                  <Input
+                    id={`items.${index}.amount`}
+                    inputMode="decimal"
+                    {...register(`items.${index}.amount` as const)}
+                  />
+                </FormField>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Shown as a deduction on the invoice — enter a positive
+                  amount.
+                </p>
+              </>
+            ) : watchedItems?.[index]?.isFlatAmount ? (
               <FormField
                 label={`Amount (${currency})`}
                 htmlFor={`items.${index}.amount`}
