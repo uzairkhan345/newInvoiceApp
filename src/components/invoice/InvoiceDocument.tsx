@@ -23,7 +23,22 @@ import styles from "./InvoiceDocument.module.css";
  * as a small, subtle marker near the invoice metadata rather than a large
  * pill beside the title, per the guideline's §14 status-display rules.
  */
-export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
+export function InvoiceDocument({
+  data,
+  screenOnly = true,
+}: {
+  data: InvoiceDocumentData;
+  /**
+   * Controls the locked banner and status tag — chrome that's never part of
+   * the actual PDF (see the @media print rule below). Defaults to true for
+   * the in-app Preview tab, where seeing them on screen is useful context.
+   * The dedicated /print route (both the real PDF-generation source and the
+   * "Print view" link's screen-viewed preview) passes false so what's shown
+   * there always matches what actually prints, rather than relying solely
+   * on @media print to hide them only during an actual print/PDF pass.
+   */
+  screenOnly?: boolean;
+}) {
   const isLocked = data.status !== "DRAFT";
   const hasConvertedTotal =
     data.convertedTotal !== null && data.convertedCurrency !== null;
@@ -31,7 +46,7 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
 
   return (
     <div>
-      {isLocked ? <LockedBanner /> : null}
+      {isLocked && screenOnly ? <LockedBanner /> : null}
       <div className={styles.page}>
         <header className={styles.header}>
           <div>
@@ -48,7 +63,9 @@ export function InvoiceDocument({ data }: { data: InvoiceDocumentData }) {
             <p className={styles.metaValue}>
               Issue date: {formatDisplayDate(data.issueDate)}
             </p>
-            <span className={styles.statusLine}>{displayStatus}</span>
+            {screenOnly ? (
+              <span className={styles.statusLine}>{displayStatus}</span>
+            ) : null}
           </div>
         </header>
 

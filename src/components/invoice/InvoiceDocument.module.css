@@ -76,7 +76,7 @@
   line-height: 1.25;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--invoice-muted);
+  color: var(--invoice-text);
 }
 
 .invoiceNumber {
