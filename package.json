@@ -9,7 +9,7 @@
     "url": "https://github.com/uzairkhan345/newInvoiceApp.git"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "scripts": {
     "dev": "next dev -p 3001",

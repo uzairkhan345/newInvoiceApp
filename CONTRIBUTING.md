@@ -4,19 +4,22 @@ Thanks for your interest in improving Invoice App!
 
 ## Development setup
 
-Follow the [Getting started](README.md#getting-started) steps in the README — Node ≥ 22, pnpm, and the Docker Postgres container are all you need.
+Follow the [Getting started](README.md#getting-started) steps in the README — Node ≥ 24, pnpm, and the Docker Postgres container are all you need.
 
 ## Before opening a PR
 
-Run the full check set locally; all three must pass clean:
+Run the full check set locally; all four must pass clean:
 
 ```bash
 pnpm typecheck
 pnpm lint
 pnpm test
+pnpm build
 ```
 
 `pnpm test` includes integration tests that create and delete real rows — they run against a **dedicated test database**, never your development one. The `pretest` hook creates and migrates it automatically (`TEST_DATABASE_URL`, defaulting to `newinvoice_test` on the same Docker Postgres server). If you override `TEST_DATABASE_URL`, it must differ from `DATABASE_URL` — the suite refuses to start otherwise.
+
+The same four checks also run automatically in CI (GitHub Actions) on every PR and must pass before merging — running them locally first just gets you faster feedback.
 
 A few project conventions worth knowing:
 
