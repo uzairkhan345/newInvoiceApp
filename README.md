@@ -36,7 +36,7 @@ Next.js (App Router) · React · TypeScript · Prisma + PostgreSQL · Tailwind C
 
 ## Getting started
 
-**Prerequisites:** Node.js ≥ 22, [pnpm](https://pnpm.io), Docker (for the local Postgres container).
+**Prerequisites:** Node.js ≥ 24, [pnpm](https://pnpm.io), Docker (for the local Postgres container).
 
 ```bash
 git clone https://github.com/uzairkhan345/newInvoiceApp.git
