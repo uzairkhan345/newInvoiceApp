@@ -15,6 +15,10 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "src/generated/**",
+    // Local-only reference material (gitignored) — never present in a
+    // fresh checkout or the redesign worktree, but when it exists on disk
+    // in this checkout ESLint picks up its large compiled bundle otherwise.
+    "ui_redesign_handoff_v3/**",
   ]),
 ]);
 
