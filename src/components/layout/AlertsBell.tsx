@@ -138,6 +138,14 @@ export function AlertsBell({ variant }: { variant: "sidebar" | "mobile" }) {
                       </span>
                     ) : null}
                     <div className="mt-1.5 flex items-center gap-3 text-[11px] font-semibold">
+                      {item.secondaryLink ? (
+                        <Link
+                          href={item.secondaryLink.href}
+                          className="text-muted-foreground hover:text-foreground hover:underline"
+                        >
+                          {item.secondaryLink.label}
+                        </Link>
+                      ) : null}
                       {item.action.disabled ? (
                         <span
                           className="text-muted-foreground"
