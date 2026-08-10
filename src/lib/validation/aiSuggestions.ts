@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { partySchema } from "@/lib/validation/party";
 import { paymentMethodSchema } from "@/lib/validation/paymentMethod";
-import { invoiceSchema } from "@/lib/validation/invoice";
+import { invoiceBaseSchema } from "@/lib/validation/invoice";
 
 /**
  * M11 — AI-assist suggestions are validated
@@ -12,7 +12,7 @@ import { invoiceSchema } from "@/lib/validation/invoice";
  */
 export const partySuggestionSchema = partySchema.partial();
 export const paymentMethodSuggestionSchema = paymentMethodSchema.partial();
-export const invoiceSuggestionSchema = invoiceSchema.partial();
+export const invoiceSuggestionSchema = invoiceBaseSchema.partial();
 
 export type PartySuggestion = z.infer<typeof partySuggestionSchema>;
 export type PaymentMethodSuggestion = z.infer<

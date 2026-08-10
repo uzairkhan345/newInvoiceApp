@@ -60,6 +60,7 @@ function baseProjectInput(overrides: Partial<ProjectInput>): ProjectInput {
     invoiceNumberFormat: "{abbreviation}-{number}-{date}",
     currencyMode: "SINGLE",
     displayCurrency: "USD",
+    referralCreditEnabled: false,
     status: "ACTIVE",
     ...overrides,
   };
@@ -116,6 +117,48 @@ describe("projectService", () => {
     expect(project.clientId).toBe(client.id);
     expect(project.displayCurrency).toBe("USD");
     expect(project.status).toBe("ACTIVE");
+  });
+
+  it("M35 — round-trips referralCreditEnabled/referralCreditLabel, defaulting off with no label", async () => {
+    const contractor = await createTestParty("[test] Referral Contractor");
+    const client = await createTestParty("[test] Referral Client");
+
+    const defaulted = await projectService.create(
+      baseProjectInput({
+        name: "[test] Referral Default",
+        contractorId: contractor.id,
+        clientId: client.id,
+      }),
+    );
+    createdProjectIds.push(defaulted.id);
+    expect(defaulted.referralCreditEnabled).toBe(false);
+    expect(defaulted.referralCreditLabel).toBeNull();
+
+    const enabled = await projectService.create(
+      baseProjectInput({
+        name: "[test] Referral Enabled",
+        contractorId: contractor.id,
+        clientId: client.id,
+        referralCreditEnabled: true,
+        referralCreditLabel: "With Thanks to Jane",
+      }),
+    );
+    createdProjectIds.push(enabled.id);
+    expect(enabled.referralCreditEnabled).toBe(true);
+    expect(enabled.referralCreditLabel).toBe("With Thanks to Jane");
+
+    const updated = await projectService.update(
+      enabled.id,
+      baseProjectInput({
+        name: "[test] Referral Enabled",
+        contractorId: contractor.id,
+        clientId: client.id,
+        referralCreditEnabled: false,
+        referralCreditLabel: "",
+      }),
+    );
+    expect(updated.referralCreditEnabled).toBe(false);
+    expect(updated.referralCreditLabel).toBeNull();
   });
 
   it("auto-derives the abbreviation from the project name when left blank", async () => {

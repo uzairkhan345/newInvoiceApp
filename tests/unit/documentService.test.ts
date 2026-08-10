@@ -61,6 +61,7 @@ function fakeInvoice(
         invoiceId: "inv_1",
         description: "Consulting",
         isFlatAmount: false,
+        isReferralCredit: false,
         quantity: new Prisma.Decimal("2"),
         unitPrice: new Prisma.Decimal("150"),
         amount: new Prisma.Decimal("300"),
@@ -110,6 +111,7 @@ describe("documentService.assembleInvoiceDocumentData", () => {
             invoiceId: "inv_1",
             description: "Retainer",
             isFlatAmount: true,
+            isReferralCredit: false,
             quantity: null,
             unitPrice: null,
             amount: new Prisma.Decimal("500"),
@@ -140,6 +142,42 @@ describe("documentService.assembleInvoiceDocumentData", () => {
       }),
     );
     expect(data.serviceDescription).toBe("Acme Ongoing Support");
+  });
+
+  it("M35 — always renders a referral-credit row last, regardless of its stored sortOrder", () => {
+    const data = documentService.assembleInvoiceDocumentData(
+      fakeInvoice({
+        items: [
+          {
+            id: "item_credit",
+            invoiceId: "inv_1",
+            description: "Referral Credit (Thank you!)",
+            isFlatAmount: true,
+            isReferralCredit: true,
+            quantity: null,
+            unitPrice: null,
+            amount: new Prisma.Decimal("-150"),
+            sortOrder: 0,
+          },
+          {
+            id: "item_work",
+            invoiceId: "inv_1",
+            description: "Consulting",
+            isFlatAmount: false,
+            isReferralCredit: false,
+            quantity: new Prisma.Decimal("2"),
+            unitPrice: new Prisma.Decimal("150"),
+            amount: new Prisma.Decimal("300"),
+            sortOrder: 1,
+          },
+        ],
+      }),
+    );
+
+    expect(data.items.map((item) => item.description)).toEqual([
+      "Consulting",
+      "Referral Credit (Thank you!)",
+    ]);
   });
 
   it("returns null itemsNote/bottomNote when neither is set", () => {

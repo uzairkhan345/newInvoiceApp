@@ -144,6 +144,10 @@ export default async function InvoiceDetailPage({
           currency: invoiceService.resolveInvoiceCurrency(invoice.project),
           invoiceNumberFormat: invoice.project.invoiceNumberFormat,
           invoicePeriodType: invoice.project.invoicePeriodType,
+          referralCreditEnabled: invoice.project.referralCreditEnabled,
+          referralCreditDefaultLabel:
+            invoice.project.referralCreditLabel ??
+            "Referral Credit (Thank you!)",
         }}
         defaultValues={{
           invoiceNumber: invoice.invoiceNumber,
@@ -155,9 +159,16 @@ export default async function InvoiceDetailPage({
           items: invoice.items.map((item) => ({
             description: item.description,
             isFlatAmount: item.isFlatAmount,
+            isReferralCredit: item.isReferralCredit,
             quantity: item.quantity?.toString() ?? "",
             unitPrice: item.unitPrice?.toString() ?? "",
-            amount: item.isFlatAmount ? item.amount.toString() : "",
+            // M35 — the field holds a positive magnitude; the stored amount
+            // is negative for a referral-credit row, so it's un-negated here.
+            amount: item.isReferralCredit
+              ? item.amount.abs().toString()
+              : item.isFlatAmount
+                ? item.amount.toString()
+                : "",
           })),
         }}
       />

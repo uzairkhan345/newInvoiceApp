@@ -128,7 +128,7 @@ Shape A — a confident suggestion, with every extracted field nested inside "su
     ]
   }
 }
-Every key inside "suggestion" is optional at the top level — omit any you cannot confidently determine, never invent a placeholder. "suggestion" itself must still be present (use {} if nothing can be determined) and must always be a nested object, never flattened into the top level. This omit-if-unsure rule does NOT apply inside an "items" entry, though: if you include "items" at all, every entry in it must have all five keys present (description, isFlatAmount, quantity, unitPrice, amount) — never omit one, use an empty string "" for whichever of quantity/unitPrice/amount doesn't apply to that item's isFlatAmount.
+Every key inside "suggestion" is optional at the top level — omit any you cannot confidently determine, never invent a placeholder. "suggestion" itself must still be present (use {} if nothing can be determined) and must always be a nested object, never flattened into the top level. This omit-if-unsure rule does NOT apply inside an "items" entry, though: if you include "items" at all, every entry in it must have all five keys present (description, isFlatAmount, quantity, unitPrice, amount) — never omit one, use an empty string "" for whichever of quantity/unitPrice/amount doesn't apply to that item's isFlatAmount. Never include a sixth key ("isReferralCredit" or any other) on an item — that field is set only by the admin through a dedicated button, never by you.
 
 Shape B — a single clarifying question, ONLY when something essential is missing or ambiguous and you genuinely cannot proceed without knowing it (e.g. the prompt names 3 line items but gives rates for only 2). Never ask about something you could reasonably omit instead — omitting a field from "suggestion" is always preferable to asking:
 { "responseType": "clarification", "question": "a single, specific question" }
@@ -149,11 +149,24 @@ async function runInvoicePrompt(params: {
   promptText: string;
   context: InvoiceAiContext;
 }): Promise<InvoiceAssistResponse | null> {
-  return runWithFallback({
+  const response = await runWithFallback({
     systemPrompt: buildInvoiceSystemPrompt(params.context),
     userPrompt: params.promptText,
     schema: invoiceAssistResponseSchema,
   });
+
+  // M35 — defense-in-depth: isReferralCredit is a real field on the shared
+  // item schema (so the manual form can use it), which means the schema
+  // above would otherwise accept a model-hallucinated `true` here. Forced
+  // false unconditionally rather than trusting prompt wording alone.
+  if (response?.responseType === "suggestion" && response.suggestion.items) {
+    response.suggestion.items = response.suggestion.items.map((item) => ({
+      ...item,
+      isReferralCredit: false,
+    }));
+  }
+
+  return response;
 }
 
 export const aiAssistService = { runPrompt, runInvoicePrompt };

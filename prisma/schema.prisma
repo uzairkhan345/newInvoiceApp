@@ -126,6 +126,11 @@ model PaymentMethod {
 /// document's "Details" text, live-joined at render time (never snapshotted
 /// onto Invoice) and falling back to `name` when unset — same live-join,
 /// no-lock-at-SENT behavior `name` itself had there before M23.
+/// M35 — `referralCreditEnabled` gates whether the invoice form's "Add
+/// Referral Credit" button is shown at all (default off); `referralCreditLabel`
+/// overrides the line item's default description, falling back to
+/// "Referral Credit (Thank you!)" when unset — same nullable/fallback shape
+/// as `serviceDescription`, freely editable per-invoice afterward.
 model Project {
   id String @id @default(cuid())
   name String
@@ -141,6 +146,8 @@ model Project {
   invoicePeriodType InvoicePeriodType?
   displayCurrency DisplayCurrency @default(USD)
   currencyMode ProjectCurrencyMode @default(SINGLE)
+  referralCreditEnabled Boolean @default(false)
+  referralCreditLabel String?
   status ProjectStatus @default(ACTIVE)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -217,12 +224,20 @@ model Invoice {
 /// `isFlatAmount` (M14) toggles per-row between Hourly (quantity/unitPrice
 /// required, `amount` backend-computed) and Flat (`amount` entered directly,
 /// quantity/unitPrice null) — see Docs/implementation_decisions.md §10.
+/// `isReferralCredit` (M35) marks at most one row per invoice (app-enforced,
+/// not a DB constraint — see invoiceService.ts) as a referral-credit
+/// deduction: it implies the same null-quantity/unitPrice shape as
+/// `isFlatAmount` (also set true alongside it), plus a negative `amount` —
+/// the user only ever types a positive magnitude, negated server-side
+/// before storage. Always rendered last regardless of `sortOrder`
+/// (documentService.ts).
 model InvoiceItem {
   id String @id @default(cuid())
   invoiceId String
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   description String
   isFlatAmount Boolean @default(false)
+  isReferralCredit Boolean @default(false)
   quantity Decimal? @db.Decimal(10, 2)
   unitPrice Decimal? @db.Decimal(12, 2)
   amount Decimal @db.Decimal(12, 2)

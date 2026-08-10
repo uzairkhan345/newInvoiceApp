@@ -64,6 +64,7 @@ function baseProjectInput(overrides: Partial<ProjectInput>): ProjectInput {
     invoiceNumberFormat: "{abbreviation}-{number}",
     currencyMode: "SINGLE",
     displayCurrency: "USD",
+    referralCreditEnabled: false,
     status: "ACTIVE",
     ...overrides,
   };
@@ -128,6 +129,18 @@ function hourlyItem(description: string, quantity: string, unitPrice: string) {
     quantity,
     unitPrice,
     amount: "",
+  };
+}
+
+/** M35 — `amount` is the positive magnitude the client submits; negated server-side. */
+function referralCreditItem(description: string, amount: string) {
+  return {
+    description,
+    isFlatAmount: true as const,
+    isReferralCredit: true as const,
+    quantity: "",
+    unitPrice: "",
+    amount,
   };
 }
 
@@ -378,6 +391,89 @@ describe("invoiceService.createDraft — Flat-amount items and notes (M14)", () 
     createdInvoiceIds.push(both.id);
     expect(both.itemsNote).toBe("Work done Jun 1 - Jun 30");
     expect(both.bottomNote).toBe("Includes arrears from May");
+  });
+});
+
+describe("invoiceService.createDraft — Referral Credit items (M35)", () => {
+  it("negates the user-submitted positive magnitude and forces the null-qty/unitPrice, Flat-shaped storage", async () => {
+    const { project } = await createTestProject();
+
+    const created = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({
+        items: [
+          hourlyItem("Consulting", "2", "150"),
+          referralCreditItem("Referral Credit (Thank you!)", "150"),
+        ],
+      }),
+    );
+    createdInvoiceIds.push(created.id);
+    const invoice = (await invoiceService.getById(created.id))!;
+
+    const credit = invoice.items.find((i) => i.isReferralCredit)!;
+    expect(credit.isFlatAmount).toBe(true);
+    expect(credit.quantity).toBeNull();
+    expect(credit.unitPrice).toBeNull();
+    expect(credit.amount.toString()).toBe("-150");
+
+    // sumAmounts just adds every item's amount — subtotal/total absorb the
+    // deduction with no separate adjustment concept.
+    expect(invoice.subtotal.toString()).toBe("150");
+    expect(invoice.total.toString()).toBe("150");
+  });
+
+  it("allows a zero-amount referral credit at draft-save time", async () => {
+    const { project } = await createTestProject();
+
+    const created = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({
+        items: [referralCreditItem("Referral Credit (Thank you!)", "0")],
+      }),
+    );
+    createdInvoiceIds.push(created.id);
+    const invoice = (await invoiceService.getById(created.id))!;
+
+    expect(invoice.items[0].amount.toString()).toBe("0");
+  });
+});
+
+describe("invoiceService.validateForSend — Referral Credit (M35)", () => {
+  it("blocks sending when the referral-credit item's amount is still zero", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({
+        items: [
+          hourlyItem("Consulting", "1", "100"),
+          referralCreditItem("Referral Credit (Thank you!)", "0"),
+        ],
+      }),
+    );
+    createdInvoiceIds.push(invoice.id);
+
+    await expect(invoiceService.validateForSend(invoice.id)).rejects.toThrow(
+      InvoiceSendValidationError,
+    );
+  });
+
+  it("allows sending once the referral-credit amount is nonzero", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({
+        invoiceNumber: "TP-RC-01",
+        items: [
+          hourlyItem("Consulting", "1", "100"),
+          referralCreditItem("Referral Credit (Thank you!)", "25"),
+        ],
+      }),
+    );
+    createdInvoiceIds.push(invoice.id);
+
+    await expect(
+      invoiceService.validateForSend(invoice.id),
+    ).resolves.not.toThrow();
   });
 });
 
@@ -957,6 +1053,7 @@ describe("invoiceService.getAutofillDataForProject", () => {
       {
         description: "Consulting",
         isFlatAmount: false,
+        isReferralCredit: false,
         quantity: "3",
         unitPrice: "150",
         amount: "",
@@ -964,6 +1061,7 @@ describe("invoiceService.getAutofillDataForProject", () => {
       {
         description: "Retainer",
         isFlatAmount: true,
+        isReferralCredit: false,
         quantity: "",
         unitPrice: "",
         amount: "500",
@@ -997,5 +1095,26 @@ describe("invoiceService.getAutofillDataForProject", () => {
 
     const autofill = await invoiceService.getAutofillDataForProject(project.id);
     expect(autofill!.items[0].description).toBe("Voided work");
+  });
+
+  it("M35 — carries a referral-credit row forward with its label but a blanked amount", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({
+        items: [
+          hourlyItem("Consulting", "1", "100"),
+          referralCreditItem("Referral Credit (Thank you!)", "150"),
+        ],
+      }),
+    );
+    createdInvoiceIds.push(invoice.id);
+
+    const autofill = await invoiceService.getAutofillDataForProject(
+      project.id,
+    );
+    const credit = autofill!.items.find((i) => i.isReferralCredit)!;
+    expect(credit.description).toBe("Referral Credit (Thank you!)");
+    expect(credit.amount).toBe("");
   });
 });

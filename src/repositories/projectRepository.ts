@@ -26,6 +26,8 @@ export type ProjectWriteInput = {
   invoicePeriodType: InvoicePeriodType | null;
   currencyMode: ProjectCurrencyMode;
   displayCurrency: DisplayCurrency;
+  referralCreditEnabled: boolean;
+  referralCreditLabel: string | null;
   status: ProjectStatus;
 };
 

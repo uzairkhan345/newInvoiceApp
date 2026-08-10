@@ -29,6 +29,8 @@ export const projectSchema = z.object({
     ["USD", "AUD", "GBP", "NZD", "AED", "PKR", "SAR"],
     { message: "Select a currency" },
   ),
+  referralCreditEnabled: z.boolean(),
+  referralCreditLabel: z.string().trim().optional().or(z.literal("")),
   status: z.enum(["ACTIVE", "ARCHIVED"], {
     message: "Select a status",
   }),

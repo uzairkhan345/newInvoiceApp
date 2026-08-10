@@ -15,6 +15,7 @@ import type { ProjectWithRelations } from "@/repositories/projectRepository";
 export type InvoiceItemWriteInput = {
   description: string;
   isFlatAmount: boolean;
+  isReferralCredit: boolean;
   quantity: Prisma.Decimal | null;
   unitPrice: Prisma.Decimal | null;
   amount: Prisma.Decimal;
@@ -291,6 +292,7 @@ function itemsCreateInput(items: InvoiceItemWriteInput[]) {
   return items.map((item) => ({
     description: item.description,
     isFlatAmount: item.isFlatAmount,
+    isReferralCredit: item.isReferralCredit,
     quantity: item.quantity,
     unitPrice: item.unitPrice,
     amount: item.amount,
