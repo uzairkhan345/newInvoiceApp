@@ -6,6 +6,7 @@ import {
   PaymentMethodDeletionBlockedError,
 } from "@/services/paymentMethodService";
 import { paymentMethodSchema } from "@/lib/validation/paymentMethod";
+import { requireRole } from "@/lib/authz";
 
 export type ActionResult<T> =
   | { success: true; data: T }
@@ -15,6 +16,9 @@ export async function createPaymentMethodAction(
   partyId: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const check = await requireRole(["ADMIN", "STANDARD"]);
+  if (!check.ok) return { success: false, error: check.error };
+
   const parsed = paymentMethodSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -34,6 +38,9 @@ export async function updatePaymentMethodAction(
   partyId: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const check = await requireRole(["ADMIN", "STANDARD"]);
+  if (!check.ok) return { success: false, error: check.error };
+
   const parsed = paymentMethodSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -56,6 +63,9 @@ export async function deletePaymentMethodAction(
   id: string,
   partyId: string,
 ): Promise<ActionResult<null>> {
+  const check = await requireRole(["ADMIN", "STANDARD"]);
+  if (!check.ok) return { success: false, error: check.error };
+
   try {
     await paymentMethodService.delete(id);
   } catch (error) {

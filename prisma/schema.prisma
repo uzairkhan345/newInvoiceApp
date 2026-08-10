@@ -131,6 +131,11 @@ model PaymentMethod {
 /// overrides the line item's default description, falling back to
 /// "Referral Credit (Thank you!)" when unset — same nullable/fallback shape
 /// as `serviceDescription`, freely editable per-invoice afterward.
+/// M28 — `createdByUserId` is nullable (existing rows predate auth) and
+/// set once at creation only, never touched by updates; `onDelete: SetNull`
+/// since this is informational, not a real ownership relationship —
+/// removing a user's login access never blocks on or cascades into
+/// projects they created.
 model Project {
   id String @id @default(cuid())
   name String
@@ -149,6 +154,8 @@ model Project {
   referralCreditEnabled Boolean @default(false)
   referralCreditLabel String?
   status ProjectStatus @default(ACTIVE)
+  createdByUserId String?
+  createdBy User? @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -158,6 +165,7 @@ model Project {
   @@index([clientId])
   @@index([contractorId])
   @@index([preferredPaymentMethodId])
+  @@index([createdByUserId])
 }
 
 /// Docs/product_spec.md §1.6. M29 — a day-of-month reminder for a Project,
@@ -191,6 +199,8 @@ model ProjectAlertSchedule {
 /// for a `SINGLE`-mode one. Same snapshot-timing rule as everything else:
 /// recomputed from the live project on every `DRAFT` save and the final
 /// `DRAFT → SENT` transition, then permanently locked.
+/// M28 — `createdByUserId` is nullable, set once at creation only,
+/// `onDelete: SetNull` — same reasoning as `Project.createdByUserId` above.
 model Invoice {
   id String @id @default(cuid())
   projectId String
@@ -209,6 +219,8 @@ model Invoice {
   paymentDetailsSnapshot Json
   itemsNote String?
   bottomNote String?
+  createdByUserId String?
+  createdBy User? @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -217,6 +229,7 @@ model Invoice {
   @@unique([projectId, invoiceNumber])
   @@index([status])
   @@index([dueDate])
+  @@index([createdByUserId])
 }
 
 /// Docs/product_spec.md §1.5. `sortOrder` preserves line-item display order
@@ -244,6 +257,86 @@ model InvoiceItem {
   sortOrder Int
 
   @@index([invoiceId])
+}
+
+/// M28. `ADMIN`: everything, including `/settings`. `STANDARD`: everything
+/// except `/settings`. `RESTRICTED`: full Invoice access, but blocked from
+/// creating/editing/deleting Project/Party/PaymentMethod and from
+/// `/settings` — see requireRole() call sites. Defaults to the most
+/// restrictive value so a row created without an explicit role (shouldn't
+/// normally happen — the admin always sets it explicitly) errs safe.
+enum Role {
+  ADMIN
+  STANDARD
+  RESTRICTED
+}
+
+/// M28. Google-OAuth-only, no self-registration — a sign-in only succeeds
+/// if a row already exists for that email (src/lib/auth.ts's `signIn`
+/// callback). `name`/`image` are synced from the Google profile on every
+/// login, not locked at creation. Auth.js's Prisma adapter owns this model
+/// alongside Account/Session/VerificationToken below.
+model User {
+  id String @id @default(cuid())
+  name String?
+  email String @unique
+  emailVerified DateTime?
+  image String?
+  role Role @default(RESTRICTED)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  createdInvoices Invoice[]
+  createdProjects Project[]
+}
+
+/// M28 — Auth.js Prisma adapter's standard shape (one row per linked OAuth
+/// provider account; only Google is used here). Do not hand-edit this
+/// model's fields — they must match what @auth/prisma-adapter expects.
+model Account {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type String
+  provider String
+  providerAccountId String
+  refresh_token String? @db.Text
+  access_token String? @db.Text
+  expires_at Int?
+  token_type String?
+  scope String?
+  id_token String? @db.Text
+  session_state String?
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+/// M28 — database session strategy, chosen specifically so removing/
+/// demoting a User takes effect immediately (deleting this row) rather
+/// than waiting out a token's expiry, unlike JWT sessions.
+/// `onDelete: Cascade` from User is what makes revocation immediate.
+model Session {
+  id String @id @default(cuid())
+  sessionToken String @unique
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires DateTime
+
+  @@index([userId])
+}
+
+/// M28 — part of Auth.js's standard adapter shape; not actually exercised
+/// by the Google-OAuth-only flow used in this app (no email/magic-link
+/// sign-in), kept for adapter schema compliance.
+model VerificationToken {
+  identifier String
+  token String
+  expires DateTime
+
+  @@unique([identifier, token])
 }
 
 /// M16 — DB-backed AI-assist provider config,

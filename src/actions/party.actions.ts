@@ -6,6 +6,7 @@ import {
   PartyDeletionBlockedError,
 } from "@/services/partyService";
 import { partySchema } from "@/lib/validation/party";
+import { requireRole } from "@/lib/authz";
 
 export type ActionResult<T> =
   | { success: true; data: T }
@@ -14,6 +15,9 @@ export type ActionResult<T> =
 export async function createPartyAction(
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const check = await requireRole(["ADMIN", "STANDARD"]);
+  if (!check.ok) return { success: false, error: check.error };
+
   const parsed = partySchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -32,6 +36,9 @@ export async function updatePartyAction(
   id: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const check = await requireRole(["ADMIN", "STANDARD"]);
+  if (!check.ok) return { success: false, error: check.error };
+
   const parsed = partySchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -50,6 +57,9 @@ export async function updatePartyAction(
 export async function deletePartyAction(
   id: string,
 ): Promise<ActionResult<null>> {
+  const check = await requireRole(["ADMIN", "STANDARD"]);
+  if (!check.ok) return { success: false, error: check.error };
+
   try {
     await partyService.delete(id);
   } catch (error) {

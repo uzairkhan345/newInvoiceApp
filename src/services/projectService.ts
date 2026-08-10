@@ -169,13 +169,16 @@ function getById(id: string): Promise<ProjectWithRelations | null> {
   return projectRepository.findById(id);
 }
 
-async function create(input: ProjectInput): Promise<Project> {
+async function create(
+  input: ProjectInput,
+  createdByUserId: string | null = null,
+): Promise<Project> {
   const data = toWriteInput(input);
   await assertPreferredPaymentMethodBelongsToContractor(
     data.preferredPaymentMethodId,
     data.contractorId,
   );
-  return projectRepository.create(data);
+  return projectRepository.create(data, createdByUserId);
 }
 
 async function update(id: string, input: ProjectInput): Promise<Project> {

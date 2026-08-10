@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { projectAlertScheduleService } from "@/services/projectAlertScheduleService";
 import { projectAlertScheduleSchema } from "@/lib/validation/projectAlertSchedule";
 import type { AlertScheduleWithProject } from "@/repositories/projectAlertScheduleRepository";
+import { requireRole, requireSession } from "@/lib/authz";
 
 export type ActionResult<T> =
   | { success: true; data: T }
@@ -27,6 +28,9 @@ function revalidateAlertSchedulePaths(projectId: string): void {
 export async function listFiredAlertSchedulesAction(): Promise<
   ActionResult<AlertScheduleWithProject[]>
 > {
+  const check = await requireSession();
+  if (!check.ok) return { success: false, error: check.error };
+
   const schedules = await projectAlertScheduleService.listFiredAcrossActiveProjects();
   return { success: true, data: schedules };
 }
@@ -35,6 +39,9 @@ export async function createProjectAlertScheduleAction(
   projectId: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const check = await requireRole(["ADMIN", "STANDARD"]);
+  if (!check.ok) return { success: false, error: check.error };
+
   const parsed = projectAlertScheduleSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -54,6 +61,9 @@ export async function updateProjectAlertScheduleAction(
   projectId: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const check = await requireRole(["ADMIN", "STANDARD"]);
+  if (!check.ok) return { success: false, error: check.error };
+
   const parsed = projectAlertScheduleSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -72,6 +82,9 @@ export async function deleteProjectAlertScheduleAction(
   id: string,
   projectId: string,
 ): Promise<ActionResult<null>> {
+  const check = await requireRole(["ADMIN", "STANDARD"]);
+  if (!check.ok) return { success: false, error: check.error };
+
   await projectAlertScheduleService.delete(id);
   revalidateAlertSchedulePaths(projectId);
   return { success: true, data: null };
@@ -81,6 +94,9 @@ export async function clearProjectAlertScheduleAction(
   id: string,
   projectId: string,
 ): Promise<ActionResult<null>> {
+  const check = await requireSession();
+  if (!check.ok) return { success: false, error: check.error };
+
   await projectAlertScheduleService.clear(id);
   revalidateAlertSchedulePaths(projectId);
   return { success: true, data: null };

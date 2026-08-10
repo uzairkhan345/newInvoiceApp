@@ -54,8 +54,16 @@ function findById(id: string): Promise<ProjectWithRelations | null> {
   });
 }
 
-function create(data: ProjectWriteInput): Promise<Project> {
-  return prisma.project.create({ data });
+/**
+ * `createdByUserId` is a separate parameter, not part of `ProjectWriteInput`
+ * (M28) — that type is shared with `update` below, and this field is set
+ * once at creation only, never touched by an update.
+ */
+function create(
+  data: ProjectWriteInput,
+  createdByUserId: string | null,
+): Promise<Project> {
+  return prisma.project.create({ data: { ...data, createdByUserId } });
 }
 
 function update(id: string, data: ProjectWriteInput): Promise<Project> {

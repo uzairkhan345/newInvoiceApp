@@ -7,6 +7,7 @@ import {
   PreferredPaymentMethodMismatchError,
 } from "@/services/projectService";
 import { projectSchema } from "@/lib/validation/project";
+import { requireRole } from "@/lib/authz";
 
 export type ActionResult<T> =
   | { success: true; data: T }
@@ -15,6 +16,9 @@ export type ActionResult<T> =
 export async function createProjectAction(
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const check = await requireRole(["ADMIN", "STANDARD"]);
+  if (!check.ok) return { success: false, error: check.error };
+
   const parsed = projectSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -25,7 +29,10 @@ export async function createProjectAction(
   }
 
   try {
-    const project = await projectService.create(parsed.data);
+    const project = await projectService.create(
+      parsed.data,
+      check.session.user.id,
+    );
     revalidatePath("/projects");
     return { success: true, data: { id: project.id } };
   } catch (error) {
@@ -40,6 +47,9 @@ export async function updateProjectAction(
   id: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const check = await requireRole(["ADMIN", "STANDARD"]);
+  if (!check.ok) return { success: false, error: check.error };
+
   const parsed = projectSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -65,6 +75,9 @@ export async function updateProjectAction(
 export async function deleteProjectAction(
   id: string,
 ): Promise<ActionResult<null>> {
+  const check = await requireRole(["ADMIN", "STANDARD"]);
+  if (!check.ok) return { success: false, error: check.error };
+
   try {
     await projectService.delete(id);
   } catch (error) {
