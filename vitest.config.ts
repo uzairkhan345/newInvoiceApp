@@ -15,6 +15,16 @@ export default defineConfig({
     // real, non-deterministic failures. Serializing file execution costs
     // nothing at this suite's size (well under a second either way).
     fileParallelism: false,
+    server: {
+      deps: {
+        // M28.7 — next-auth's own "next/server" import trips Next's
+        // package.json#exports map when Node resolves it natively (the
+        // default for externalized SSR deps); inlining routes it through
+        // Vite's resolver instead, where vi.mock("next/server", ...) can
+        // also actually intercept it.
+        inline: ["next-auth", "@auth/core", "@auth/prisma-adapter"],
+      },
+    },
   },
   resolve: {
     alias: {
