@@ -28,7 +28,12 @@ export function InvoicePreviewTab({
             variant="outline"
             size="sm"
             nativeButton={false}
-            render={<Link href={`/api/invoices/${invoiceId}/excel`} />}
+            render={
+              <Link
+                href={`/api/invoices/${invoiceId}/excel`}
+                target="_blank"
+              />
+            }
           >
             <Download className="h-3.5 w-3.5" />
             Excel
@@ -37,7 +42,9 @@ export function InvoicePreviewTab({
             variant="outline"
             size="sm"
             nativeButton={false}
-            render={<Link href={`/api/invoices/${invoiceId}/pdf`} />}
+            render={
+              <Link href={`/api/invoices/${invoiceId}/pdf`} target="_blank" />
+            }
           >
             <Download className="h-3.5 w-3.5" />
             PDF

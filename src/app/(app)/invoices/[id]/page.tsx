@@ -98,7 +98,9 @@ export default async function InvoiceDetailPage({
       <Button
         variant="outline"
         nativeButton={false}
-        render={<Link href={`/api/invoices/${invoice.id}/excel`} />}
+        render={
+          <Link href={`/api/invoices/${invoice.id}/excel`} target="_blank" />
+        }
       >
         <Download className="h-3.5 w-3.5" />
         Excel
@@ -106,7 +108,9 @@ export default async function InvoiceDetailPage({
       <Button
         variant="outline"
         nativeButton={false}
-        render={<Link href={`/api/invoices/${invoice.id}/pdf`} />}
+        render={
+          <Link href={`/api/invoices/${invoice.id}/pdf`} target="_blank" />
+        }
       >
         <FileText className="h-3.5 w-3.5" />
         PDF
