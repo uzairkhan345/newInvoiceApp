@@ -26,7 +26,7 @@ Local development runs on the developer machine: Next.js app, Prisma, local Post
 
 ## 4. Production Deployment Decision
 
-Deferred — see §21. Do not assume Vercel-specific constraints (or any other target's constraints) in the core application code. The only piece of the system allowed to vary by deployment target is the PDF-generation browser-launch adapter (§12.2).
+Deferred — see §21. Do not assume Vercel-specific constraints (or any other target's constraints) in the core application code. The only piece of the system allowed to vary by deployment target is the PDF-generation adapter (§12.2).
 
 ## 5. Modular Monolith Decision
 
@@ -93,13 +93,12 @@ The TypeScript port must be checked cell-by-cell against the sample Excel/PDF ou
 
 ### 12.2 PDF Generation
 
-PDF generation uses standard **`puppeteer`**, rendering the same HTML invoice preview markup used for the on-screen preview — one template, not two, and pixel-faithful to what the admin already sees before downloading.
+PDF generation supports two interchangeable rendering paths, selected at runtime via `PDF_ADAPTER`, never a build/deploy-time choice:
 
-The browser-launch code (the part of the implementation that actually starts a Chromium instance) is isolated behind a single, swappable adapter module. This is the **only** part of the entire application allowed to vary by deployment target:
-- On a persistent-process target (local dev, a droplet, Fly.io/Render/Railway, etc.), the adapter uses plain `puppeteer` with no changes needed.
-- If a serverless target (e.g. Vercel) is chosen later, only this adapter is swapped to `puppeteer-core` + `@sparticuz/chromium`. The invoice HTML template and all calling code remain untouched.
+- **Browser rendering** (`local`/`serverless`) — standard **`puppeteer`**, rendering the same HTML invoice preview markup used for the on-screen preview (one template, not two, pixel-faithful to what the admin already sees before downloading). The browser-launch code is isolated behind a swappable adapter module: `local` uses plain `puppeteer` for a persistent-process target (local dev, a droplet, Fly.io/Render/Railway, etc.); `serverless` swaps to `puppeteer-core` + `@sparticuz/chromium` for a serverless target (e.g. Vercel) — the invoice HTML template and all calling code remain untouched either way.
+- **In-process rendering** (`pdf-lib`, M32.1) — draws the invoice directly from `documentService.assembleInvoiceDocumentData`'s output using `pdf-lib`, no browser launch at all. A hand-transcribed second implementation of the same layout/typography spec (`Docs/invoice_design_guidelines.md`), the same structural precedent as the existing Excel builder — not a rendering of the HTML template. Exists because a full headless-Chromium launch is the single biggest memory cost in the app, a real constraint on a small droplet; `puppeteer`/`puppeteer-core`/`@sparticuz/chromium` are `devDependencies` (not shipped in a production install) specifically so this path can run without them present.
 
-No Excel-to-PDF conversion. No permanent storage of generated files — both are produced on demand.
+No Excel-to-PDF conversion. No permanent storage of generated files — all three paths produce output on demand.
 
 ### 12.3 Currency in Generated Documents
 
@@ -173,7 +172,7 @@ This is a standing pattern, not a one-off: any future dependent-entity flow shou
 
 The production hosting target is a **DigitalOcean droplet** (a persistent VM), to be deployed at a later date — not decided implicitly by how the code is written, and not required for local development, which is what the app currently runs against exclusively.
 
-The application must be built so that it runs correctly in local development without assuming any particular production target's constraints. The **only** part of the system permitted to be deployment-target-specific is the PDF browser-launch adapter (§12.2) — everything else (database access via `DATABASE_URL`, business logic, the AI-assist provider abstraction, Excel generation) is already environment-driven and needs no target-specific branching.
+The application must be built so that it runs correctly in local development without assuming any particular production target's constraints. The **only** part of the system permitted to be deployment-target-specific is the PDF-generation adapter (§12.2) — everything else (database access via `DATABASE_URL`, business logic, the AI-assist provider abstraction, Excel generation) is already environment-driven and needs no target-specific branching.
 
 A persistent VM avoids the serverless-specific concerns a platform like Vercel would introduce (connection-pool exhaustion under concurrency, Puppeteer cold-start/bundle-size limits, function execution time limits) — one long-lived process needs none of that — at the cost of self-managed OS patching, process supervision (pm2/systemd), and TLS/reverse-proxy setup, none of which is built yet. Deployment readiness (the actual droplet setup, process supervision, reverse proxy, and whatever else the DigitalOcean target specifically needs) is intentionally not scoped until it's actually being done.
 
