@@ -20,6 +20,10 @@ prisma/generated/
 # Testing
 coverage/
 
+# M32.1 — scripts/comparePdfRenderers.ts's manual-comparison output (fake
+# [test]-prefixed invoice data, but no reason to track generated PDFs)
+/scripts/output
+
 # Logs
 npm-debug.log*
 pnpm-debug.log*

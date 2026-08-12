@@ -358,8 +358,12 @@ The invoice is print-first.
 
 ## 16. PDF generation requirements
 
+Two interchangeable rendering paths exist (`PDF_ADAPTER`, a runtime toggle — see `Docs/implementation_decisions.md` §12.2), and both must independently satisfy the acceptance criteria in §18 — a change to one is not automatically reflected in the other, since they are two separate implementations of the same spec:
+
+**Browser rendering** (`local`/`serverless`) — renders the same React component used for the on-screen preview:
+
 - Use the same React component for preview and PDF output
-- Generate the PDF using browser rendering, preferably Playwright or Puppeteer
+- Generate the PDF using browser rendering (Puppeteer)
 - Wait for fonts and logo assets before capturing
 - Enable print backgrounds
 - Use exact A4 dimensions
@@ -380,6 +384,13 @@ thead {
   display: table-header-group;
 }
 ```
+
+**In-process rendering** (`pdf-lib`, M32.1) — a second, independent implementation drawing directly from `documentService.assembleInvoiceDocumentData`'s output, no browser and no CSS at all:
+
+- Page geometry, spacing scale, colors, and per-element font size/weight are hand-transcribed from this document's §2/§4/§5/§9/§13 into mm-denominated constants (converted to pt at draw time) — any change to those sections must be applied to both `InvoiceDocument.module.css` and `src/lib/pdf/renderInvoicePdf.ts`
+- Only standard Helvetica/HelveticaBold/HelveticaOblique (no font embedding); `font-weight: 500` maps to regular; `text-transform: uppercase` is applied via `.toUpperCase()`; letter-spacing is not reproduced (pdf-lib has no per-character tracking control)
+- A greedy word-wrap helper stands in for CSS text wrapping (pdf-lib has no built-in text layout)
+- "Repeat table headers"/"keep totals together" are satisfied by hand-written cursor logic instead of `break-inside`/`display: table-header-group`: a new page starts and the header row repeats before an item row would overflow; the totals/note/payment section is measured up front and moved to a new page as one atomic block rather than split mid-section
 
 ## 17. Implementation constraints for Claude Code
 
