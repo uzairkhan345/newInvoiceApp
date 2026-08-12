@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { navItems, isActiveNavHref } from "./navItems";
+import { getNavItems, isActiveNavHref } from "./navItems";
 import { AlertsBell } from "./AlertsBell";
+import type { Role } from "@/generated/prisma/client";
 
 /**
  * Mobile nav shell (<1024px) — M27 v2 redesign,
@@ -27,11 +28,17 @@ export function MobileTopBar() {
   );
 }
 
-export function MobileTabBar() {
+export function MobileTabBar({ role }: { role: Role }) {
   const pathname = usePathname();
+  const navItems = getNavItems(role);
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 bg-nav px-1 pt-1.5 pb-2.5 lg:hidden">
+    <nav
+      className={cn(
+        "fixed inset-x-0 bottom-0 z-40 grid bg-nav px-1 pt-1.5 pb-2.5 lg:hidden",
+        navItems.length === 5 ? "grid-cols-5" : "grid-cols-4",
+      )}
+    >
       {navItems.map((item) => {
         const isActive = isActiveNavHref(pathname, item.href);
         return (

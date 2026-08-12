@@ -1,6 +1,7 @@
 import { Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ProviderSettingsCard } from "@/components/settings/ProviderSettingsCard";
+import { SettingsTabs } from "@/components/settings/SettingsTabs";
 import { PROVIDER_LABELS } from "@/lib/aiProviderLabels";
 import { cn } from "@/lib/utils";
 import { aiProviderSettingsService } from "@/services/aiProviderSettingsService";
@@ -28,6 +29,7 @@ export default async function SettingsPage() {
         title="AI providers"
         subtitle="Configure AI-assisted form filling, provider priority and model fallback order. Every form remains fully usable without AI."
       />
+      <SettingsTabs active="providers" />
       <ReadinessBanner
         readyLabels={ready.map((s) => PROVIDER_LABELS[s.provider])}
       />

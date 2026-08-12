@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { invoiceService } from "@/services/invoiceService";
 import { documentService } from "@/services/documentService";
 import { buildInvoiceWorkbook } from "@/lib/excel/buildInvoiceWorkbook";
@@ -8,12 +9,18 @@ import { buildInvoiceWorkbook } from "@/lib/excel/buildInvoiceWorkbook";
  * (`workbook.xlsx.writeBuffer()`); nothing is ever written to disk. Sources
  * exclusively from `documentService.assembleInvoiceDocumentData`, so a SENT
  * invoice always exports its locked snapshot, never live Party/PaymentMethod
- * data.
+ * data. M28 — one of only two Route Handlers in the app, so it needs its
+ * own explicit session check (no layout wraps it the way pages get one).
  */
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const session = await auth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
   const { id } = await params;
   const invoice = await invoiceService.getById(id);
   if (!invoice) {

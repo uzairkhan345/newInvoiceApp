@@ -5,6 +5,7 @@ import {
   aiAssistService,
   type InvoiceAiContext,
 } from "@/services/aiAssistService";
+import { requireRole, requireSession } from "@/lib/authz";
 
 export type ActionResult<T> =
   | { success: true; data: T }
@@ -31,6 +32,9 @@ export async function runAiAssistAction(
   formType: "party" | "paymentMethod",
   promptText: string,
 ): Promise<ActionResult<Record<string, unknown>>> {
+  const check = await requireRole(["ADMIN", "STANDARD"]);
+  if (!check.ok) return { success: false, error: check.error };
+
   const parsed = requestSchema.safeParse({ formType, promptText });
   if (!parsed.success) {
     return { success: false, error: "Enter a prompt first." };
@@ -68,6 +72,9 @@ export async function runInvoiceAiAssistAction(
   promptText: string,
   context: InvoiceAiContext,
 ): Promise<ActionResult<InvoiceAiAssistResult>> {
+  const check = await requireSession();
+  if (!check.ok) return { success: false, error: check.error };
+
   const parsed = z.string().trim().min(1).safeParse(promptText);
   if (!parsed.success) {
     return { success: false, error: "Enter a prompt first." };

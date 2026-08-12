@@ -51,6 +51,7 @@ function fakeInvoice(
         value: encryptSecret("Test Bank"),
       },
     ],
+    createdByUserId: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     itemsNote: null,

@@ -148,7 +148,12 @@ export function InvoiceSummaryTab({
             variant="outline"
             size="sm"
             nativeButton={false}
-            render={<Link href={`/api/invoices/${invoice.id}/excel`} />}
+            render={
+              <Link
+                href={`/api/invoices/${invoice.id}/excel`}
+                target="_blank"
+              />
+            }
           >
             <Download className="h-3.5 w-3.5" />
             Excel
@@ -157,7 +162,9 @@ export function InvoiceSummaryTab({
             variant="outline"
             size="sm"
             nativeButton={false}
-            render={<Link href={`/api/invoices/${invoice.id}/pdf`} />}
+            render={
+              <Link href={`/api/invoices/${invoice.id}/pdf`} target="_blank" />
+            }
           >
             <Download className="h-3.5 w-3.5" />
             PDF

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { aiProviderSettingsService } from "@/services/aiProviderSettingsService";
 import { aiProviderSettingSchema } from "@/lib/validation/aiProviderSettings";
 import type { AiProviderName } from "@/lib/ai-providers/types";
+import { requireRole } from "@/lib/authz";
 
 export type ActionResult<T> =
   | { success: true; data: T }
@@ -23,6 +24,9 @@ export async function updateProviderSettingAction(
   provider: AiProviderName,
   input: unknown,
 ): Promise<ActionResult<null>> {
+  const check = await requireRole(["ADMIN"]);
+  if (!check.ok) return { success: false, error: check.error };
+
   const parsed = aiProviderSettingSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -45,6 +49,9 @@ export async function moveProviderAction(
   provider: AiProviderName,
   direction: "up" | "down",
 ): Promise<ActionResult<null>> {
+  const check = await requireRole(["ADMIN"]);
+  if (!check.ok) return { success: false, error: check.error };
+
   await aiProviderSettingsService.moveProvider(provider, direction);
   revalidateEverywhere();
   return { success: true, data: null };

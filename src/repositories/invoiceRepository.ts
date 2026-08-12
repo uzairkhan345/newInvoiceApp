@@ -300,11 +300,20 @@ function itemsCreateInput(items: InvoiceItemWriteInput[]) {
   }));
 }
 
-function createWithItems(data: InvoiceWriteInput): Promise<Invoice> {
+/**
+ * `createdByUserId` is a separate parameter, not part of `InvoiceWriteInput`
+ * (M28) — that type is shared with `replaceItemsAndUpdate` below, and this
+ * field is set once at creation only, never touched by an update.
+ */
+function createWithItems(
+  data: InvoiceWriteInput,
+  createdByUserId: string | null,
+): Promise<Invoice> {
   const { items, ...invoiceData } = data;
   return prisma.invoice.create({
     data: {
       ...invoiceData,
+      createdByUserId,
       items: { create: itemsCreateInput(items) },
     },
   });

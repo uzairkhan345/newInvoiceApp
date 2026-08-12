@@ -42,9 +42,11 @@ Frontend components never call Prisma directly. Flow: Frontend Component → Ser
 
 ## 8. Authentication Decision
 
-**Auth is deferred for the entire MVP development phase, not just local development.** No login system is built during initial implementation; all routes are open during development.
+Auth was deferred for the entire MVP development phase — no login system existed during initial implementation, and all routes were open. It's since been built: **Google OAuth only, via Auth.js, with no self-registration** — a sign-in only succeeds if the email already has a `User` row (§1.7 in `Docs/product_spec.md`), created by an existing admin through a `/settings/users` screen or, for the very first admin, a committed, parameterized bootstrap script (`scripts/bootstrapAdmin.ts <email>` — no email hardcoded in tracked source, so it works identically for a self-hosted fork).
 
-When the application is later exposed beyond local development, the intended approach is **simple credentials + a signed cookie session** (no third-party auth provider, no user table with roles — a single admin identity). This is recorded now so it doesn't get designed in a way that blocks adding it later (e.g. avoid assuming server-side in-memory session state anywhere), but it is explicitly **not implemented as part of MVP construction**.
+This supersedes the originally-recorded plan (simple credentials + a signed cookie session, single admin identity, no third-party provider) — that approach was scoped for a single-admin app with no `User`/`Role` model; the actual requirement that emerged during scoping was multi-user with roles, which tips decisively in Google OAuth's favor (no password to generate, store, or reset for each added user).
+
+Key shape: **database-backed sessions**, not JWT, so removing or demoting a user's role takes effect immediately (deleting their session row) rather than waiting out a token's expiry. Three roles — `ADMIN` (everything, including `/settings`), `STANDARD` (everything except `/settings`), `RESTRICTED` (full Invoice access, but blocked from creating/editing/deleting Project/Party/PaymentMethod and from `/settings`) — enforced in two layers: middleware/layout-level redirects for UX, and an independent role check inside every relevant Server Action itself, since Server Actions are callable directly regardless of which page rendered the trigger. The PDF pipeline's internal Puppeteer request to `/invoices/[id]/print` (itself behind the same auth gate as every other page) carries a real session by forwarding the original request's own cookies, rather than a separate internal-only auth mechanism. Full decision record and build breakdown in `Docs/internal/feedback_backlog.md`'s M28 section.
 
 ## 9. Invoice Numbering Decision
 

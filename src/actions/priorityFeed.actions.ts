@@ -4,6 +4,7 @@ import { invoiceService } from "@/services/invoiceService";
 import { projectService } from "@/services/projectService";
 import { projectAlertScheduleService } from "@/services/projectAlertScheduleService";
 import { buildPriorityFeed, type PriorityFeedItem } from "@/lib/priorityFeed";
+import { requireSession } from "@/lib/authz";
 
 export type ActionResult<T> =
   { success: true; data: T } | { success: false; error: string };
@@ -18,6 +19,9 @@ export type ActionResult<T> =
 export async function listPriorityFeedAction(): Promise<
   ActionResult<PriorityFeedItem[]>
 > {
+  const check = await requireSession();
+  if (!check.ok) return { success: false, error: check.error };
+
   const [
     activeProjects,
     allInvoices,

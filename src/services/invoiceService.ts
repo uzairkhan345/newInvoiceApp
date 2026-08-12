@@ -452,11 +452,13 @@ async function getAutofillDataForProject(
 async function createDraft(
   projectId: string,
   input: InvoiceInput,
+  createdByUserId: string | null = null,
 ): Promise<Invoice> {
   const project = await loadProjectOrThrow(projectId);
   try {
     return await invoiceRepository.createWithItems(
       toWriteInput(project, input),
+      createdByUserId,
     );
   } catch (error) {
     throw translateWriteError(error);

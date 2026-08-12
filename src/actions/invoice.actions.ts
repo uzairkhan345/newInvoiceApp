@@ -12,6 +12,7 @@ import {
 } from "@/services/invoiceService";
 import { invoiceSchema } from "@/lib/validation/invoice";
 import type { InvoiceStatus } from "@/generated/prisma/client";
+import { requireSession } from "@/lib/authz";
 
 export type ActionResult<T> =
   | { success: true; data: T }
@@ -44,6 +45,9 @@ export async function createInvoiceDraftAction(
   projectId: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const check = await requireSession();
+  if (!check.ok) return { success: false, error: check.error };
+
   const parsed = invoiceSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -54,7 +58,11 @@ export async function createInvoiceDraftAction(
   }
 
   try {
-    const invoice = await invoiceService.createDraft(projectId, parsed.data);
+    const invoice = await invoiceService.createDraft(
+      projectId,
+      parsed.data,
+      check.session.user.id,
+    );
     revalidatePath("/invoices");
     return { success: true, data: { id: invoice.id } };
   } catch (error) {
@@ -66,6 +74,9 @@ export async function updateInvoiceDraftAction(
   id: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const check = await requireSession();
+  if (!check.ok) return { success: false, error: check.error };
+
   const parsed = invoiceSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -89,6 +100,9 @@ export async function transitionInvoiceStatusAction(
   id: string,
   target: InvoiceStatus,
 ): Promise<ActionResult<{ id: string }>> {
+  const check = await requireSession();
+  if (!check.ok) return { success: false, error: check.error };
+
   try {
     const invoice = await invoiceService.transitionStatus(id, target);
     revalidatePath("/invoices");
@@ -102,6 +116,9 @@ export async function transitionInvoiceStatusAction(
 export async function deleteInvoiceAction(
   id: string,
 ): Promise<ActionResult<{ id: string }>> {
+  const check = await requireSession();
+  if (!check.ok) return { success: false, error: check.error };
+
   try {
     await invoiceService.delete(id);
     revalidatePath("/invoices");

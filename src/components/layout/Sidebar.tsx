@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { navItems, isActiveNavHref } from "./navItems";
+import { getNavItems, isActiveNavHref } from "./navItems";
 import { AlertsBell } from "./AlertsBell";
+import type { Role } from "@/generated/prisma/client";
 
 /**
  * Desktop nav shell (≥1024px) — M27 v2 redesign,
@@ -13,8 +14,9 @@ import { AlertsBell } from "./AlertsBell";
  * renders nothing — MobileNav.tsx's top bar + bottom tab bar take over
  * entirely rather than this collapsing to a drawer.
  */
-export function Sidebar() {
+export function Sidebar({ role }: { role: Role }) {
   const pathname = usePathname();
+  const navItems = getNavItems(role);
 
   return (
     <aside className="hidden w-[240px] shrink-0 flex-col bg-nav lg:flex">

@@ -65,6 +65,7 @@ The bridge between a contractor and a client, and the home for per-engagement co
 | `ReferralCreditEnabled` | Boolean, default `false` | Whether the invoice form shows an "Add Referral Credit" button for this project — see §1.5's `IsReferralCredit`. |
 | `ReferralCreditLabel` | Text, Optional | Overrides the referral-credit line item's default description ("Referral Credit (Thank you!)"). Only meaningful when `ReferralCreditEnabled` is true; freely editable per-invoice afterward, same fallback shape as `ServiceDescription`. |
 | `Status` | Text | `ACTIVE` or `ARCHIVED`. |
+| `CreatedByUserId` | Identifier, Foreign Key, Optional → `User.Id` | Which user created this project — set once at creation, never updated. `null` for projects created before M28 (auth). Removing that `User` sets this to `null` too (`SetNull`), never blocked or cascaded. |
 
 **Deletion**: a `Project` may be deleted only if it has zero `Invoice` rows (see §7).
 
@@ -90,6 +91,7 @@ The immutable master ledger entry for a requested payment. Stores flat historica
 | `PaymentDetailsSnapshot` | List of Objects | Copy of the chosen `PaymentMethod.Fields` array. There is **no** `PaymentMethodId` foreign key on `Invoice` — the snapshot alone is sufficient; it exists for historical record-keeping, not detailed audit trails. |
 | `ItemsNote` | Text, Optional | Free-text note describing the line items as a whole, rendered unlabeled/italic below them on the document. Plain admin-authored content, not a snapshot of live external data — ordinary `DRAFT`-editable/locked-once-`SENT` field like `InvoiceNumber`. |
 | `BottomNote` | Text, Optional | A separate, independently-optional free-text note rendered near the bottom of the document (bold label + value), below the totals. Same editability rule as `ItemsNote` — the two are unrelated fields, not a repeat of one value. |
+| `CreatedByUserId` | Identifier, Foreign Key, Optional → `User.Id` | Which user created this invoice — set once at creation, never updated. `null` for invoices created before M28 (auth). Removing that `User` sets this to `null` too (`SetNull`), never blocked or cascaded. |
 
 There is no `Tax` field. `Currency` records what the core amounts are denominated in — it is derived from the project's currency mode (§5), never a free per-invoice selection.
 
@@ -123,6 +125,22 @@ A day-of-month reminder for a `Project`, purely calendar-driven and in-app only 
 **Firing**: an alert is "fired" once the current date reaches `DayOfMonth` for the current month, and it hasn't already been cleared for that occurrence — *and* the schedule existed before that occurrence's date arrived. A schedule created after its `DayOfMonth` has already passed for the current month (e.g. creating a "7th of the month" alert on the 30th) does not retroactively fire; it waits for the day's next real occurrence. This only suppresses the creation month's own occurrence — from the next calendar month onward, firing works normally. A fired alert surfaces in three places: the global nav bell (visible from every page, with a badge count), a small indicator next to the project's name on the Projects list, and the project's own detail page. Clearing is a single action shared by all three — an alert cleared from any one of them is reflected on the others immediately.
 
 **Deletion**: freely deletable by the admin at any time (no live reference ever blocks it); cascades automatically when the parent `Project` is deleted.
+
+### 1.7 Entity: User
+
+Google-OAuth-only, no self-registration — see `Docs/implementation_decisions.md` §8.
+
+| Field | Type | Description |
+|---|---|---|
+| `Id` | Identifier, Primary Key | Unique user identifier. |
+| `Email` | Text, Unique | The allowlist key — a Google sign-in only succeeds if this email already has a `User` row. |
+| `Name` | Text, Optional | Synced from the signed-in Google account's profile on every login, not fixed at creation. |
+| `Image` | Text, Optional | Profile photo URL, synced the same way as `Name`. |
+| `Role` | Enum: `ADMIN` \| `STANDARD` \| `RESTRICTED`, default `RESTRICTED` | `ADMIN`: full access, including `/settings`. `STANDARD`: full access except `/settings`. `RESTRICTED`: full Invoice access, but cannot create/edit/delete Project/Party/PaymentMethod, and cannot access `/settings`. |
+
+**Sessions**: database-backed — an `Account`/`Session`/`VerificationToken` set of tables owned outright by the Auth.js Prisma adapter (standard shape, not hand-designed business entities). Deleting a `User` row cascades to their sessions, so removing or demoting someone's access takes effect immediately rather than waiting out a token's expiry.
+
+**Bootstrapping the first admin**: a committed, parameterized script (`scripts/bootstrapAdmin.ts <email>`), never a hardcoded email in tracked source — works identically for a self-hosted fork.
 
 ## 2. Structural Examples for Dynamic Payment Fields
 
@@ -256,7 +274,7 @@ A chat-style assistant is available on the **Party**, **Payment Method**, and **
 
 ## 10. Authentication Scope
 
-Deferred for the entire MVP build (`Docs/implementation_decisions.md` §8) — not implemented during development. When later exposed beyond local development, the intended approach is a single admin identity using simple credentials + a signed cookie session.
+Google OAuth only (via Auth.js), no self-registration — a sign-in only succeeds if the email already has a `User` row (§1.7), created by an existing admin or the bootstrap script. Database-backed sessions, not JWT, so revoking access takes effect immediately rather than waiting out a token's expiry. Three roles (`ADMIN`/`STANDARD`/`RESTRICTED`) replace the single-admin-identity model originally planned — see `Docs/implementation_decisions.md` §8 for the full rationale.
 
 ## 11. Modular Monolith Architecture
 
