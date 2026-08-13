@@ -268,6 +268,11 @@ function listByProject(projectId: string): Promise<InvoiceListItem[]> {
   return invoiceRepository.findMany({ projectId });
 }
 
+/** M36 — invoices-for-this-party section on the Party detail page; every invoice where this party is either the project's client or its contractor. */
+function listByParty(partyId: string): Promise<InvoiceListItem[]> {
+  return invoiceRepository.findMany({ partyId });
+}
+
 /** Dashboard (M10) — stats row counts (Docs/ui_design_guide.md §16). */
 function countByStatus(status: InvoiceStatus): Promise<number> {
   return invoiceRepository.countByStatus(status);
@@ -601,6 +606,7 @@ export const invoiceService = {
   list,
   listByStatus,
   listByProject,
+  listByParty,
   getById,
   resolveInvoiceCurrency,
   previewNextInvoiceNumber,

@@ -50,25 +50,35 @@ export function InvoiceTable({
           <span />
         </div>
         {invoices.map((invoice, index) => (
-          <Link
+          <div
             key={invoice.id}
-            href={`/invoices/${invoice.id}`}
             className={cn(
-              "grid items-center gap-3 px-5 py-3.5 hover:bg-muted/40",
+              "relative grid items-center gap-3 px-5 py-3.5 hover:bg-muted/40",
               gridCols,
               index > 0 && "border-t border-muted",
             )}
           >
+            <Link
+              href={`/invoices/${invoice.id}`}
+              className="absolute inset-0 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+              aria-label={`Open invoice ${invoice.invoiceNumber}`}
+            />
             <span className="truncate font-mono text-[13px] font-semibold text-foreground">
               {invoice.invoiceNumber}
             </span>
-            <span className="truncate text-[13px] text-foreground">
+            <Link
+              href={`/parties/${invoice.project.client.id}`}
+              className="relative z-10 block min-w-0 truncate text-[13px] text-foreground hover:text-brand hover:underline"
+            >
               {invoice.project.client.name}
-            </span>
+            </Link>
             {hideProjectColumn ? null : (
-              <span className="truncate text-[13px] text-muted-foreground">
+              <Link
+                href={`/projects/${invoice.project.id}`}
+                className="relative z-10 block min-w-0 truncate text-[13px] text-muted-foreground hover:text-brand hover:underline"
+              >
                 {invoice.project.name}
-              </span>
+              </Link>
             )}
             <span className="truncate font-mono text-[13px] text-foreground">
               {formatCurrency(invoice.total, invoice.currency)}
@@ -81,31 +91,41 @@ export function InvoiceTable({
               Open invoice
               <ArrowRight className="h-3 w-3" />
             </span>
-          </Link>
+          </div>
         ))}
       </div>
 
       {/* Mobile stacked cards */}
       <div className="flex flex-col gap-3 lg:hidden">
         {invoices.map((invoice) => (
-          <Link
+          <div
             key={invoice.id}
-            href={`/invoices/${invoice.id}`}
-            className="flex flex-col gap-1.5 rounded-xl border border-border bg-card p-4"
+            className="relative flex flex-col gap-1.5 rounded-xl border border-border bg-card p-4"
           >
+            <Link
+              href={`/invoices/${invoice.id}`}
+              className="absolute inset-0 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+              aria-label={`Open invoice ${invoice.invoiceNumber}`}
+            />
             <div className="flex items-center justify-between gap-2">
               <span className="font-mono text-[13px] font-bold text-foreground">
                 {invoice.invoiceNumber}
               </span>
               <StatusBadge status={invoice.status} dueDate={invoice.dueDate} />
             </div>
-            <span className="text-[13px] font-semibold text-foreground">
+            <Link
+              href={`/parties/${invoice.project.client.id}`}
+              className="relative z-10 block w-fit max-w-full text-[13px] font-semibold text-foreground hover:text-brand hover:underline"
+            >
               {invoice.project.client.name}
-            </span>
+            </Link>
             {hideProjectColumn ? null : (
-              <span className="text-[12px] text-muted-foreground">
+              <Link
+                href={`/projects/${invoice.project.id}`}
+                className="relative z-10 block w-fit max-w-full text-[12px] text-muted-foreground hover:text-brand hover:underline"
+              >
                 {invoice.project.name}
-              </span>
+              </Link>
             )}
             <div className="mt-1 flex items-center justify-between border-t border-muted pt-2">
               <span className="text-[12px] text-muted-foreground">
@@ -115,7 +135,7 @@ export function InvoiceTable({
                 {formatCurrency(invoice.total, invoice.currency)}
               </span>
             </div>
-          </Link>
+          </div>
         ))}
       </div>
     </>

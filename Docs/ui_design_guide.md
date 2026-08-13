@@ -113,6 +113,15 @@ Stage padding 40/16px, card padding 24px (body)/20×24px (header), row-section g
 | `VOID` | `#fff1f2` | `#be123c` |
 | `OVERDUE` *(derived)* | `#fef2f2` | `#b91c1c` |
 
+### Relationship tokens (Parties directory only — display-only, not a lifecycle status)
+
+| Relationship | Background | Text |
+|---|---|---|
+| `Client` | `#eff6ff` | `#1d4ed8` |
+| `Contractor` | `#f5f3ff` | `#6d28d9` |
+| `Client & Contractor` | `#f0fdfa` | `#0f766e` |
+| `Unassigned` | `--muted` | `--muted-foreground` |
+
 ### Nav shell + dashboard-alert tokens
 
 | Token | Value | Usage |

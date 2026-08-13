@@ -89,6 +89,14 @@
   --status-overdue-bg: #fef2f2;
   --status-overdue-text: #b91c1c;
 
+  /* Party relationship tokens (Parties directory §7) — display-only, derived live, not a lifecycle status */
+  --relationship-client-bg: #eff6ff;
+  --relationship-client-text: #1d4ed8;
+  --relationship-contractor-bg: #f5f3ff;
+  --relationship-contractor-text: #6d28d9;
+  --relationship-both-bg: #f0fdfa;
+  --relationship-both-text: #0f766e;
+
   /* Semantic (validation/alert) tokens — §7 */
   --alert-info-bg: #f8fafc;
   --alert-warning-bg: #fffbeb;

@@ -4,30 +4,45 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { PartyForm } from "@/components/party/PartyForm";
 import { PartyDetailCard } from "@/components/party/PartyDetailCard";
 import { PartyDeleteButton } from "@/components/party/PartyDeleteButton";
+import {
+  PartyDetailTabs,
+  type PartyDetailTab,
+} from "@/components/party/PartyDetailTabs";
 import { PaymentMethodList } from "@/components/payment-method/PaymentMethodList";
+import { InvoiceTable } from "@/components/invoice/InvoiceTable";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
 import { partyService } from "@/services/partyService";
 import { paymentMethodService } from "@/services/paymentMethodService";
 import { projectService } from "@/services/projectService";
+import { invoiceService } from "@/services/invoiceService";
+import { toInvoiceTableRow } from "@/lib/invoiceTableRow";
 import { getAiAssistConfigSummary } from "@/lib/ai-providers/config";
+import type { PaymentMethod, Party } from "@/generated/prisma/client";
+
+function resolveTab(value: string | undefined): PartyDetailTab {
+  if (value === "payment-methods" || value === "invoices") return value;
+  return "overview";
+}
 
 export default async function PartyDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ edit?: string }>;
+  searchParams: Promise<{ tab?: string; edit?: string }>;
 }) {
   const { id } = await params;
-  const { edit } = await searchParams;
-  const isEditing = edit === "1";
+  const { tab: tabParam, edit } = await searchParams;
+  const tab = resolveTab(tabParam);
+  const isEditingOverview = tab === "overview" && edit === "1";
 
   const party = await partyService.getById(id);
   if (!party) {
     notFound();
   }
 
-  if (isEditing) {
+  if (isEditingOverview) {
     const aiConfig = await getAiAssistConfigSummary();
     return (
       <>
@@ -66,23 +81,11 @@ export default async function PartyDetailPage({
     );
   }
 
-  const [isDeletable, paymentMethods] = await Promise.all([
+  const [isDeletable, paymentMethods, invoices] = await Promise.all([
     partyService.isDeletable(id),
     paymentMethodService.listForParty(id),
+    invoiceService.listByParty(id),
   ]);
-  const [deletableFlags, projectRefsByPaymentMethodId] = await Promise.all([
-    Promise.all(
-      paymentMethods.map((method) => paymentMethodService.isDeletable(method.id)),
-    ),
-    projectService.listProjectRefsByPreferredPaymentMethod(
-      paymentMethods.map((method) => method.id),
-    ),
-  ]);
-  const deletableIds = new Set(
-    paymentMethods
-      .filter((_, index) => deletableFlags[index])
-      .map((method) => method.id),
-  );
 
   return (
     <>
@@ -99,9 +102,51 @@ export default async function PartyDetailPage({
           />
         }
       />
-      <PartyDetailCard party={party} editHref={`/parties/${party.id}?edit=1`} />
+      <PartyDetailTabs
+        partyId={party.id}
+        active={tab}
+        paymentMethodsCount={paymentMethods.length}
+        invoicesCount={invoices.length}
+      />
 
-      <div className="mt-8 mb-1 flex items-center justify-between">
+      {tab === "overview" ? (
+        <PartyDetailCard
+          party={party}
+          editHref={`/parties/${party.id}?tab=overview&edit=1`}
+        />
+      ) : tab === "payment-methods" ? (
+        <PaymentMethodsTab party={party} paymentMethods={paymentMethods} />
+      ) : (
+        <InvoicesTab party={party} invoices={invoices} />
+      )}
+    </>
+  );
+}
+
+async function PaymentMethodsTab({
+  party,
+  paymentMethods,
+}: {
+  party: Party;
+  paymentMethods: PaymentMethod[];
+}) {
+  const [deletableFlags, projectRefsByPaymentMethodId] = await Promise.all([
+    Promise.all(
+      paymentMethods.map((method) => paymentMethodService.isDeletable(method.id)),
+    ),
+    projectService.listProjectRefsByPreferredPaymentMethod(
+      paymentMethods.map((method) => method.id),
+    ),
+  ]);
+  const deletableIds = new Set(
+    paymentMethods
+      .filter((_, index) => deletableFlags[index])
+      .map((method) => method.id),
+  );
+
+  return (
+    <>
+      <div className="mb-1 flex items-center justify-between">
         <h2 className="text-[15px] font-bold text-foreground">
           Payment Methods
         </h2>
@@ -126,6 +171,33 @@ export default async function PartyDetailPage({
         deletableIds={deletableIds}
         projectRefsByPaymentMethodId={projectRefsByPaymentMethodId}
       />
+    </>
+  );
+}
+
+function InvoicesTab({
+  party,
+  invoices,
+}: {
+  party: Party;
+  invoices: Awaited<ReturnType<typeof invoiceService.listByParty>>;
+}) {
+  return (
+    <>
+      <div className="mb-1 flex items-center justify-between">
+        <h2 className="text-[15px] font-bold text-foreground">Invoices</h2>
+      </div>
+      <p className="mb-3 text-[11px] text-muted-foreground">
+        Every invoice where {party.name} is the client or the contractor.
+      </p>
+      {invoices.length === 0 ? (
+        <EmptyState
+          title="No invoices yet"
+          description="Invoices will appear here once this party is used as a project's client or contractor."
+        />
+      ) : (
+        <InvoiceTable invoices={invoices.map(toInvoiceTableRow)} />
+      )}
     </>
   );
 }

@@ -63,11 +63,22 @@ const LIST_ITEM_INCLUDE = {
 function findMany(filters?: {
   projectId?: string;
   status?: InvoiceStatus;
+  partyId?: string;
 }): Promise<InvoiceListItem[]> {
   return prisma.invoice.findMany({
     where: {
       ...(filters?.projectId ? { projectId: filters.projectId } : {}),
       ...(filters?.status ? { status: filters.status } : {}),
+      ...(filters?.partyId
+        ? {
+            project: {
+              OR: [
+                { clientId: filters.partyId },
+                { contractorId: filters.partyId },
+              ],
+            },
+          }
+        : {}),
     },
     include: LIST_ITEM_INCLUDE,
     orderBy: { createdAt: "desc" },
