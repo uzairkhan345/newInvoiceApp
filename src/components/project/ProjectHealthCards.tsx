@@ -10,6 +10,8 @@ const TONE_TEXT: Record<ProjectBillingRow["statusTone"], string> = {
   overdue: "text-[var(--status-overdue-text)]",
   prepare: "text-[var(--status-sent-text)]",
   draft: "text-brand",
+  setupIncomplete: "text-[var(--status-sent-text)]",
+  upcoming: "text-[var(--status-upcoming-text)]",
   positive: "text-[var(--status-paid-text)]",
 };
 
@@ -17,6 +19,8 @@ const TONE_SUBTEXT: Record<ProjectBillingRow["statusTone"], string> = {
   overdue: "Payment is overdue.",
   prepare: "A new invoice is due to be created.",
   draft: "A draft invoice is awaiting review.",
+  setupIncomplete: "No preferred payment method is set for this project.",
+  upcoming: "A payment is due soon.",
   positive: "No outstanding billing issues.",
 };
 
