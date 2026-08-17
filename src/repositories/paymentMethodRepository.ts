@@ -27,6 +27,11 @@ function findByParty(partyId: string): Promise<PaymentMethod[]> {
   });
 }
 
+/** Party detail page's tab badge — avoids fetching/decrypting the full list just to count it. */
+function countByParty(partyId: string): Promise<number> {
+  return prisma.paymentMethod.count({ where: { partyId } });
+}
+
 function findById(id: string): Promise<PaymentMethod | null> {
   return prisma.paymentMethod.findUnique({ where: { id } });
 }
@@ -100,6 +105,7 @@ function isReferencedAsPreferredPaymentMethod(
 
 export const paymentMethodRepository = {
   findByParty,
+  countByParty,
   findById,
   create,
   update,

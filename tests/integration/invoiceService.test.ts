@@ -678,6 +678,88 @@ describe("invoiceService.listByProject", () => {
   });
 });
 
+describe("invoiceService.listByParty", () => {
+  it("returns invoices where the party is the project's client", async () => {
+    const client = await createTestParty({ name: "[test] Party as Client" });
+    const { project } = await createTestProject({ clientId: client.id });
+
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput(),
+    );
+    createdInvoiceIds.push(invoice.id);
+
+    const result = await invoiceService.listByParty(client.id);
+
+    expect(result.map((i) => i.id)).toEqual([invoice.id]);
+  });
+
+  it("returns invoices where the party is the project's contractor", async () => {
+    const contractor = await createTestParty({
+      name: "[test] Party as Contractor",
+    });
+    const { project } = await createTestProject({
+      contractorId: contractor.id,
+      preferredPaymentMethodId: "",
+    });
+
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput(),
+    );
+    createdInvoiceIds.push(invoice.id);
+
+    const result = await invoiceService.listByParty(contractor.id);
+
+    expect(result.map((i) => i.id)).toEqual([invoice.id]);
+  });
+
+  it("returns invoices where the party is either the client or the contractor, across different projects", async () => {
+    const shared = await createTestParty({ name: "[test] Shared Party" });
+    const { project: projectA } = await createTestProject({
+      clientId: shared.id,
+    });
+    const { project: projectB } = await createTestProject({
+      contractorId: shared.id,
+      preferredPaymentMethodId: "",
+    });
+
+    const a1 = await invoiceService.createDraft(
+      projectA.id,
+      baseInvoiceInput(),
+    );
+    const b1 = await invoiceService.createDraft(
+      projectB.id,
+      baseInvoiceInput(),
+    );
+    createdInvoiceIds.push(a1.id, b1.id);
+
+    const result = await invoiceService.listByParty(shared.id);
+
+    expect(result.map((i) => i.id).sort()).toEqual([a1.id, b1.id].sort());
+  });
+
+  it("returns an empty array for a party with no associated projects/invoices", async () => {
+    const party = await createTestParty({ name: "[test] Unrelated Party" });
+    const result = await invoiceService.listByParty(party.id);
+    expect(result).toEqual([]);
+  });
+
+  it("excludes invoices belonging to an unrelated party's project", async () => {
+    const { project: unrelatedProject } = await createTestProject();
+    const unrelatedInvoice = await invoiceService.createDraft(
+      unrelatedProject.id,
+      baseInvoiceInput(),
+    );
+    createdInvoiceIds.push(unrelatedInvoice.id);
+
+    const party = await createTestParty({ name: "[test] Excluded Party" });
+    const result = await invoiceService.listByParty(party.id);
+
+    expect(result).toEqual([]);
+  });
+});
+
 describe("invoiceService.validateForSend", () => {
   it("rejects when there are no line items", async () => {
     const { project } = await createTestProject();

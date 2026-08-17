@@ -18,7 +18,7 @@ export function PageHeader({
 }: {
   eyebrow?: string;
   title: ReactNode;
-  subtitle?: string;
+  subtitle?: ReactNode;
   action?: ReactNode;
   backHref?: string;
   backLabel?: string;

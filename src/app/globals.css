@@ -89,6 +89,14 @@
   --status-overdue-bg: #fef2f2;
   --status-overdue-text: #b91c1c;
 
+  /* Party relationship tokens (Parties directory §7) — display-only, derived live, not a lifecycle status */
+  --relationship-client-bg: #eff6ff;
+  --relationship-client-text: #1d4ed8;
+  --relationship-contractor-bg: #f5f3ff;
+  --relationship-contractor-text: #6d28d9;
+  --relationship-both-bg: #f0fdfa;
+  --relationship-both-text: #0f766e;
+
   /* Dashboard "billing health" tone (Project billing health view) — a due-soon
      outstanding invoice, distinct from an overdue/draft/prepare-invoice state */
   --status-upcoming-bg: #eff6ff;

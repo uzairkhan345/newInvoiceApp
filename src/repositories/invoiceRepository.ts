@@ -63,11 +63,22 @@ const LIST_ITEM_INCLUDE = {
 function findMany(filters?: {
   projectId?: string;
   status?: InvoiceStatus;
+  partyId?: string;
 }): Promise<InvoiceListItem[]> {
   return prisma.invoice.findMany({
     where: {
       ...(filters?.projectId ? { projectId: filters.projectId } : {}),
       ...(filters?.status ? { status: filters.status } : {}),
+      ...(filters?.partyId
+        ? {
+            project: {
+              OR: [
+                { clientId: filters.partyId },
+                { contractorId: filters.partyId },
+              ],
+            },
+          }
+        : {}),
     },
     include: LIST_ITEM_INCLUDE,
     orderBy: { createdAt: "desc" },
@@ -77,6 +88,17 @@ function findMany(filters?: {
 /** Dashboard (M10) — stats row counts, excluding VOID by construction (callers pass DRAFT/SENT). */
 function countByStatus(status: InvoiceStatus): Promise<number> {
   return prisma.invoice.count({ where: { status } });
+}
+
+/** Party detail page's tab badge — avoids fetching+joining the full list just to count it. */
+function countByParty(partyId: string): Promise<number> {
+  return prisma.invoice.count({
+    where: {
+      project: {
+        OR: [{ clientId: partyId }, { contractorId: partyId }],
+      },
+    },
+  });
 }
 
 /**
@@ -384,6 +406,7 @@ export const invoiceRepository = {
   updateStatus,
   deleteById,
   countByStatus,
+  countByParty,
   sumSubtotalByStatus,
   sumSubtotalByStatusGroupedByNonUsdCurrency,
   findOverdueCandidates,

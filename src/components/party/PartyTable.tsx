@@ -34,6 +34,14 @@ const HEALTH_STYLES: Record<PartyHealthTone, string> = {
   internal: "bg-muted text-[var(--text-secondary)]",
 };
 
+const RELATIONSHIP_STYLES: Record<PartyRelationship, string> = {
+  client: "bg-[var(--relationship-client-bg)] text-[var(--relationship-client-text)]",
+  contractor:
+    "bg-[var(--relationship-contractor-bg)] text-[var(--relationship-contractor-text)]",
+  both: "bg-[var(--relationship-both-bg)] text-[var(--relationship-both-text)]",
+  unassigned: "bg-muted text-muted-foreground",
+};
+
 /** First letters of the first two words, or the first two characters of a single-word name. */
 function initialsFor(name: string): string {
   const words = name.trim().split(/\s+/);
@@ -65,6 +73,20 @@ export function HealthPill({ row }: { row: PartyBillingRow }) {
       )}
     >
       {row.healthLabel}
+    </span>
+  );
+}
+
+/** Client/Contractor/Both/Unassigned — display-only, derived live by partyBillingStatus.ts, not a stored field. */
+export function RelationshipTag({ row }: { row: PartyBillingRow }) {
+  return (
+    <span
+      className={cn(
+        "inline-block w-fit rounded-md px-2 py-1 text-[10px] font-bold whitespace-nowrap uppercase",
+        RELATIONSHIP_STYLES[row.relationship],
+      )}
+    >
+      {RELATIONSHIP_LABELS[row.relationship]}
     </span>
   );
 }
@@ -122,9 +144,7 @@ export function PartyTable({
                   ) : null}
                 </span>
               </span>
-              <span className="truncate text-[12px] text-foreground">
-                {RELATIONSHIP_LABELS[row.relationship]}
-              </span>
+              <RelationshipTag row={row} />
               <span className="truncate text-[13px] text-muted-foreground">
                 {party.email ?? "—"}
               </span>
@@ -160,9 +180,9 @@ export function PartyTable({
                 </span>
                 <HealthPill row={row} />
               </div>
-              <span className="text-[13px] text-muted-foreground">
-                {RELATIONSHIP_LABELS[row.relationship]}
-                {party.email ? ` · ${party.email}` : ""}
+              <span className="flex items-center gap-2 text-[13px] text-muted-foreground">
+                <RelationshipTag row={row} />
+                {party.email ? <span>· {party.email}</span> : null}
               </span>
               <div className="mt-1 flex items-center justify-between border-t border-muted pt-2">
                 <span className="text-[12px] text-muted-foreground">

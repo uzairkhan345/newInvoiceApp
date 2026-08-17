@@ -49,7 +49,23 @@ export default async function InvoiceDetailPage({
       <>
         <PageHeader
           title={invoice.invoiceNumber}
-          subtitle={`${invoice.project.client.name} · ${invoice.project.name}`}
+          subtitle={
+            <>
+              <Link
+                href={`/parties/${invoice.project.client.id}`}
+                className="hover:text-brand hover:underline"
+              >
+                {invoice.project.client.name}
+              </Link>
+              {" · "}
+              <Link
+                href={`/projects/${invoice.projectId}`}
+                className="hover:text-brand hover:underline"
+              >
+                {invoice.project.name}
+              </Link>
+            </>
+          }
           action={
             <div className="flex items-center gap-3">
               <StatusBadge status={invoice.status} dueDate={invoice.dueDate} />
@@ -127,7 +143,18 @@ export default async function InvoiceDetailPage({
     <>
       <PageHeader
         title={invoice.invoiceNumber}
-        subtitle={`Draft invoice for ${invoice.project.name}.`}
+        subtitle={
+          <>
+            Draft invoice for{" "}
+            <Link
+              href={`/projects/${invoice.projectId}`}
+              className="hover:text-brand hover:underline"
+            >
+              {invoice.project.name}
+            </Link>
+            .
+          </>
+        }
         action={headerAction}
         backHref="/invoices"
         backLabel="Back to Invoices"

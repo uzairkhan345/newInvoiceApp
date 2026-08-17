@@ -17,7 +17,7 @@ export type InvoiceTableRow = {
   dueDate: Date;
   total: string;
   currency: string;
-  project: { name: string; client: { name: string } };
+  project: { id: string; name: string; client: { id: string; name: string } };
 };
 
 export function toInvoiceTableRow(invoice: InvoiceListItem): InvoiceTableRow {
@@ -30,8 +30,9 @@ export function toInvoiceTableRow(invoice: InvoiceListItem): InvoiceTableRow {
     total: invoice.total.toString(),
     currency: invoice.currency,
     project: {
+      id: invoice.project.id,
       name: invoice.project.name,
-      client: { name: invoice.project.client.name },
+      client: { id: invoice.project.client.id, name: invoice.project.client.name },
     },
   };
 }
