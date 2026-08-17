@@ -274,4 +274,32 @@ describe("invoiceSchema", () => {
     );
     expect(result.success).toBe(false);
   });
+
+  it("accepts a valid periodStart/periodEnd range (M39)", () => {
+    const result = invoiceSchema.safeParse(
+      baseInput({ periodStart: "2026-01-01", periodEnd: "2026-01-31" }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts both period fields left blank (M39)", () => {
+    const result = invoiceSchema.safeParse(
+      baseInput({ periodStart: "", periodEnd: "" }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts only one of periodStart/periodEnd set (M39)", () => {
+    const result = invoiceSchema.safeParse(
+      baseInput({ periodStart: "2026-01-01", periodEnd: "" }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects periodEnd before periodStart (M39)", () => {
+    const result = invoiceSchema.safeParse(
+      baseInput({ periodStart: "2026-01-31", periodEnd: "2026-01-01" }),
+    );
+    expect(result.success).toBe(false);
+  });
 });

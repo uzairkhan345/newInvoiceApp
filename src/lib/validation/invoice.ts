@@ -93,6 +93,16 @@ export const invoiceBaseSchema = z.object({
   invoiceNumber: z.string().trim().min(1, "Invoice number is required"),
   issueDate: z.string().trim().min(1, "Issue date is required"),
   dueDate: z.string().trim().min(1, "Due date is required"),
+  /**
+   * M39 — the billing period this invoice covers, independent of
+   * issueDate/dueDate. Both optional (a flat one-off fee has no period) and
+   * independently optional of each other at this layer — the "periodEnd
+   * can't be before periodStart" ordering rule is enforced by
+   * `invoiceSchema`'s `superRefine` below, not here, so `.partial()` (used
+   * by aiSuggestions.ts) stays valid.
+   */
+  periodStart: z.string().trim().optional().or(z.literal("")),
+  periodEnd: z.string().trim().optional().or(z.literal("")),
   convertedTotal: z
     .string()
     .trim()
@@ -113,6 +123,18 @@ export const invoiceSchema = invoiceBaseSchema.superRefine((data, ctx) => {
       code: z.ZodIssueCode.custom,
       path: ["items"],
       message: "Only one referral credit line item is allowed.",
+    });
+  }
+  // M39 — only checked when both are actually set; either/both blank is fine.
+  if (
+    data.periodStart &&
+    data.periodEnd &&
+    data.periodEnd < data.periodStart
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["periodEnd"],
+      message: "Period end must be on or after period start.",
     });
   }
 });

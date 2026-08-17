@@ -80,6 +80,14 @@ export function InvoiceSummaryTab({
             <Fact label="Project" value={invoice.project.name} />
             <Fact label="Service" value={data.serviceDescription} />
             <Fact
+              label="Billing period"
+              value={
+                invoice.periodStart && invoice.periodEnd
+                  ? `${formatDisplayDate(invoice.periodStart)} – ${formatDisplayDate(invoice.periodEnd)}`
+                  : "—"
+              }
+            />
+            <Fact
               label="Currency"
               value={
                 data.convertedTotal && data.convertedCurrency

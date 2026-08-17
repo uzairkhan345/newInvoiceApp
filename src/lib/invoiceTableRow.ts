@@ -15,6 +15,8 @@ export type InvoiceTableRow = {
   status: InvoiceStatus;
   issueDate: Date;
   dueDate: Date;
+  periodStart: Date | null;
+  periodEnd: Date | null;
   total: string;
   currency: string;
   project: { id: string; name: string; client: { id: string; name: string } };
@@ -27,6 +29,8 @@ export function toInvoiceTableRow(invoice: InvoiceListItem): InvoiceTableRow {
     status: invoice.status,
     issueDate: invoice.issueDate,
     dueDate: invoice.dueDate,
+    periodStart: invoice.periodStart,
+    periodEnd: invoice.periodEnd,
     total: invoice.total.toString(),
     currency: invoice.currency,
     project: {

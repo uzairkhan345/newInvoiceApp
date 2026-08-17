@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
-import { formatDisplayDate } from "@/lib/dates";
+import { formatDisplayDate, formatShortDate } from "@/lib/dates";
 import type {
   ProjectBillingRow,
   BillingStatusTone,
@@ -53,6 +53,7 @@ export function ProjectBillingStatusTable({
               <th className="px-5 py-3 font-bold">Project</th>
               <th className="px-3 py-3 font-bold">Billing</th>
               <th className="px-3 py-3 font-bold">Last invoice</th>
+              <th className="px-3 py-3 font-bold">Period covered</th>
               <th className="px-3 py-3 font-bold">Next invoice</th>
               <th className="px-3 py-3 font-bold">Exposure</th>
               <th className="px-5 py-3 font-bold">Status</th>
@@ -62,7 +63,7 @@ export function ProjectBillingStatusTable({
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="px-5 py-8 text-center text-[12px] text-muted-foreground"
                 >
                   No active projects yet.
@@ -91,6 +92,11 @@ export function ProjectBillingStatusTable({
                   <td className="px-3 py-3.5 text-[12px] text-foreground">
                     {row.lastInvoiceDate
                       ? formatDisplayDate(row.lastInvoiceDate)
+                      : "—"}
+                  </td>
+                  <td className="px-3 py-3.5 text-[12px] whitespace-nowrap text-foreground">
+                    {row.lastCoveredPeriod
+                      ? `${formatShortDate(row.lastCoveredPeriod.start)} – ${formatShortDate(row.lastCoveredPeriod.end)}`
                       : "—"}
                   </td>
                   <td className="px-3 py-3.5 text-[12px] text-foreground">

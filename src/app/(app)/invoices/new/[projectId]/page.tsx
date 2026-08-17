@@ -27,6 +27,8 @@ export default async function NewInvoiceForProjectPage({
   const aiConfig = await getAiAssistConfigSummary();
   const autofillData =
     await invoiceService.getAutofillDataForProject(projectId);
+  const initialPeriodStart =
+    await invoiceService.previewNextPeriodStart(projectId);
 
   return (
     <>
@@ -61,6 +63,8 @@ export default async function NewInvoiceForProjectPage({
           invoiceNumber: suggestedInvoiceNumber,
           issueDate: today,
           dueDate: initialDueDate,
+          periodStart: initialPeriodStart ?? "",
+          periodEnd: today,
         }}
       />
     </>

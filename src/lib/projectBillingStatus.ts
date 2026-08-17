@@ -43,6 +43,39 @@ export function buildLastInvoiceByProjectId(
   return byProject;
 }
 
+export type CoveredPeriod = { start: Date; end: Date };
+
+/**
+ * M39 — the period covered by a project's most recently issued SENT/PAID
+ * invoice (DRAFT doesn't count — nothing's final yet; VOID doesn't count —
+ * it was never really billed). `null` per project if that invoice has no
+ * `periodStart`/`periodEnd` set (pre-M39 invoices, or a non-period-based
+ * flat fee) — deliberately not falling back to only-one-of-the-two-set,
+ * since a half-period is more confusing to show than nothing.
+ */
+export function buildLastCoveredPeriodByProjectId(
+  allInvoices: InvoiceListItem[],
+): Map<string, CoveredPeriod> {
+  const byProject = new Map<string, { issueDate: Date; period: CoveredPeriod }>();
+  for (const invoice of allInvoices) {
+    if (invoice.status !== "SENT" && invoice.status !== "PAID") continue;
+    if (!invoice.periodStart || !invoice.periodEnd) continue;
+    const existing = byProject.get(invoice.projectId);
+    if (!existing || invoice.issueDate.getTime() > existing.issueDate.getTime()) {
+      byProject.set(invoice.projectId, {
+        issueDate: invoice.issueDate,
+        period: { start: invoice.periodStart, end: invoice.periodEnd },
+      });
+    }
+  }
+  return new Map(
+    Array.from(byProject.entries()).map(([projectId, { period }]) => [
+      projectId,
+      period,
+    ]),
+  );
+}
+
 const BILLING_LABELS: Record<string, string> = {
   WEEKLY: "Weekly",
   SEMI_MONTHLY: "Semi-monthly",
@@ -100,6 +133,8 @@ export type ProjectBillingRow = {
   lastInvoiceDate: Date | null;
   lastInvoiceTotal: string | null;
   lastInvoiceCurrency: string | null;
+  /** M39 — the last SENT/PAID invoice's covered period, `null` if that invoice never had one set. */
+  lastCoveredPeriod: CoveredPeriod | null;
   nextInvoiceDate: Date | null;
   exposureTotal: string;
   exposureCurrency: string;
@@ -171,6 +206,9 @@ export function buildProjectBillingRows(input: {
 }): ProjectBillingRow[] {
   const now = input.now ?? new Date();
   const lastInvoiceByProjectId = buildLastInvoiceByProjectId(input.allInvoices);
+  const lastCoveredPeriodByProjectId = buildLastCoveredPeriodByProjectId(
+    input.allInvoices,
+  );
   const overdueByProjectId = new Map<string, InvoiceListItem>();
   for (const invoice of input.overdueInvoices) {
     if (!overdueByProjectId.has(invoice.projectId)) {
@@ -246,6 +284,7 @@ export function buildProjectBillingRows(input: {
       lastInvoiceDate: lastInvoice?.issueDate ?? null,
       lastInvoiceTotal: lastInvoice?.total ?? null,
       lastInvoiceCurrency: lastInvoice?.currency ?? null,
+      lastCoveredPeriod: lastCoveredPeriodByProjectId.get(project.id) ?? null,
       nextInvoiceDate: resolveNextInvoiceDate(
         project,
         firedSchedule,

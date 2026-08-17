@@ -209,6 +209,13 @@ model Invoice {
   status InvoiceStatus @default(DRAFT)
   issueDate DateTime @db.Date
   dueDate DateTime @db.Date
+  /// M39 — the billing period this invoice covers (distinct from
+  /// issueDate/dueDate, which are about payment timing, not the work
+  /// period). Both nullable/independent: not every invoice is period-based
+  /// (a flat one-off fee has none), and there's no DB-level ordering
+  /// constraint between them, only app-level validation.
+  periodStart DateTime? @db.Date
+  periodEnd DateTime? @db.Date
   subtotal Decimal @db.Decimal(12, 2)
   total Decimal @db.Decimal(12, 2)
   currency DisplayCurrency @default(USD)

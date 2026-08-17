@@ -81,6 +81,8 @@ The immutable master ledger entry for a requested payment. Stores flat historica
 | `Status` | Text | `DRAFT`, `SENT`, `PAID`, or `VOID` — see §6 for the transition rules. |
 | `IssueDate` | Date | Date the invoice becomes active. |
 | `DueDate` | Date | Payment deadline. Must be on/after `IssueDate`. |
+| `PeriodStart` | Date, Optional | Start of the billing period this invoice covers — distinct from `IssueDate`/`DueDate`, which are about payment timing, not the work period. Independently optional of `PeriodEnd` at the schema level; app validation requires `PeriodEnd >= PeriodStart` when both are set. `null` for a non-period-based invoice (e.g. a flat one-off fee). |
+| `PeriodEnd` | Date, Optional | End of the billing period this invoice covers. See `PeriodStart`. |
 | `Subtotal` | Decimal | Sum of all `InvoiceItem.Amount` values, denominated in `Currency`. |
 | `Total` | Decimal | Always equal to `Subtotal` — **there is no tax in MVP**, so no `Subtotal + Tax` computation exists anywhere. |
 | `Currency` | Enum (same values as `DisplayCurrency`) | The currency `Subtotal`/`Total`/item rates are actually denominated in: always `USD` for a `DUAL`-mode project, the project's `DisplayCurrency` for a `SINGLE`-mode one. Derived, not user-edited; locked at `SENT` (§6). |
@@ -213,7 +215,7 @@ Unchanged from the original spec: select a contractor, pick a template (`BANK_WI
 
 **Entry point**: selecting "Create Invoice" always first shows a picker of existing `Project`s — an invoice cannot be started without picking one. There is no path to the invoice form that skips this.
 
-**Inputs after project selection** (contractor, client, preferred payment method, and invoice-number format are all pre-filled from the project and not re-entered): auto-generated invoice number (editable while `DRAFT`), Issue Date, Due Date, an array of line items (Description, Quantity, UnitPrice), and — only if the project's `DisplayCurrency` is not `USD` — a manually-entered `ConvertedTotal`.
+**Inputs after project selection** (contractor, client, preferred payment method, and invoice-number format are all pre-filled from the project and not re-entered): auto-generated invoice number (editable while `DRAFT`), Issue Date, Due Date, an optional `PeriodStart`/`PeriodEnd` (defaults: `PeriodStart` chains off the project's last SENT/PAID invoice's `PeriodEnd` + 1 day, or blank for a project's first invoice; `PeriodEnd` defaults to Issue Date, both freely overridable), an array of line items (Description, Quantity, UnitPrice), and — only if the project's `DisplayCurrency` is not `USD` — a manually-entered `ConvertedTotal`. Once both period fields are set, `ItemsNote` is pre-filled with a plain-English sentence describing them (create mode only, and only until manually edited) — there is no separate "billing period" field on the invoice document itself, this is the only surface that renders it.
 
 **Assembly**:
 1. **Context Lookup** — resolve the parent project's contractor/client/payment-method configuration.

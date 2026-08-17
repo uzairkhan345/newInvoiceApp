@@ -24,7 +24,7 @@ import {
   TREND_WINDOW_DAYS,
   type StatTrend,
 } from "@/lib/dashboardTrend";
-import { startOfMonthUTC } from "@/lib/dates";
+import { addDays, startOfMonthUTC, toDateInputValue } from "@/lib/dates";
 
 /**
  * Thrown when a projectId doesn't resolve to a real Project — createDraft is
@@ -232,6 +232,8 @@ function toWriteInput(
     invoiceNumber: input.invoiceNumber,
     issueDate: new Date(input.issueDate),
     dueDate: new Date(input.dueDate),
+    periodStart: input.periodStart ? new Date(input.periodStart) : null,
+    periodEnd: input.periodEnd ? new Date(input.periodEnd) : null,
     subtotal,
     total: subtotal, // Docs/implementation_decisions.md §13 — no tax, Total always equals Subtotal.
     currency: resolveInvoiceCurrency(project),
@@ -408,6 +410,20 @@ async function previewNextInvoiceNumber(projectId: string): Promise<string> {
     },
     existingInvoiceNumbers,
   });
+}
+
+/**
+ * M39 — create form's `periodStart` default: the day after the project's
+ * last SENT/PAID invoice's `periodEnd`, so consecutive invoices' periods
+ * chain with no gap/overlap by default (still freely editable). `null` for
+ * a project's first invoice, or if that prior invoice never had a period
+ * set — nothing to chain off either way.
+ */
+async function previewNextPeriodStart(projectId: string): Promise<string | null> {
+  const lastInvoice =
+    await invoiceRepository.findMostRecentSentOrPaidByProject(projectId);
+  if (!lastInvoice?.periodEnd) return null;
+  return toDateInputValue(addDays(lastInvoice.periodEnd, 1));
 }
 
 export type InvoiceAutofillData = {
@@ -616,6 +632,7 @@ export const invoiceService = {
   getById,
   resolveInvoiceCurrency,
   previewNextInvoiceNumber,
+  previewNextPeriodStart,
   getAutofillDataForProject,
   createDraft,
   updateDraft,

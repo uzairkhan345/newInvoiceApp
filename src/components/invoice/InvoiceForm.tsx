@@ -23,6 +23,7 @@ import type { AiAssistConfigSummary } from "@/lib/ai-providers/config";
 import type { InvoiceAiContext } from "@/services/aiAssistService";
 import type { InvoiceAutofillData } from "@/services/invoiceService";
 import { computeDueDate } from "@/lib/invoicePeriod";
+import { formatDisplayDate } from "@/lib/dates";
 import type {
   DisplayCurrency,
   InvoicePeriodType,
@@ -192,6 +193,8 @@ export function InvoiceForm({
       invoiceNumber: "",
       issueDate: "",
       dueDate: "",
+      periodStart: "",
+      periodEnd: "",
       convertedTotal: "",
       itemsNote: "",
       bottomNote: "",
@@ -234,6 +237,59 @@ export function InvoiceForm({
     lastAutoDueDateRef.current = computed;
     setValue("dueDate", computed, { shouldValidate: true });
   }, [issueDate, mode, project.invoicePeriodType, getValues, setValue]);
+
+  /**
+   * M39 — create-form only, same "recompute until manually overridden"
+   * shape as the due-date effect above, but independent of it: `periodEnd`
+   * defaults to today's issueDate regardless of whether the project has an
+   * `invoicePeriodType` set (most real projects don't, see
+   * feedback_backlog.md's M39 section) — chained off invoice history via
+   * `periodStart`'s one-time server-computed default instead.
+   */
+  const lastAutoPeriodEndRef = useRef<string | undefined>(
+    getValues("periodEnd"),
+  );
+
+  useEffect(() => {
+    if (mode !== "create" || !issueDate) return;
+    const currentPeriodEnd = getValues("periodEnd");
+    if (
+      lastAutoPeriodEndRef.current !== undefined &&
+      currentPeriodEnd !== lastAutoPeriodEndRef.current
+    ) {
+      return;
+    }
+    lastAutoPeriodEndRef.current = issueDate;
+    setValue("periodEnd", issueDate, { shouldValidate: true });
+  }, [issueDate, mode, getValues, setValue]);
+
+  /**
+   * M39 — create-form only: once both period bounds are set, generate a
+   * plain-English `itemsNote` sentence describing them, the same "recompute
+   * until manually touched" pattern as the two effects above. Never runs in
+   * edit mode — an existing invoice's `itemsNote` predates this feature and
+   * may already contain hand-typed period text (the exact workaround this
+   * feature replaces), which must never be silently overwritten.
+   */
+  const lastAutoItemsNoteRef = useRef<string | undefined>(
+    getValues("itemsNote"),
+  );
+  const periodStart = watch("periodStart");
+  const periodEnd = watch("periodEnd");
+
+  useEffect(() => {
+    if (mode !== "create" || !periodStart || !periodEnd) return;
+    const currentItemsNote = getValues("itemsNote");
+    if (
+      lastAutoItemsNoteRef.current !== undefined &&
+      currentItemsNote !== lastAutoItemsNoteRef.current
+    ) {
+      return;
+    }
+    const generated = `Covers services rendered ${formatDisplayDate(new Date(periodStart))} – ${formatDisplayDate(new Date(periodEnd))}.`;
+    lastAutoItemsNoteRef.current = generated;
+    setValue("itemsNote", generated, { shouldValidate: true });
+  }, [periodStart, periodEnd, mode, getValues, setValue]);
 
   /** M18 (Autofill) — items/notes only; invoiceNumber/dates/convertedTotal are left exactly as they are. */
   function handleAutofill() {
@@ -355,6 +411,37 @@ export function InvoiceForm({
                   highlighted={highlightedKeys.has("dueDate")}
                 >
                   <Input id="dueDate" type="date" {...register("dueDate")} />
+                </FormField>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FormField
+                  label="Period Start"
+                  htmlFor="periodStart"
+                  error={errors.periodStart?.message}
+                  highlighted={highlightedKeys.has("periodStart")}
+                >
+                  <Input
+                    id="periodStart"
+                    type="date"
+                    {...register("periodStart")}
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Optional — the billing period this invoice covers, not
+                    when it&rsquo;s due
+                  </p>
+                </FormField>
+                <FormField
+                  label="Period End"
+                  htmlFor="periodEnd"
+                  error={errors.periodEnd?.message}
+                  highlighted={highlightedKeys.has("periodEnd")}
+                >
+                  <Input
+                    id="periodEnd"
+                    type="date"
+                    {...register("periodEnd")}
+                  />
                 </FormField>
               </div>
 
