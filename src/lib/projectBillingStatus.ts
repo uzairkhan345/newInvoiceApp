@@ -2,7 +2,10 @@ import type { InvoiceListItem } from "@/repositories/invoiceRepository";
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
 import type { AlertScheduleWithProject } from "@/repositories/projectAlertScheduleRepository";
 import { computeDueDate } from "@/lib/invoicePeriod";
-import { resolveScheduledDayThisMonth } from "@/lib/alertScheduleFiring";
+import {
+  resolveNextOccurrence,
+  resolveScheduledDayThisMonth,
+} from "@/lib/alertScheduleFiring";
 import { toDateInputValue } from "@/lib/dates";
 
 /**
@@ -106,23 +109,35 @@ export type ProjectBillingRow = {
 };
 
 /**
- * Next expected billing trigger for a project. Only derived from a
- * *currently fired* alert schedule (already fetched dashboard-wide) or an
- * invoicePeriodType calc off the last invoice — a project with an
- * active-but-not-yet-due recurring schedule has no cheap "next date" here
- * without an extra per-project query, so it falls through to the
- * invoicePeriodType estimate instead. Accepted scope simplification, not a
- * bug — the schedule itself is still visible/editable on the project page.
+ * Next expected billing trigger for a project, in priority order: (1) a
+ * *currently fired* alert schedule — shown as this month's resolved day,
+ * i.e. "due now," not pushed out to its next recurrence; (2) failing that,
+ * the earliest `resolveNextOccurrence` across the project's other
+ * configured schedules (recurring or one-time-uncleared) — an explicit,
+ * user-set date always outranks the generic estimate below; (3) failing
+ * that, an `invoicePeriodType` calc off the last invoice, an estimate with
+ * no real schedule backing it. `null` if none of the three apply.
  */
 function resolveNextInvoiceDate(
   project: ProjectWithRelations,
   firedSchedule: AlertScheduleWithProject | undefined,
+  liveSchedules: AlertScheduleWithProject[] | undefined,
   lastInvoice: LastInvoiceInfo | undefined,
   now: Date,
 ): Date | null {
   if (firedSchedule) {
     const day = resolveScheduledDayThisMonth(firedSchedule.dayOfMonth, now);
     return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), day));
+  }
+  if (liveSchedules && liveSchedules.length > 0) {
+    const occurrences = liveSchedules
+      .map((schedule) => resolveNextOccurrence(schedule, now))
+      .filter((date): date is Date => date !== null);
+    if (occurrences.length > 0) {
+      return occurrences.reduce((earliest, date) =>
+        date.getTime() < earliest.getTime() ? date : earliest,
+      );
+    }
   }
   if (project.invoicePeriodType && lastInvoice) {
     const next = computeDueDate(
@@ -141,6 +156,13 @@ export function buildProjectBillingRows(input: {
   overdueInvoices: InvoiceListItem[];
   staleDrafts: InvoiceListItem[];
   firedAlertSchedules: AlertScheduleWithProject[];
+  /**
+   * Every schedule that could still occur, fired or not — feeds
+   * resolveNextInvoiceDate's schedule-wins tier. Optional: existing callers
+   * that don't pass it just fall through to the invoicePeriodType estimate,
+   * same as before this was added.
+   */
+  liveAlertSchedules?: AlertScheduleWithProject[];
   /** M36-adjacent — Project billing health view's "Setup incomplete" tone. */
   missingPaymentMethodProjects?: ProjectWithRelations[];
   /** M36-adjacent — Project billing health view's "Upcoming" tone. */
@@ -162,6 +184,15 @@ export function buildProjectBillingRows(input: {
   for (const schedule of input.firedAlertSchedules) {
     if (!firedScheduleByProjectId.has(schedule.project.id)) {
       firedScheduleByProjectId.set(schedule.project.id, schedule);
+    }
+  }
+  const liveSchedulesByProjectId = new Map<string, AlertScheduleWithProject[]>();
+  for (const schedule of input.liveAlertSchedules ?? []) {
+    const existing = liveSchedulesByProjectId.get(schedule.project.id);
+    if (existing) {
+      existing.push(schedule);
+    } else {
+      liveSchedulesByProjectId.set(schedule.project.id, [schedule]);
     }
   }
   const missingPaymentMethodProjectIds = new Set(
@@ -218,6 +249,7 @@ export function buildProjectBillingRows(input: {
       nextInvoiceDate: resolveNextInvoiceDate(
         project,
         firedSchedule,
+        liveSchedulesByProjectId.get(project.id),
         lastInvoice,
         now,
       ),

@@ -95,6 +95,7 @@ export default async function DashboardPage({
     dueSoonInvoices,
     missingPaymentMethodProjects,
     firedAlertSchedules,
+    liveAlertSchedules,
   ] = await Promise.all([
     projectService.list({ status: "ACTIVE" }),
     invoiceService.list(),
@@ -103,6 +104,7 @@ export default async function DashboardPage({
     invoiceService.listDueSoon(),
     projectService.listMissingPreferredPaymentMethod(),
     projectAlertScheduleService.listFiredAcrossActiveProjects(),
+    projectAlertScheduleService.listLiveAcrossActiveProjects(),
   ]);
 
   const feed = buildPriorityFeed({
@@ -121,6 +123,7 @@ export default async function DashboardPage({
     overdueInvoices,
     staleDrafts,
     firedAlertSchedules,
+    liveAlertSchedules,
     missingPaymentMethodProjects,
     dueSoonInvoices,
   });
