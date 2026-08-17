@@ -3,7 +3,10 @@ import type { ProjectWithRelations } from "@/repositories/projectRepository";
 import type { AlertScheduleWithProject } from "@/repositories/projectAlertScheduleRepository";
 import { formatCurrency } from "@/lib/currency";
 import { formatDisplayDate } from "@/lib/dates";
-import { resolveScheduledDayThisMonth } from "@/lib/alertScheduleFiring";
+import {
+  isSendInvoiceSchedule,
+  resolveScheduledDayThisMonth,
+} from "@/lib/alertScheduleFiring";
 import { buildLastInvoiceByProjectId } from "@/lib/projectBillingStatus";
 
 /**
@@ -96,8 +99,9 @@ export function buildPriorityFeed(input: {
     };
   });
 
-  const prepare: PriorityFeedItem[] = input.firedAlertSchedules.map(
-    (schedule) => {
+  const prepare: PriorityFeedItem[] = input.firedAlertSchedules
+    .filter(isSendInvoiceSchedule)
+    .map((schedule) => {
       const day = resolveScheduledDayThisMonth(schedule.dayOfMonth, now);
       const scheduledDate = new Date(
         Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), day),

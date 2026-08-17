@@ -3,6 +3,7 @@ import type { ProjectWithRelations } from "@/repositories/projectRepository";
 import type { AlertScheduleWithProject } from "@/repositories/projectAlertScheduleRepository";
 import { computeDueDate } from "@/lib/invoicePeriod";
 import {
+  isSendInvoiceSchedule,
   resolveNextOccurrence,
   resolveScheduledDayThisMonth,
 } from "@/lib/alertScheduleFiring";
@@ -190,12 +191,14 @@ export function buildProjectBillingRows(input: {
   allInvoices: InvoiceListItem[];
   overdueInvoices: InvoiceListItem[];
   staleDrafts: InvoiceListItem[];
+  /** Filtered internally to isSendInvoiceSchedule — a fired reminder unrelated to invoicing never drives billing status. */
   firedAlertSchedules: AlertScheduleWithProject[];
   /**
    * Every schedule that could still occur, fired or not — feeds
    * resolveNextInvoiceDate's schedule-wins tier. Optional: existing callers
    * that don't pass it just fall through to the invoicePeriodType estimate,
-   * same as before this was added.
+   * same as before this was added. Also filtered internally to
+   * isSendInvoiceSchedule, same reasoning as firedAlertSchedules above.
    */
   liveAlertSchedules?: AlertScheduleWithProject[];
   /** M36-adjacent — Project billing health view's "Setup incomplete" tone. */
@@ -220,12 +223,14 @@ export function buildProjectBillingRows(input: {
   );
   const firedScheduleByProjectId = new Map<string, AlertScheduleWithProject>();
   for (const schedule of input.firedAlertSchedules) {
+    if (!isSendInvoiceSchedule(schedule)) continue;
     if (!firedScheduleByProjectId.has(schedule.project.id)) {
       firedScheduleByProjectId.set(schedule.project.id, schedule);
     }
   }
   const liveSchedulesByProjectId = new Map<string, AlertScheduleWithProject[]>();
   for (const schedule of input.liveAlertSchedules ?? []) {
+    if (!isSendInvoiceSchedule(schedule)) continue;
     const existing = liveSchedulesByProjectId.get(schedule.project.id);
     if (existing) {
       existing.push(schedule);

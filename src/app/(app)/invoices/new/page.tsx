@@ -25,20 +25,25 @@ export default async function NewInvoiceProjectPickerPage() {
     overdueInvoices,
     staleDrafts,
     firedAlertSchedules,
+    liveAlertSchedules,
   ] = await Promise.all([
     projectService.list({ status: "ACTIVE" }),
     invoiceService.list(),
     invoiceService.listOverdue(),
     invoiceService.listStaleDrafts(),
     projectAlertScheduleService.listFiredAcrossActiveProjects(),
+    projectAlertScheduleService.listLiveAcrossActiveProjects(),
   ]);
 
+  // M40 — same schedule-wins-over-invoicePeriodType priority the dashboard
+  // uses (M38), so this picker's "Next invoice" preview agrees with it.
   const billingRows = buildProjectBillingRows({
     activeProjects,
     allInvoices,
     overdueInvoices,
     staleDrafts,
     firedAlertSchedules,
+    liveAlertSchedules,
   });
 
   return (

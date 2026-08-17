@@ -64,7 +64,7 @@ function alertSchedule(
     projectId: "project-1",
     dayOfMonth: 25,
     recurring: true,
-    label: null,
+    label: "Send Invoice",
     clearedAt: null,
     createdAt: new Date("2026-01-01"),
     updatedAt: new Date("2026-01-01"),
@@ -193,6 +193,38 @@ describe("buildProjectBillingRows", () => {
     });
 
     expect(rows[0].statusTone).toBe("overdue");
+  });
+
+  it("ignores a fired schedule not labeled Send Invoice — no prepare tone, no next-invoice-date (M39)", () => {
+    const rows = buildProjectBillingRows({
+      activeProjects: [project({})],
+      allInvoices: [],
+      overdueInvoices: [],
+      staleDrafts: [],
+      firedAlertSchedules: [
+        alertSchedule({ dayOfMonth: 25, label: "Pick up dry cleaning" }),
+      ],
+      now: NOW,
+    });
+
+    expect(rows[0].statusTone).toBe("positive");
+    expect(rows[0].nextInvoiceDate).toBeNull();
+  });
+
+  it("ignores a live schedule not labeled Send Invoice for the next-invoice-date estimate (M39)", () => {
+    const rows = buildProjectBillingRows({
+      activeProjects: [project({})],
+      allInvoices: [],
+      overdueInvoices: [],
+      staleDrafts: [],
+      firedAlertSchedules: [],
+      liveAlertSchedules: [
+        alertSchedule({ dayOfMonth: 27, label: "Pick up dry cleaning" }),
+      ],
+      now: NOW,
+    });
+
+    expect(rows[0].nextInvoiceDate).toBeNull();
   });
 
   it("falls back to On track (positive) when nothing needs attention", () => {

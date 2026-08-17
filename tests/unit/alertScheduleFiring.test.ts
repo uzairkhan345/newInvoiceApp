@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isAlertCurrentlyFired,
+  isSendInvoiceSchedule,
   resolveScheduledDayThisMonth,
   resolveNextOccurrence,
 } from "@/lib/alertScheduleFiring";
@@ -298,5 +299,28 @@ describe("isAlertCurrentlyFired", () => {
         ),
       ).toBe(true);
     });
+  });
+});
+
+describe("isSendInvoiceSchedule (M39)", () => {
+  it("matches the exact label, case-insensitively", () => {
+    expect(isSendInvoiceSchedule({ label: "Send Invoice" })).toBe(true);
+    expect(isSendInvoiceSchedule({ label: "send invoice" })).toBe(true);
+    expect(isSendInvoiceSchedule({ label: "SEND INVOICE" })).toBe(true);
+  });
+
+  it("tolerates surrounding whitespace", () => {
+    expect(isSendInvoiceSchedule({ label: "  Send Invoice  " })).toBe(true);
+  });
+
+  it("rejects an unrelated label", () => {
+    expect(isSendInvoiceSchedule({ label: "Pick up dry cleaning" })).toBe(
+      false,
+    );
+  });
+
+  it("rejects a null or blank label", () => {
+    expect(isSendInvoiceSchedule({ label: null })).toBe(false);
+    expect(isSendInvoiceSchedule({ label: "" })).toBe(false);
   });
 });

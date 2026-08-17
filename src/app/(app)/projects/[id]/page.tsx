@@ -142,20 +142,30 @@ async function OverviewTab({
     );
   }
 
-  const [allInvoices, overdueInvoices, staleDrafts, firedAlertSchedules] =
-    await Promise.all([
-      invoiceService.list(),
-      invoiceService.listOverdue(),
-      invoiceService.listStaleDrafts(),
-      projectAlertScheduleService.listFiredAcrossActiveProjects(),
-    ]);
+  const [
+    allInvoices,
+    overdueInvoices,
+    staleDrafts,
+    firedAlertSchedules,
+    liveAlertSchedules,
+  ] = await Promise.all([
+    invoiceService.list(),
+    invoiceService.listOverdue(),
+    invoiceService.listStaleDrafts(),
+    projectAlertScheduleService.listFiredAcrossActiveProjects(),
+    projectAlertScheduleService.listLiveAcrossActiveProjects(),
+  ]);
 
+  // M39-adjacent — same schedule-wins-over-invoicePeriodType priority the
+  // dashboard uses (M38), now applied here too so "Next billing" agrees
+  // with the dashboard's own Project billing status table for this project.
   const [row] = buildProjectBillingRows({
     activeProjects: [project],
     allInvoices,
     overdueInvoices,
     staleDrafts,
     firedAlertSchedules,
+    liveAlertSchedules,
   });
 
   return (
