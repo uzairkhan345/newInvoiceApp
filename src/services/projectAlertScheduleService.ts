@@ -88,6 +88,18 @@ async function listFiredAcrossActiveProjects(): Promise<AlertScheduleWithProject
   return candidates.filter((schedule) => isAlertCurrentlyFired(schedule, now));
 }
 
+/**
+ * Dashboard "next invoice date" — every schedule that could still occur
+ * across ACTIVE projects (recurring, or one-time and not yet cleared),
+ * unfiltered by current firing state, unlike listFiredAcrossActiveProjects
+ * above. A project can have more than one; callers resolve each schedule's
+ * own next occurrence (`resolveNextOccurrence`, alertScheduleFiring.ts) and
+ * take the earliest per project.
+ */
+function listLiveAcrossActiveProjects(): Promise<AlertScheduleWithProject[]> {
+  return projectAlertScheduleRepository.findFireableAcrossActiveProjects();
+}
+
 export const projectAlertScheduleService = {
   listForProject,
   listForProjectWithFiringState,
@@ -97,4 +109,5 @@ export const projectAlertScheduleService = {
   delete: deleteSchedule,
   clear,
   listFiredAcrossActiveProjects,
+  listLiveAcrossActiveProjects,
 };

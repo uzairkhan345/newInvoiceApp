@@ -185,6 +185,60 @@ describe("buildProjectBillingRows", () => {
     );
   });
 
+  it("uses a live (not-yet-fired) schedule's next occurrence over the invoicePeriodType calc", () => {
+    const rows = buildProjectBillingRows({
+      activeProjects: [project({ invoicePeriodType: "MONTHLY" })],
+      allInvoices: [invoice({ id: "a", issueDate: new Date("2026-01-05") })],
+      overdueInvoices: [],
+      staleDrafts: [],
+      firedAlertSchedules: [],
+      liveAlertSchedules: [alertSchedule({ dayOfMonth: 27, recurring: true })],
+      now: NOW,
+    });
+
+    expect(rows[0].nextInvoiceDate?.toISOString().slice(0, 10)).toBe(
+      "2026-01-27",
+    );
+  });
+
+  it("picks the earliest occurrence across multiple live schedules on the same project", () => {
+    const rows = buildProjectBillingRows({
+      activeProjects: [project({})],
+      allInvoices: [],
+      overdueInvoices: [],
+      staleDrafts: [],
+      firedAlertSchedules: [],
+      liveAlertSchedules: [
+        alertSchedule({ id: "s-1", dayOfMonth: 27, recurring: true }),
+        alertSchedule({ id: "s-2", dayOfMonth: 22, recurring: true }),
+      ],
+      now: NOW,
+    });
+
+    expect(rows[0].nextInvoiceDate?.toISOString().slice(0, 10)).toBe(
+      "2026-01-22",
+    );
+  });
+
+  it("still prefers a fired schedule's resolved day over a live schedule's next occurrence", () => {
+    const rows = buildProjectBillingRows({
+      activeProjects: [project({})],
+      allInvoices: [],
+      overdueInvoices: [],
+      staleDrafts: [],
+      firedAlertSchedules: [alertSchedule({ id: "fired-1", dayOfMonth: 15 })],
+      liveAlertSchedules: [
+        alertSchedule({ id: "fired-1", dayOfMonth: 15 }),
+        alertSchedule({ id: "s-2", dayOfMonth: 27, recurring: true }),
+      ],
+      now: NOW,
+    });
+
+    expect(rows[0].nextInvoiceDate?.toISOString().slice(0, 10)).toBe(
+      "2026-01-15",
+    );
+  });
+
   it("returns null next invoice date when there's no schedule and no invoicePeriodType", () => {
     const rows = buildProjectBillingRows({
       activeProjects: [project({ invoicePeriodType: null })],
