@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import {
   PartyAvatar,
   RELATIONSHIP_LABELS,
+  RelationshipTag,
   formatOutstanding,
 } from "@/components/party/PartyTable";
 import type { Party } from "@/generated/prisma/client";
@@ -90,8 +91,8 @@ export function PartyCardGrid({
                 <dt className="font-bold tracking-wide text-muted-foreground uppercase">
                   Relationship
                 </dt>
-                <dd className="mt-1 text-foreground">
-                  {RELATIONSHIP_LABELS[row.relationship]}
+                <dd className="mt-1">
+                  <RelationshipTag row={row} />
                 </dd>
               </div>
               <div>

@@ -19,6 +19,20 @@ const DESKTOP_GRID_WITH_PROJECT =
 const DESKTOP_GRID_WITHOUT_PROJECT =
   "grid-cols-[1.1fr_1.3fr_0.9fr_0.9fr_0.9fr_120px]";
 
+/** The stretched click target that opens the invoice — shared by the desktop row and mobile card. */
+function RowOpenLink({ href, ariaLabel }: { href: string; ariaLabel: string }) {
+  return (
+    <Link
+      href={href}
+      className="absolute inset-0 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+      aria-label={ariaLabel}
+    />
+  );
+}
+
+const NAME_LINK_FOCUS =
+  "focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none";
+
 export function InvoiceTable({
   invoices,
   hideProjectColumn,
@@ -50,25 +64,40 @@ export function InvoiceTable({
           <span />
         </div>
         {invoices.map((invoice, index) => (
-          <Link
+          <div
             key={invoice.id}
-            href={`/invoices/${invoice.id}`}
             className={cn(
-              "grid items-center gap-3 px-5 py-3.5 hover:bg-muted/40",
+              "relative grid items-center gap-3 px-5 py-3.5 hover:bg-muted/40",
               gridCols,
               index > 0 && "border-t border-muted",
             )}
           >
+            <RowOpenLink
+              href={`/invoices/${invoice.id}`}
+              ariaLabel={`Open invoice ${invoice.invoiceNumber}`}
+            />
             <span className="truncate font-mono text-[13px] font-semibold text-foreground">
               {invoice.invoiceNumber}
             </span>
-            <span className="truncate text-[13px] text-foreground">
+            <Link
+              href={`/parties/${invoice.project.client.id}`}
+              className={cn(
+                "relative z-10 block min-w-0 truncate text-[13px] text-foreground hover:text-brand hover:underline",
+                NAME_LINK_FOCUS,
+              )}
+            >
               {invoice.project.client.name}
-            </span>
+            </Link>
             {hideProjectColumn ? null : (
-              <span className="truncate text-[13px] text-muted-foreground">
+              <Link
+                href={`/projects/${invoice.project.id}`}
+                className={cn(
+                  "relative z-10 block min-w-0 truncate text-[13px] text-muted-foreground hover:text-brand hover:underline",
+                  NAME_LINK_FOCUS,
+                )}
+              >
                 {invoice.project.name}
-              </span>
+              </Link>
             )}
             <span className="truncate font-mono text-[13px] text-foreground">
               {formatCurrency(invoice.total, invoice.currency)}
@@ -81,31 +110,46 @@ export function InvoiceTable({
               Open invoice
               <ArrowRight className="h-3 w-3" />
             </span>
-          </Link>
+          </div>
         ))}
       </div>
 
       {/* Mobile stacked cards */}
       <div className="flex flex-col gap-3 lg:hidden">
         {invoices.map((invoice) => (
-          <Link
+          <div
             key={invoice.id}
-            href={`/invoices/${invoice.id}`}
-            className="flex flex-col gap-1.5 rounded-xl border border-border bg-card p-4"
+            className="relative flex flex-col gap-1.5 rounded-xl border border-border bg-card p-4"
           >
+            <RowOpenLink
+              href={`/invoices/${invoice.id}`}
+              ariaLabel={`Open invoice ${invoice.invoiceNumber}`}
+            />
             <div className="flex items-center justify-between gap-2">
               <span className="font-mono text-[13px] font-bold text-foreground">
                 {invoice.invoiceNumber}
               </span>
               <StatusBadge status={invoice.status} dueDate={invoice.dueDate} />
             </div>
-            <span className="text-[13px] font-semibold text-foreground">
+            <Link
+              href={`/parties/${invoice.project.client.id}`}
+              className={cn(
+                "relative z-10 block w-fit max-w-full text-[13px] font-semibold text-foreground hover:text-brand hover:underline",
+                NAME_LINK_FOCUS,
+              )}
+            >
               {invoice.project.client.name}
-            </span>
+            </Link>
             {hideProjectColumn ? null : (
-              <span className="text-[12px] text-muted-foreground">
+              <Link
+                href={`/projects/${invoice.project.id}`}
+                className={cn(
+                  "relative z-10 block w-fit max-w-full text-[12px] text-muted-foreground hover:text-brand hover:underline",
+                  NAME_LINK_FOCUS,
+                )}
+              >
                 {invoice.project.name}
-              </span>
+              </Link>
             )}
             <div className="mt-1 flex items-center justify-between border-t border-muted pt-2">
               <span className="text-[12px] text-muted-foreground">
@@ -115,7 +159,7 @@ export function InvoiceTable({
                 {formatCurrency(invoice.total, invoice.currency)}
               </span>
             </div>
-          </Link>
+          </div>
         ))}
       </div>
     </>
