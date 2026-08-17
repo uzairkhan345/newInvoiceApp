@@ -89,6 +89,11 @@
   --status-overdue-bg: #fef2f2;
   --status-overdue-text: #b91c1c;
 
+  /* Dashboard "billing health" tone (Project billing health view) — a due-soon
+     outstanding invoice, distinct from an overdue/draft/prepare-invoice state */
+  --status-upcoming-bg: #eff6ff;
+  --status-upcoming-text: #1d4ed8;
+
   /* Semantic (validation/alert) tokens — §7 */
   --alert-info-bg: #f8fafc;
   --alert-warning-bg: #fffbeb;

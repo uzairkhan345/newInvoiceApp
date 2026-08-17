@@ -4,6 +4,7 @@ import {
   buildLastInvoiceByProjectId,
   buildProjectBillingRows,
   buildReceivablesAgeing,
+  resolveHealthCategory,
 } from "@/lib/projectBillingStatus";
 import type { InvoiceListItem } from "@/repositories/invoiceRepository";
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
@@ -219,6 +220,86 @@ describe("buildProjectBillingRows", () => {
     });
 
     expect(rows[0].exposureTotal).toBe("300");
+  });
+
+  it("marks a project with no preferred payment method as setupIncomplete when nothing more urgent applies", () => {
+    const rows = buildProjectBillingRows({
+      activeProjects: [project({})],
+      allInvoices: [],
+      overdueInvoices: [],
+      staleDrafts: [],
+      firedAlertSchedules: [],
+      missingPaymentMethodProjects: [project({})],
+      now: NOW,
+    });
+
+    expect(rows[0].statusTone).toBe("setupIncomplete");
+    expect(rows[0].statusLabel).toBe("Setup incomplete");
+  });
+
+  it("marks a project with a due-soon outstanding invoice as upcoming when nothing more urgent applies", () => {
+    const dueSoonInvoice = invoice({ id: "due-soon-1", status: "SENT" });
+    const rows = buildProjectBillingRows({
+      activeProjects: [project({})],
+      allInvoices: [dueSoonInvoice],
+      overdueInvoices: [],
+      staleDrafts: [],
+      firedAlertSchedules: [],
+      dueSoonInvoices: [dueSoonInvoice],
+      now: NOW,
+    });
+
+    expect(rows[0].statusTone).toBe("upcoming");
+    expect(rows[0].statusLabel).toBe("Payment due soon");
+  });
+
+  it("prioritizes overdue/prepare/draft over setupIncomplete and upcoming", () => {
+    const overdueInvoice = invoice({
+      id: "od-1",
+      dueDate: new Date("2026-01-10"),
+    });
+    const rows = buildProjectBillingRows({
+      activeProjects: [project({})],
+      allInvoices: [overdueInvoice],
+      overdueInvoices: [overdueInvoice],
+      staleDrafts: [],
+      firedAlertSchedules: [],
+      missingPaymentMethodProjects: [project({})],
+      dueSoonInvoices: [overdueInvoice],
+      now: NOW,
+    });
+
+    expect(rows[0].statusTone).toBe("overdue");
+  });
+
+  it("prioritizes setupIncomplete over upcoming", () => {
+    const dueSoonInvoice = invoice({ id: "due-soon-1", status: "SENT" });
+    const rows = buildProjectBillingRows({
+      activeProjects: [project({})],
+      allInvoices: [dueSoonInvoice],
+      overdueInvoices: [],
+      staleDrafts: [],
+      firedAlertSchedules: [],
+      missingPaymentMethodProjects: [project({})],
+      dueSoonInvoices: [dueSoonInvoice],
+      now: NOW,
+    });
+
+    expect(rows[0].statusTone).toBe("setupIncomplete");
+  });
+});
+
+describe("resolveHealthCategory", () => {
+  it("groups overdue/prepare/draft/setupIncomplete as needsAttention", () => {
+    expect(resolveHealthCategory("overdue")).toBe("needsAttention");
+    expect(resolveHealthCategory("prepare")).toBe("needsAttention");
+    expect(resolveHealthCategory("draft")).toBe("needsAttention");
+    expect(resolveHealthCategory("setupIncomplete")).toBe("needsAttention");
+  });
+
+  it("maps upcoming and positive to their own categories", () => {
+    expect(resolveHealthCategory("upcoming")).toBe("upcoming");
+    expect(resolveHealthCategory("positive")).toBe("healthy");
   });
 });
 

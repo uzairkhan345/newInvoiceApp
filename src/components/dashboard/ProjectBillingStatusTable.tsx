@@ -12,6 +12,8 @@ const TONE_STYLES: Record<BillingStatusTone, string> = {
   overdue: "bg-[var(--status-overdue-bg)] text-[var(--status-overdue-text)]",
   prepare: "bg-[var(--status-sent-bg)] text-[var(--status-sent-text)]",
   draft: "bg-brand-light text-brand",
+  setupIncomplete: "bg-[var(--status-sent-bg)] text-[var(--status-sent-text)]",
+  upcoming: "bg-[var(--status-upcoming-bg)] text-[var(--status-upcoming-text)]",
   positive: "bg-[var(--status-paid-bg)] text-[var(--status-paid-text)]",
 };
 

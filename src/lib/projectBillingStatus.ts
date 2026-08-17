@@ -52,13 +52,21 @@ function billingLabelFor(project: ProjectWithRelations): string {
   return BILLING_LABELS[project.invoicePeriodType] ?? "Milestone";
 }
 
-export type BillingStatusTone = "overdue" | "prepare" | "draft" | "positive";
+export type BillingStatusTone =
+  | "overdue"
+  | "prepare"
+  | "draft"
+  | "setupIncomplete"
+  | "upcoming"
+  | "positive";
 
 /** Shared left-border accent classes for billing-status project cards (ProjectCardGrid, InvoiceProjectPicker). */
 export const BILLING_TONE_ACCENT: Record<BillingStatusTone, string> = {
   overdue: "bg-[var(--status-overdue-text)]",
   prepare: "bg-[var(--status-sent-text)]",
   draft: "bg-brand",
+  setupIncomplete: "bg-[var(--status-sent-text)]",
+  upcoming: "bg-[var(--status-upcoming-text)]",
   positive: "bg-[var(--status-paid-text)]",
 };
 
@@ -67,8 +75,19 @@ export const BILLING_TONE_PILL: Record<BillingStatusTone, string> = {
   overdue: "bg-[var(--status-overdue-bg)] text-[var(--status-overdue-text)]",
   prepare: "bg-[var(--status-sent-bg)] text-[var(--status-sent-text)]",
   draft: "bg-brand-light text-brand",
+  setupIncomplete: "bg-[var(--status-sent-bg)] text-[var(--status-sent-text)]",
+  upcoming: "bg-[var(--status-upcoming-bg)] text-[var(--status-upcoming-text)]",
   positive: "bg-[var(--status-paid-bg)] text-[var(--status-paid-text)]",
 };
+
+/** Dashboard "Project billing health" view (M36-adjacent) — coarser grouping for the filter chips. */
+export type HealthCategory = "needsAttention" | "upcoming" | "healthy";
+
+export function resolveHealthCategory(tone: BillingStatusTone): HealthCategory {
+  if (tone === "upcoming") return "upcoming";
+  if (tone === "positive") return "healthy";
+  return "needsAttention";
+}
 
 export type ProjectBillingRow = {
   projectId: string;
@@ -122,6 +141,10 @@ export function buildProjectBillingRows(input: {
   overdueInvoices: InvoiceListItem[];
   staleDrafts: InvoiceListItem[];
   firedAlertSchedules: AlertScheduleWithProject[];
+  /** M36-adjacent — Project billing health view's "Setup incomplete" tone. */
+  missingPaymentMethodProjects?: ProjectWithRelations[];
+  /** M36-adjacent — Project billing health view's "Upcoming" tone. */
+  dueSoonInvoices?: InvoiceListItem[];
   now?: Date;
 }): ProjectBillingRow[] {
   const now = input.now ?? new Date();
@@ -141,6 +164,12 @@ export function buildProjectBillingRows(input: {
       firedScheduleByProjectId.set(schedule.project.id, schedule);
     }
   }
+  const missingPaymentMethodProjectIds = new Set(
+    (input.missingPaymentMethodProjects ?? []).map((project) => project.id),
+  );
+  const dueSoonProjectIds = new Set(
+    (input.dueSoonInvoices ?? []).map((invoice) => invoice.projectId),
+  );
 
   return input.activeProjects.map((project) => {
     const lastInvoice = lastInvoiceByProjectId.get(project.id);
@@ -170,6 +199,12 @@ export function buildProjectBillingRows(input: {
     } else if (staleDraftProjectIds.has(project.id)) {
       statusLabel = "Review draft";
       statusTone = "draft";
+    } else if (missingPaymentMethodProjectIds.has(project.id)) {
+      statusLabel = "Setup incomplete";
+      statusTone = "setupIncomplete";
+    } else if (dueSoonProjectIds.has(project.id)) {
+      statusLabel = "Payment due soon";
+      statusTone = "upcoming";
     }
 
     return {
