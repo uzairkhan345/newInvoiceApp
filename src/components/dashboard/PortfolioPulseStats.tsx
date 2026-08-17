@@ -1,30 +1,36 @@
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
-import { resolveHealthCategory } from "@/lib/projectBillingStatus";
+import {
+  isDueWithin14Days,
+  resolveHealthCategory,
+  type DashboardHealthFilter,
+} from "@/lib/projectBillingStatus";
 import type { ProjectBillingRow } from "@/lib/projectBillingStatus";
-
-const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
 
 /**
  * Dashboard "Project billing health" view — same 4-stat-card grid shape as
  * PartySummaryStats.tsx/InvoiceSummaryStats.tsx, over data
- * ProjectBillingStatusTable's own rows already carry (no new query).
+ * ProjectBillingStatusTable's own rows already carry (no new query). Each
+ * card is a real link into the same `?health=` filter the FilterChips below
+ * it use, matching List view's clickable metric-card behavior
+ * (ActionRequiredPanel) — clicking filters the table to exactly what the
+ * card's own number counts, never a looser approximation of it.
  */
 export function PortfolioPulseStats({
   rows,
   now = new Date(),
+  activeFilter,
 }: {
   rows: ProjectBillingRow[];
   now?: Date;
+  activeFilter: DashboardHealthFilter;
 }) {
   const needsAttentionCount = rows.filter(
     (row) => resolveHealthCategory(row.statusTone) === "needsAttention",
   ).length;
-  const datesWithin14DaysCount = rows.filter(
-    (row) =>
-      row.nextInvoiceDate !== null &&
-      row.nextInvoiceDate.getTime() >= now.getTime() &&
-      row.nextInvoiceDate.getTime() <= now.getTime() + FOURTEEN_DAYS_MS,
+  const datesWithin14DaysCount = rows.filter((row) =>
+    isDueWithin14Days(row, now),
   ).length;
   const openExposureUsd = rows.reduce(
     (sum, row) =>
@@ -34,17 +40,28 @@ export function PortfolioPulseStats({
 
   return (
     <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Stat label="Active projects" value={rows.length.toString()} />
       <Stat
+        href="/?view=health"
+        active={activeFilter === "all"}
+        label="Active projects"
+        value={rows.length.toString()}
+      />
+      <Stat
+        href="/?view=health&health=needsAttention"
+        active={activeFilter === "needsAttention"}
         label="Need attention"
         value={needsAttentionCount.toString()}
         danger={needsAttentionCount > 0}
       />
       <Stat
+        href="/?view=health&health=dueSoon14Days"
+        active={activeFilter === "dueSoon14Days"}
         label="Dates in 14 days"
         value={datesWithin14DaysCount.toString()}
       />
       <Stat
+        href="/?view=health&health=openExposure"
+        active={activeFilter === "openExposure"}
         label="Open exposure"
         value={formatCurrency(openExposureUsd, "USD")}
       />
@@ -53,18 +70,26 @@ export function PortfolioPulseStats({
 }
 
 function Stat({
+  href,
   label,
   value,
   danger = false,
+  active = false,
 }: {
+  href: string;
   label: string;
   value: string;
   danger?: boolean;
+  active?: boolean;
 }) {
   return (
-    <div
+    <Link
+      href={href}
       className={cn(
-        "relative overflow-hidden rounded-xl border border-border bg-card p-4",
+        "relative block overflow-hidden rounded-xl border p-4 transition-colors",
+        active
+          ? "border-brand bg-brand-light/20"
+          : "border-border bg-card hover:border-brand/40",
         danger &&
           "before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-[var(--status-overdue-text)]",
       )}
@@ -80,6 +105,6 @@ function Stat({
       >
         {value}
       </div>
-    </div>
+    </Link>
   );
 }

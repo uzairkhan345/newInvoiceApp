@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
-import { formatDisplayDate, formatShortDate } from "@/lib/dates";
+import { formatShortDate } from "@/lib/dates";
 import type {
   ProjectBillingRow,
   BillingStatusTone,
@@ -47,16 +47,16 @@ export function ProjectBillingStatusTable({
         </Link>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px] text-left">
+        <table className="w-full min-w-[580px] text-left">
           <thead>
             <tr className="bg-nav text-[10px] font-bold tracking-[0.05em] text-nav-muted uppercase">
-              <th className="px-5 py-3 font-bold">Project</th>
-              <th className="px-3 py-3 font-bold">Billing</th>
-              <th className="px-3 py-3 font-bold">Last invoice</th>
-              <th className="px-3 py-3 font-bold">Period covered</th>
-              <th className="px-3 py-3 font-bold">Next invoice</th>
-              <th className="px-3 py-3 font-bold">Exposure</th>
-              <th className="px-5 py-3 font-bold">Status</th>
+              <th className="px-3 py-3 font-bold">Project</th>
+              <th className="px-2 py-3 font-bold">Billing</th>
+              <th className="px-2 py-3 font-bold">Last invoice</th>
+              <th className="px-2 py-3 font-bold">Period covered</th>
+              <th className="px-2 py-3 font-bold">Next invoice</th>
+              <th className="px-2 py-3 font-bold">Exposure</th>
+              <th className="px-3 py-3 font-bold">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -75,7 +75,7 @@ export function ProjectBillingStatusTable({
                   key={row.projectId}
                   className={cn(index > 0 && "border-t border-muted")}
                 >
-                  <td className="px-5 py-3.5">
+                  <td className="px-3 py-3.5">
                     <Link
                       href={`/projects/${row.projectId}`}
                       className="block text-[13px] font-semibold text-foreground hover:text-brand hover:underline"
@@ -86,30 +86,30 @@ export function ProjectBillingStatusTable({
                       {row.clientName}
                     </span>
                   </td>
-                  <td className="px-3 py-3.5 text-[12px] text-foreground">
+                  <td className="px-2 py-3.5 text-[12px] whitespace-nowrap text-foreground">
                     {row.billingLabel}
                   </td>
-                  <td className="px-3 py-3.5 text-[12px] text-foreground">
+                  <td className="px-2 py-3.5 text-[12px] whitespace-nowrap text-foreground">
                     {row.lastInvoiceDate
-                      ? formatDisplayDate(row.lastInvoiceDate)
+                      ? formatShortDate(row.lastInvoiceDate)
                       : "—"}
                   </td>
-                  <td className="px-3 py-3.5 text-[12px] whitespace-nowrap text-foreground">
+                  <td className="px-2 py-3.5 text-[12px] whitespace-nowrap text-foreground">
                     {row.lastCoveredPeriod
                       ? `${formatShortDate(row.lastCoveredPeriod.start)} – ${formatShortDate(row.lastCoveredPeriod.end)}`
                       : "—"}
                   </td>
-                  <td className="px-3 py-3.5 text-[12px] text-foreground">
+                  <td className="px-2 py-3.5 text-[12px] whitespace-nowrap text-foreground">
                     {row.nextInvoiceDate
-                      ? formatDisplayDate(row.nextInvoiceDate)
+                      ? formatShortDate(row.nextInvoiceDate)
                       : "Not scheduled"}
                   </td>
-                  <td className="px-3 py-3.5 font-mono text-[12px] font-semibold text-foreground">
+                  <td className="px-2 py-3.5 font-mono text-[12px] font-semibold whitespace-nowrap text-foreground">
                     {Number(row.exposureTotal) > 0
                       ? formatCurrency(row.exposureTotal, row.exposureCurrency)
                       : "—"}
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-3 py-3.5">
                     <span
                       className={cn(
                         "inline-block rounded-md px-2 py-1 text-[10px] font-bold whitespace-nowrap uppercase",

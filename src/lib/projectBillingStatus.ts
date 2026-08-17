@@ -126,6 +126,35 @@ export function resolveHealthCategory(tone: BillingStatusTone): HealthCategory {
   return "needsAttention";
 }
 
+/**
+ * Dashboard Health view — every value a project row can be filtered to,
+ * whether from a `FilterChips` click (the 3 `HealthCategory` values) or a
+ * `PortfolioPulseStats` card click (`dueSoon14Days`/`openExposure`, each
+ * defined by the exact same predicate the stat's own count uses, so the
+ * number on the card and the rows shown after clicking it never disagree).
+ */
+export type DashboardHealthFilter =
+  | "all"
+  | HealthCategory
+  | "dueSoon14Days"
+  | "openExposure";
+
+const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
+
+/** Matches PortfolioPulseStats's "Dates in 14 days" count. */
+export function isDueWithin14Days(row: ProjectBillingRow, now: Date): boolean {
+  return (
+    row.nextInvoiceDate !== null &&
+    row.nextInvoiceDate.getTime() >= now.getTime() &&
+    row.nextInvoiceDate.getTime() <= now.getTime() + FOURTEEN_DAYS_MS
+  );
+}
+
+/** Matches PortfolioPulseStats's "Open exposure" sum — projects actually contributing to it. */
+export function hasOpenExposure(row: ProjectBillingRow): boolean {
+  return Number(row.exposureTotal) > 0;
+}
+
 export type ProjectBillingRow = {
   projectId: string;
   projectName: string;

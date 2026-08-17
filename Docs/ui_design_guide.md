@@ -270,6 +270,7 @@ Copy: "This invoice is locked. Line items, snapshots, and totals can no longer b
 - **"Stale draft" threshold is 1 day**, **"due soon" window is 7 days**, both single named constants (`STALE_DRAFT_DAYS`, `DUE_SOON_WITHIN_DAYS`) so either is changeable without touching multiple call sites.
 - `VOID` invoices are excluded from every dashboard count and total.
 - **Currency rule per §17**: every USD-blended figure on this page sums USD-denominated invoices only; each non-USD currency present gets its own per-currency breakdown line, never blended in.
+- **Health view** (`?view=health`, a `?view=` toggle in the header next to List) replaces the Attention Needed banner + Action Required panel with: a 4-stat row (Active projects/Need attention/Dates in 14 days/Open exposure), a filter chip row (All/Needs attention/Upcoming/Healthy), and the same Project billing status table + Upcoming billing/Receivables ageing sidebar as List view, in a `1.7fr/1fr` grid. **Every stat card is a real link filtering the table below it** to exactly what its own number counts (reusing the `?health=` param the filter chips also drive) — the clicked card shows an active/highlighted border, same visual language as an active filter chip; a stat with no matching chip (Dates in 14 days/Open exposure) relies on its own card's highlight alone, no chip lights up for it.
 
 ---
 
