@@ -71,6 +71,11 @@ async function listForParty(partyId: string): Promise<PaymentMethod[]> {
   return methods.map(decryptPaymentMethod);
 }
 
+/** Party detail page's tab badge count, without fetching+decrypting the full list. */
+function countForParty(partyId: string): Promise<number> {
+  return paymentMethodRepository.countByParty(partyId);
+}
+
 async function getById(id: string): Promise<PaymentMethod | null> {
   const method = await paymentMethodRepository.findById(id);
   return method ? decryptPaymentMethod(method) : null;
@@ -127,6 +132,7 @@ async function deletePaymentMethod(id: string): Promise<void> {
 
 export const paymentMethodService = {
   listForParty,
+  countForParty,
   getById,
   create,
   update,

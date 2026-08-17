@@ -273,6 +273,11 @@ function listByParty(partyId: string): Promise<InvoiceListItem[]> {
   return invoiceRepository.findMany({ partyId });
 }
 
+/** M36 — Party detail page's Invoices tab badge count, without fetching the full list. */
+function countByParty(partyId: string): Promise<number> {
+  return invoiceRepository.countByParty(partyId);
+}
+
 /** Dashboard (M10) — stats row counts (Docs/ui_design_guide.md §16). */
 function countByStatus(status: InvoiceStatus): Promise<number> {
   return invoiceRepository.countByStatus(status);
@@ -607,6 +612,7 @@ export const invoiceService = {
   listByStatus,
   listByProject,
   listByParty,
+  countByParty,
   getById,
   resolveInvoiceCurrency,
   previewNextInvoiceNumber,

@@ -90,6 +90,17 @@ function countByStatus(status: InvoiceStatus): Promise<number> {
   return prisma.invoice.count({ where: { status } });
 }
 
+/** Party detail page's tab badge — avoids fetching+joining the full list just to count it. */
+function countByParty(partyId: string): Promise<number> {
+  return prisma.invoice.count({
+    where: {
+      project: {
+        OR: [{ clientId: partyId }, { contractorId: partyId }],
+      },
+    },
+  });
+}
+
 /**
  * Dashboard (M10) — USD-only outstanding subtext (Docs/ui_design_guide.md
  * §16); subtotal === total, no tax. M26 — scoped to
@@ -395,6 +406,7 @@ export const invoiceRepository = {
   updateStatus,
   deleteById,
   countByStatus,
+  countByParty,
   sumSubtotalByStatus,
   sumSubtotalByStatusGroupedByNonUsdCurrency,
   findOverdueCandidates,

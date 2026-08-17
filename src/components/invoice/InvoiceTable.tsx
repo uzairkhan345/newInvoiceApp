@@ -19,6 +19,20 @@ const DESKTOP_GRID_WITH_PROJECT =
 const DESKTOP_GRID_WITHOUT_PROJECT =
   "grid-cols-[1.1fr_1.3fr_0.9fr_0.9fr_0.9fr_120px]";
 
+/** The stretched click target that opens the invoice — shared by the desktop row and mobile card. */
+function RowOpenLink({ href, ariaLabel }: { href: string; ariaLabel: string }) {
+  return (
+    <Link
+      href={href}
+      className="absolute inset-0 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+      aria-label={ariaLabel}
+    />
+  );
+}
+
+const NAME_LINK_FOCUS =
+  "focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none";
+
 export function InvoiceTable({
   invoices,
   hideProjectColumn,
@@ -58,24 +72,29 @@ export function InvoiceTable({
               index > 0 && "border-t border-muted",
             )}
           >
-            <Link
+            <RowOpenLink
               href={`/invoices/${invoice.id}`}
-              className="absolute inset-0 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
-              aria-label={`Open invoice ${invoice.invoiceNumber}`}
+              ariaLabel={`Open invoice ${invoice.invoiceNumber}`}
             />
             <span className="truncate font-mono text-[13px] font-semibold text-foreground">
               {invoice.invoiceNumber}
             </span>
             <Link
               href={`/parties/${invoice.project.client.id}`}
-              className="relative z-10 block min-w-0 truncate text-[13px] text-foreground hover:text-brand hover:underline"
+              className={cn(
+                "relative z-10 block min-w-0 truncate text-[13px] text-foreground hover:text-brand hover:underline",
+                NAME_LINK_FOCUS,
+              )}
             >
               {invoice.project.client.name}
             </Link>
             {hideProjectColumn ? null : (
               <Link
                 href={`/projects/${invoice.project.id}`}
-                className="relative z-10 block min-w-0 truncate text-[13px] text-muted-foreground hover:text-brand hover:underline"
+                className={cn(
+                  "relative z-10 block min-w-0 truncate text-[13px] text-muted-foreground hover:text-brand hover:underline",
+                  NAME_LINK_FOCUS,
+                )}
               >
                 {invoice.project.name}
               </Link>
@@ -102,10 +121,9 @@ export function InvoiceTable({
             key={invoice.id}
             className="relative flex flex-col gap-1.5 rounded-xl border border-border bg-card p-4"
           >
-            <Link
+            <RowOpenLink
               href={`/invoices/${invoice.id}`}
-              className="absolute inset-0 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
-              aria-label={`Open invoice ${invoice.invoiceNumber}`}
+              ariaLabel={`Open invoice ${invoice.invoiceNumber}`}
             />
             <div className="flex items-center justify-between gap-2">
               <span className="font-mono text-[13px] font-bold text-foreground">
@@ -115,14 +133,20 @@ export function InvoiceTable({
             </div>
             <Link
               href={`/parties/${invoice.project.client.id}`}
-              className="relative z-10 block w-fit max-w-full text-[13px] font-semibold text-foreground hover:text-brand hover:underline"
+              className={cn(
+                "relative z-10 block w-fit max-w-full text-[13px] font-semibold text-foreground hover:text-brand hover:underline",
+                NAME_LINK_FOCUS,
+              )}
             >
               {invoice.project.client.name}
             </Link>
             {hideProjectColumn ? null : (
               <Link
                 href={`/projects/${invoice.project.id}`}
-                className="relative z-10 block w-fit max-w-full text-[12px] text-muted-foreground hover:text-brand hover:underline"
+                className={cn(
+                  "relative z-10 block w-fit max-w-full text-[12px] text-muted-foreground hover:text-brand hover:underline",
+                  NAME_LINK_FOCUS,
+                )}
               >
                 {invoice.project.name}
               </Link>
