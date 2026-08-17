@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { StatusBadge } from "@/components/invoice/StatusBadge";
 import { formatCurrency } from "@/lib/currency";
-import { formatDisplayDate } from "@/lib/dates";
+import { formatDisplayDate, formatShortDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import type { InvoiceTableRow } from "@/lib/invoiceTableRow";
 
@@ -32,6 +32,12 @@ function RowOpenLink({ href, ariaLabel }: { href: string; ariaLabel: string }) {
 
 const NAME_LINK_FOCUS =
   "focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none";
+
+/** M39 — compact "Jul 15 – Aug 15" period label, `null` when either bound is unset (older invoices, or a non-period-based flat fee). */
+function periodLabel(row: InvoiceTableRow): string | null {
+  if (!row.periodStart || !row.periodEnd) return null;
+  return `${formatShortDate(row.periodStart)} – ${formatShortDate(row.periodEnd)}`;
+}
 
 export function InvoiceTable({
   invoices,
@@ -104,6 +110,11 @@ export function InvoiceTable({
             </span>
             <span className="truncate text-[13px] text-muted-foreground">
               {formatDisplayDate(invoice.dueDate)}
+              {periodLabel(invoice) ? (
+                <span className="block truncate text-[10px] text-muted-foreground/70">
+                  {periodLabel(invoice)}
+                </span>
+              ) : null}
             </span>
             <StatusBadge status={invoice.status} dueDate={invoice.dueDate} />
             <span className="flex shrink-0 items-center justify-center gap-1 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-[11px] font-semibold text-brand">
@@ -154,6 +165,11 @@ export function InvoiceTable({
             <div className="mt-1 flex items-center justify-between border-t border-muted pt-2">
               <span className="text-[12px] text-muted-foreground">
                 {formatDisplayDate(invoice.dueDate)}
+                {periodLabel(invoice) ? (
+                  <span className="block text-[10px] text-muted-foreground/70">
+                    {periodLabel(invoice)}
+                  </span>
+                ) : null}
               </span>
               <span className="font-mono text-[13px] font-bold text-foreground">
                 {formatCurrency(invoice.total, invoice.currency)}

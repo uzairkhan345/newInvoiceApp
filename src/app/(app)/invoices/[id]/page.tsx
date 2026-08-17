@@ -184,6 +184,12 @@ export default async function InvoiceDetailPage({
           invoiceNumber: invoice.invoiceNumber,
           issueDate: toDateInputValue(invoice.issueDate),
           dueDate: toDateInputValue(invoice.dueDate),
+          periodStart: invoice.periodStart
+            ? toDateInputValue(invoice.periodStart)
+            : "",
+          periodEnd: invoice.periodEnd
+            ? toDateInputValue(invoice.periodEnd)
+            : "",
           convertedTotal: invoice.convertedTotal?.toString() ?? "",
           itemsNote: invoice.itemsNote ?? "",
           bottomNote: invoice.bottomNote ?? "",

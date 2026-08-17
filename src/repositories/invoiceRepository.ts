@@ -27,6 +27,8 @@ export type InvoiceWriteInput = {
   invoiceNumber: string;
   issueDate: Date;
   dueDate: Date;
+  periodStart: Date | null;
+  periodEnd: Date | null;
   subtotal: Prisma.Decimal;
   total: Prisma.Decimal;
   currency: DisplayCurrency;
@@ -303,6 +305,21 @@ function findMostRecentByProject(
   });
 }
 
+/**
+ * M39 — the create form's `periodStart` default chains off this: the
+ * most recently issued SENT/PAID invoice for a project (DRAFT doesn't count,
+ * nothing's final yet; VOID doesn't count, it was never really billed).
+ */
+function findMostRecentSentOrPaidByProject(
+  projectId: string,
+): Promise<Pick<Invoice, "periodEnd"> | null> {
+  return prisma.invoice.findFirst({
+    where: { projectId, status: { in: ["SENT", "PAID"] } },
+    select: { periodEnd: true },
+    orderBy: { issueDate: "desc" },
+  });
+}
+
 /** Sourced for invoiceNumberService's per-project sequence computation. */
 function findInvoiceNumbersForProject(projectId: string): Promise<string[]> {
   return prisma.invoice
@@ -400,6 +417,7 @@ export const invoiceRepository = {
   findMany,
   findById,
   findMostRecentByProject,
+  findMostRecentSentOrPaidByProject,
   findInvoiceNumbersForProject,
   createWithItems,
   replaceItemsAndUpdate,

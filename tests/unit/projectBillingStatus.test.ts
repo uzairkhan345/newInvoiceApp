@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Prisma } from "@/generated/prisma/client";
 import {
+  buildLastCoveredPeriodByProjectId,
   buildLastInvoiceByProjectId,
   buildProjectBillingRows,
   buildReceivablesAgeing,
@@ -87,6 +88,74 @@ describe("buildLastInvoiceByProjectId", () => {
       }),
     ]);
     expect(map.get("project-1")?.total).toBe("200");
+  });
+});
+
+describe("buildLastCoveredPeriodByProjectId (M39)", () => {
+  it("returns the most recently issued SENT/PAID invoice's period", () => {
+    const map = buildLastCoveredPeriodByProjectId([
+      invoice({
+        id: "a",
+        status: "SENT",
+        issueDate: new Date("2026-01-01"),
+        periodStart: new Date("2026-01-01"),
+        periodEnd: new Date("2026-01-31"),
+      }),
+      invoice({
+        id: "b",
+        status: "SENT",
+        issueDate: new Date("2026-02-01"),
+        periodStart: new Date("2026-02-01"),
+        periodEnd: new Date("2026-02-28"),
+      }),
+    ]);
+    expect(map.get("project-1")?.start.toISOString().slice(0, 10)).toBe(
+      "2026-02-01",
+    );
+    expect(map.get("project-1")?.end.toISOString().slice(0, 10)).toBe(
+      "2026-02-28",
+    );
+  });
+
+  it("ignores DRAFT/VOID invoices even if more recently issued", () => {
+    const map = buildLastCoveredPeriodByProjectId([
+      invoice({
+        id: "a",
+        status: "SENT",
+        issueDate: new Date("2026-01-01"),
+        periodStart: new Date("2026-01-01"),
+        periodEnd: new Date("2026-01-31"),
+      }),
+      invoice({
+        id: "b",
+        status: "DRAFT",
+        issueDate: new Date("2026-02-01"),
+        periodStart: new Date("2026-02-01"),
+        periodEnd: new Date("2026-02-28"),
+      }),
+    ]);
+    expect(map.get("project-1")?.end.toISOString().slice(0, 10)).toBe(
+      "2026-01-31",
+    );
+  });
+
+  it("counts PAID the same as SENT", () => {
+    const map = buildLastCoveredPeriodByProjectId([
+      invoice({
+        id: "a",
+        status: "PAID",
+        periodStart: new Date("2026-01-01"),
+        periodEnd: new Date("2026-01-31"),
+      }),
+    ]);
+    expect(map.has("project-1")).toBe(true);
+  });
+
+  it("skips an invoice missing either period bound", () => {
+    const map = buildLastCoveredPeriodByProjectId([
+      invoice({ id: "a", status: "SENT", periodStart: null, periodEnd: null }),
+    ]);
+    expect(map.has("project-1")).toBe(false);
   });
 });
 
@@ -250,6 +319,43 @@ describe("buildProjectBillingRows", () => {
     });
 
     expect(rows[0].nextInvoiceDate).toBeNull();
+  });
+
+  it("surfaces the last covered period on the row when set (M39)", () => {
+    const sent = invoice({
+      id: "a",
+      status: "SENT",
+      periodStart: new Date("2026-01-01"),
+      periodEnd: new Date("2026-01-31"),
+    });
+    const rows = buildProjectBillingRows({
+      activeProjects: [project({})],
+      allInvoices: [sent],
+      overdueInvoices: [],
+      staleDrafts: [],
+      firedAlertSchedules: [],
+      now: NOW,
+    });
+
+    expect(rows[0].lastCoveredPeriod?.start.toISOString().slice(0, 10)).toBe(
+      "2026-01-01",
+    );
+    expect(rows[0].lastCoveredPeriod?.end.toISOString().slice(0, 10)).toBe(
+      "2026-01-31",
+    );
+  });
+
+  it("leaves lastCoveredPeriod null when no invoice has one set", () => {
+    const rows = buildProjectBillingRows({
+      activeProjects: [project({})],
+      allInvoices: [invoice({ id: "a" })],
+      overdueInvoices: [],
+      staleDrafts: [],
+      firedAlertSchedules: [],
+      now: NOW,
+    });
+
+    expect(rows[0].lastCoveredPeriod).toBeNull();
   });
 
   it("sums only SENT invoices for exposure", () => {

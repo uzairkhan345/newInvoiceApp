@@ -16,6 +16,8 @@ function fakeInvoice(
     status: "SENT",
     issueDate: new Date("2026-01-01"),
     dueDate: new Date("2026-01-15"),
+    periodStart: null,
+    periodEnd: null,
     subtotal: new Prisma.Decimal("300"),
     total: new Prisma.Decimal("300"),
     currency: "USD",

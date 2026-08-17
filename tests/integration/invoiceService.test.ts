@@ -645,6 +645,129 @@ describe("invoiceService.previewNextInvoiceNumber", () => {
   });
 });
 
+describe("invoiceService.createDraft/updateDraft — billing period (M39)", () => {
+  it("persists periodStart/periodEnd when both are provided", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ periodStart: "2026-01-01", periodEnd: "2026-01-31" }),
+    );
+    createdInvoiceIds.push(invoice.id);
+
+    expect(invoice.periodStart?.toISOString().slice(0, 10)).toBe(
+      "2026-01-01",
+    );
+    expect(invoice.periodEnd?.toISOString().slice(0, 10)).toBe("2026-01-31");
+  });
+
+  it("stores null when period fields are left blank", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput(),
+    );
+    createdInvoiceIds.push(invoice.id);
+
+    expect(invoice.periodStart).toBeNull();
+    expect(invoice.periodEnd).toBeNull();
+  });
+
+  it("updates periodStart/periodEnd on a DRAFT save", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ periodStart: "2026-01-01", periodEnd: "2026-01-31" }),
+    );
+    createdInvoiceIds.push(invoice.id);
+
+    const updated = await invoiceService.updateDraft(
+      invoice.id,
+      baseInvoiceInput({ periodStart: "2026-02-01", periodEnd: "2026-02-28" }),
+    );
+
+    expect(updated.periodStart?.toISOString().slice(0, 10)).toBe(
+      "2026-02-01",
+    );
+    expect(updated.periodEnd?.toISOString().slice(0, 10)).toBe("2026-02-28");
+  });
+});
+
+describe("invoiceService.previewNextPeriodStart (M39)", () => {
+  it("returns null for a project with no prior invoice", async () => {
+    const { project } = await createTestProject();
+    const preview = await invoiceService.previewNextPeriodStart(project.id);
+    expect(preview).toBeNull();
+  });
+
+  it("returns null when the project's last SENT/PAID invoice never had a period set", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput(),
+    );
+    createdInvoiceIds.push(invoice.id);
+    await invoiceService.transitionStatus(invoice.id, "SENT");
+
+    const preview = await invoiceService.previewNextPeriodStart(project.id);
+    expect(preview).toBeNull();
+  });
+
+  it("returns the day after the last SENT invoice's periodEnd", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ periodStart: "2026-01-01", periodEnd: "2026-01-31" }),
+    );
+    createdInvoiceIds.push(invoice.id);
+    await invoiceService.transitionStatus(invoice.id, "SENT");
+
+    const preview = await invoiceService.previewNextPeriodStart(project.id);
+    expect(preview).toBe("2026-02-01");
+  });
+
+  it("still chains off a PAID invoice's period", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ periodStart: "2026-01-01", periodEnd: "2026-01-31" }),
+    );
+    createdInvoiceIds.push(invoice.id);
+    await invoiceService.transitionStatus(invoice.id, "SENT");
+    await invoiceService.transitionStatus(invoice.id, "PAID");
+
+    const preview = await invoiceService.previewNextPeriodStart(project.id);
+    expect(preview).toBe("2026-02-01");
+  });
+
+  it("ignores a DRAFT invoice's period even if it's the most recent one", async () => {
+    const { project } = await createTestProject();
+    const sent = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({
+        invoiceNumber: "TP-01",
+        periodStart: "2026-01-01",
+        periodEnd: "2026-01-31",
+      }),
+    );
+    createdInvoiceIds.push(sent.id);
+    await invoiceService.transitionStatus(sent.id, "SENT");
+
+    const draft = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({
+        invoiceNumber: "TP-02",
+        issueDate: "2026-02-05",
+        periodStart: "2026-02-01",
+        periodEnd: "2026-02-15",
+      }),
+    );
+    createdInvoiceIds.push(draft.id);
+
+    const preview = await invoiceService.previewNextPeriodStart(project.id);
+    expect(preview).toBe("2026-02-01");
+  });
+});
+
 describe("invoiceService.listByProject", () => {
   it("returns only invoices belonging to the given project, newest first", async () => {
     const { project: projectA } = await createTestProject();

@@ -64,6 +64,11 @@ export function isOverdue(dueDate: Date): boolean {
   return dueDate.getTime() < startOfTodayUTC().getTime();
 }
 
+/** Adds `days` (may be negative) to a UTC-midnight `@db.Date` value, safe from DST drift since there's no local timezone involved. */
+export function addDays(date: Date, days: number): Date {
+  return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
+}
+
 /** Midnight UTC on the 1st of the current calendar month — Invoices list "Paid this month" stat. */
 export function startOfMonthUTC(): Date {
   const now = new Date();
