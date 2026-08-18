@@ -23,7 +23,10 @@ import {
 import {
   buildProjectBillingRows,
   buildReceivablesAgeing,
+  hasOpenExposure,
+  isDueWithin14Days,
   resolveHealthCategory,
+  type DashboardHealthFilter,
   type ProjectBillingRow,
 } from "@/lib/projectBillingStatus";
 
@@ -69,10 +72,14 @@ function resolveView(value: string | undefined): DashboardView {
   return value === "health" ? "health" : "list";
 }
 
-type HealthFilterValue = "all" | "needsAttention" | "upcoming" | "healthy";
-
-function resolveHealthFilter(value: string | undefined): HealthFilterValue {
-  if (value === "needsAttention" || value === "upcoming" || value === "healthy") {
+function resolveHealthFilter(value: string | undefined): DashboardHealthFilter {
+  if (
+    value === "needsAttention" ||
+    value === "upcoming" ||
+    value === "healthy" ||
+    value === "dueSoon14Days" ||
+    value === "openExposure"
+  ) {
     return value;
   }
   return "all";
@@ -86,6 +93,7 @@ export default async function DashboardPage({
   const { view: viewParam, health: healthParam } = await searchParams;
   const view = resolveView(viewParam);
   const healthFilter = resolveHealthFilter(healthParam);
+  const now = new Date();
 
   const [
     activeProjects,
@@ -182,7 +190,7 @@ export default async function DashboardPage({
   const actionableCount = countActionableFeedItems(feed);
 
   const rowsByCategory: Record<
-    Exclude<HealthFilterValue, "all">,
+    Exclude<DashboardHealthFilter, "all" | "dueSoon14Days" | "openExposure">,
     ProjectBillingRow[]
   > = {
     needsAttention: [],
@@ -192,8 +200,19 @@ export default async function DashboardPage({
   for (const row of billingRows) {
     rowsByCategory[resolveHealthCategory(row.statusTone)].push(row);
   }
+  const dueSoon14DaysRows = billingRows.filter((row) =>
+    isDueWithin14Days(row, now),
+  );
+  const openExposureRows = billingRows.filter(hasOpenExposure);
+
   const filteredRows =
-    healthFilter === "all" ? billingRows : rowsByCategory[healthFilter];
+    healthFilter === "all"
+      ? billingRows
+      : healthFilter === "dueSoon14Days"
+        ? dueSoon14DaysRows
+        : healthFilter === "openExposure"
+          ? openExposureRows
+          : rowsByCategory[healthFilter];
 
   return (
     <>
@@ -219,7 +238,11 @@ export default async function DashboardPage({
         />
       ) : (
         <>
-          <PortfolioPulseStats rows={billingRows} />
+          <PortfolioPulseStats
+            rows={billingRows}
+            now={now}
+            activeFilter={healthFilter}
+          />
           <div className="mb-4">
             <FilterChips
               options={[

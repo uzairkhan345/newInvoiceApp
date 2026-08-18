@@ -38,6 +38,22 @@ export type AlertFiringInput = {
 };
 
 /**
+ * M39-adjacent — a project can have `ProjectAlertSchedule` rows for
+ * reminders unrelated to invoicing (e.g. "Pick up dry cleaning"),
+ * alongside ones that really do mean "go send an invoice." Only a schedule
+ * labeled exactly "Send Invoice" (case-insensitive, trimmed) counts as the
+ * latter — every "does this project need an invoice" computation (fired
+ * status, next-invoice-date estimates, the dashboard's "prepare" action
+ * items) must filter to this before using a schedule. General-purpose
+ * surfaces (the nav bell, the project page's own "Next alert" card, the
+ * Alert Schedules management list) intentionally do NOT filter — those are
+ * about reminders in general, not specifically invoicing.
+ */
+export function isSendInvoiceSchedule(input: { label: string | null }): boolean {
+  return input.label?.trim().toLowerCase() === "send invoice";
+}
+
+/**
  * Project detail Overview tab's "Next alert" health card — the next date
  * this schedule will occur, or `null` for a one-time schedule whose day has
  * already passed this month (it's done; a recurring schedule always has a

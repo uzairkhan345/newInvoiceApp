@@ -65,6 +65,7 @@ export default async function ProjectsPage({
     overdueInvoices,
     staleDrafts,
     firedAlertSchedules,
+    liveAlertSchedules,
   ] = await Promise.all([
     projectService.list(),
     projectService.list({ status: "ACTIVE" }),
@@ -72,14 +73,18 @@ export default async function ProjectsPage({
     invoiceService.listOverdue(),
     invoiceService.listStaleDrafts(),
     projectAlertScheduleService.listFiredAcrossActiveProjects(),
+    projectAlertScheduleService.listLiveAcrossActiveProjects(),
   ]);
 
+  // M40 — same schedule-wins-over-invoicePeriodType priority the dashboard
+  // uses (M38), so this list's "Next invoice" date agrees with it.
   const billingRows = buildProjectBillingRows({
     activeProjects,
     allInvoices,
     overdueInvoices,
     staleDrafts,
     firedAlertSchedules,
+    liveAlertSchedules,
   });
   const billingRowByProjectId = new Map(
     billingRows.map((row) => [row.projectId, row]),

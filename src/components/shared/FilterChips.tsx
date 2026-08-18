@@ -18,7 +18,14 @@ export function FilterChips<T extends string>({
   hrefFor,
 }: {
   options: readonly FilterChipOption<T>[];
-  active: T;
+  /**
+   * `string`, not `T` — a caller may have a wider filter-value type than
+   * this particular chip row covers (e.g. the dashboard Health view's
+   * `PortfolioPulseStats` cards add filter values with no matching chip
+   * here); passing one through should just leave every chip unhighlighted,
+   * not fail to typecheck.
+   */
+  active: string;
   hrefFor: (value: T) => string;
 }) {
   return (

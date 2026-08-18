@@ -3,6 +3,7 @@ import type { ProjectWithRelations } from "@/repositories/projectRepository";
 import type { AlertScheduleWithProject } from "@/repositories/projectAlertScheduleRepository";
 import { computeDueDate } from "@/lib/invoicePeriod";
 import {
+  isSendInvoiceSchedule,
   resolveNextOccurrence,
   resolveScheduledDayThisMonth,
 } from "@/lib/alertScheduleFiring";
@@ -125,6 +126,35 @@ export function resolveHealthCategory(tone: BillingStatusTone): HealthCategory {
   return "needsAttention";
 }
 
+/**
+ * Dashboard Health view — every value a project row can be filtered to,
+ * whether from a `FilterChips` click (the 3 `HealthCategory` values) or a
+ * `PortfolioPulseStats` card click (`dueSoon14Days`/`openExposure`, each
+ * defined by the exact same predicate the stat's own count uses, so the
+ * number on the card and the rows shown after clicking it never disagree).
+ */
+export type DashboardHealthFilter =
+  | "all"
+  | HealthCategory
+  | "dueSoon14Days"
+  | "openExposure";
+
+const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
+
+/** Matches PortfolioPulseStats's "Dates in 14 days" count. */
+export function isDueWithin14Days(row: ProjectBillingRow, now: Date): boolean {
+  return (
+    row.nextInvoiceDate !== null &&
+    row.nextInvoiceDate.getTime() >= now.getTime() &&
+    row.nextInvoiceDate.getTime() <= now.getTime() + FOURTEEN_DAYS_MS
+  );
+}
+
+/** Matches PortfolioPulseStats's "Open exposure" sum — projects actually contributing to it. */
+export function hasOpenExposure(row: ProjectBillingRow): boolean {
+  return Number(row.exposureTotal) > 0;
+}
+
 export type ProjectBillingRow = {
   projectId: string;
   projectName: string;
@@ -190,12 +220,14 @@ export function buildProjectBillingRows(input: {
   allInvoices: InvoiceListItem[];
   overdueInvoices: InvoiceListItem[];
   staleDrafts: InvoiceListItem[];
+  /** Filtered internally to isSendInvoiceSchedule — a fired reminder unrelated to invoicing never drives billing status. */
   firedAlertSchedules: AlertScheduleWithProject[];
   /**
    * Every schedule that could still occur, fired or not — feeds
    * resolveNextInvoiceDate's schedule-wins tier. Optional: existing callers
    * that don't pass it just fall through to the invoicePeriodType estimate,
-   * same as before this was added.
+   * same as before this was added. Also filtered internally to
+   * isSendInvoiceSchedule, same reasoning as firedAlertSchedules above.
    */
   liveAlertSchedules?: AlertScheduleWithProject[];
   /** M36-adjacent — Project billing health view's "Setup incomplete" tone. */
@@ -220,12 +252,14 @@ export function buildProjectBillingRows(input: {
   );
   const firedScheduleByProjectId = new Map<string, AlertScheduleWithProject>();
   for (const schedule of input.firedAlertSchedules) {
+    if (!isSendInvoiceSchedule(schedule)) continue;
     if (!firedScheduleByProjectId.has(schedule.project.id)) {
       firedScheduleByProjectId.set(schedule.project.id, schedule);
     }
   }
   const liveSchedulesByProjectId = new Map<string, AlertScheduleWithProject[]>();
   for (const schedule of input.liveAlertSchedules ?? []) {
+    if (!isSendInvoiceSchedule(schedule)) continue;
     const existing = liveSchedulesByProjectId.get(schedule.project.id);
     if (existing) {
       existing.push(schedule);

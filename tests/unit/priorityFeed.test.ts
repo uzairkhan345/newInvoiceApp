@@ -59,7 +59,7 @@ function alertSchedule(
     projectId: "project-3",
     dayOfMonth: 15,
     recurring: true,
-    label: null,
+    label: "Send Invoice",
     clearedAt: null,
     createdAt: new Date("2026-01-01"),
     updatedAt: new Date("2026-01-01"),
@@ -230,6 +230,38 @@ describe("buildPriorityFeed", () => {
       tier: "High",
       action: { label: "Complete setup", href: "/projects/setup-1" },
     });
+  });
+
+  it("excludes a fired schedule not labeled Send Invoice (M39)", () => {
+    const feed = buildPriorityFeed({
+      overdueInvoices: [],
+      dueSoonInvoices: [],
+      staleDrafts: [],
+      missingPaymentMethodProjects: [],
+      firedAlertSchedules: [
+        alertSchedule({ id: "schedule-1", label: "Pick up dry cleaning" }),
+      ],
+      activeProjects: [],
+      allInvoices: [],
+      now: NOW,
+    });
+
+    expect(feed).toHaveLength(0);
+  });
+
+  it("excludes a fired schedule with no label at all (M39)", () => {
+    const feed = buildPriorityFeed({
+      overdueInvoices: [],
+      dueSoonInvoices: [],
+      staleDrafts: [],
+      missingPaymentMethodProjects: [],
+      firedAlertSchedules: [alertSchedule({ id: "schedule-1", label: null })],
+      activeProjects: [],
+      allInvoices: [],
+      now: NOW,
+    });
+
+    expect(feed).toHaveLength(0);
   });
 });
 
