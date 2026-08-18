@@ -265,9 +265,23 @@ function listByStatus(status: InvoiceStatus): Promise<InvoiceListItem[]> {
   return invoiceRepository.findMany({ status });
 }
 
-/** M19.3a — invoices-for-this-project section on the Project detail page. */
-function listByProject(projectId: string): Promise<InvoiceListItem[]> {
-  return invoiceRepository.findMany({ projectId });
+/**
+ * M19.3a — invoices-for-this-project section on the Project detail page.
+ * M44 — ordered by `InvoiceNumber` (not `createdAt`, unlike every other
+ * invoice list) since a project's own numbering sequence is the
+ * meaningful order here; `sort` defaults to `desc` (newest number first,
+ * matching every other list's newest-first convention) and is caller-
+ * controlled so the page can offer an ascending toggle.
+ */
+function listByProject(
+  projectId: string,
+  sort: "asc" | "desc" = "desc",
+): Promise<InvoiceListItem[]> {
+  return invoiceRepository.findMany({
+    projectId,
+    orderBy: "invoiceNumber",
+    orderDirection: sort,
+  });
 }
 
 /** M36 — invoices-for-this-party section on the Party detail page; every invoice where this party is either the project's client or its contractor. */

@@ -13,6 +13,7 @@ import { ProjectSummary } from "@/components/project/ProjectSummary";
 import { ProjectRecentActivity } from "@/components/project/ProjectRecentActivity";
 import { ProjectStatusPill } from "@/components/project/ProjectStatusPill";
 import { InvoiceTable } from "@/components/invoice/InvoiceTable";
+import { InvoiceSortToggle } from "@/components/invoice/InvoiceSortToggle";
 import { AlertScheduleList } from "@/components/project-alert-schedule/AlertScheduleList";
 import { AddAlertScheduleButton } from "@/components/project-alert-schedule/AddAlertScheduleButton";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -32,17 +33,22 @@ function resolveTab(value: string | undefined): ProjectDetailTab {
   return "overview";
 }
 
+function resolveSort(value: string | undefined): "asc" | "desc" {
+  return value === "asc" ? "asc" : "desc";
+}
+
 export default async function ProjectDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string; edit?: string }>;
+  searchParams: Promise<{ tab?: string; edit?: string; sort?: string }>;
 }) {
   const { id } = await params;
-  const { tab: tabParam, edit } = await searchParams;
+  const { tab: tabParam, edit, sort: sortParam } = await searchParams;
   const tab = resolveTab(tabParam);
   const isEditingSetup = tab === "setup" && edit === "1";
+  const sort = resolveSort(sortParam);
 
   const project = await projectService.getById(id);
   if (!project) {
@@ -51,7 +57,7 @@ export default async function ProjectDetailPage({
 
   const [isDeletable, invoices, alertSchedules] = await Promise.all([
     projectService.isDeletable(id),
-    invoiceService.listByProject(id),
+    invoiceService.listByProject(id, sort),
     projectAlertScheduleService.listForProjectWithFiringState(id),
   ]);
 
@@ -107,6 +113,7 @@ export default async function ProjectDetailPage({
           project={project}
           invoices={invoices}
           alertSchedules={alertSchedules}
+          sort={sort}
         />
       ) : (
         <BillingSetupTab project={project} isEditing={isEditingSetup} />
@@ -187,12 +194,14 @@ function InvoicesAndAlertsTab({
   project,
   invoices,
   alertSchedules,
+  sort,
 }: {
   project: NonNullable<Awaited<ReturnType<typeof projectService.getById>>>;
   invoices: Awaited<ReturnType<typeof invoiceService.listByProject>>;
   alertSchedules: Awaited<
     ReturnType<typeof projectAlertScheduleService.listForProjectWithFiringState>
   >;
+  sort: "asc" | "desc";
 }) {
   return (
     <>
@@ -202,19 +211,22 @@ function InvoicesAndAlertsTab({
             Invoices
           </h2>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
-            Invoices created for {project.name}.
+            Invoices created for {project.name}, ordered by invoice number.
           </p>
         </div>
         {invoices.length > 0 ? (
-          <Button
-            variant="outline"
-            className="h-8 px-3 text-[12px]"
-            nativeButton={false}
-            render={<Link href={`/invoices/new/${project.id}`} />}
-          >
-            <FileText className="h-3.5 w-3.5" />
-            Create Invoice
-          </Button>
+          <div className="flex items-center gap-2">
+            <InvoiceSortToggle projectId={project.id} sort={sort} />
+            <Button
+              variant="outline"
+              className="h-8 px-3 text-[12px]"
+              nativeButton={false}
+              render={<Link href={`/invoices/new/${project.id}`} />}
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Create Invoice
+            </Button>
+          </div>
         ) : null}
       </div>
       {invoices.length === 0 ? (
