@@ -17,13 +17,15 @@ const VIEWS: {
  * Dashboard List/Health view toggle (reference prototype parity) — `?view=`
  * driven real Links, same idiom as ProjectDetailTabs/PartyDetailTabs rather
  * than client-side tab state, so each view stays bookmarkable/shareable.
+ * Health is the default (bare `/`, see page.tsx's `resolveView`) — List
+ * must be explicitly requested via `?view=list`.
  */
 export function DashboardViewToggle({ active }: { active: DashboardView }) {
   return (
     <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-1">
       {VIEWS.map((view) => {
         const isActive = view.value === active;
-        const href = view.value === "list" ? "/" : "/?view=health";
+        const href = view.value === "health" ? "/" : "/?view=list";
         const Icon = view.icon;
         return (
           <Link
