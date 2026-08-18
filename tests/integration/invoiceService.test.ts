@@ -769,7 +769,7 @@ describe("invoiceService.previewNextPeriodStart (M39)", () => {
 });
 
 describe("invoiceService.listByProject", () => {
-  it("returns only invoices belonging to the given project, newest first", async () => {
+  it("returns only invoices belonging to the given project", async () => {
     const { project: projectA } = await createTestProject();
     const { project: projectB } = await createTestProject();
 
@@ -798,6 +798,56 @@ describe("invoiceService.listByProject", () => {
     const { project } = await createTestProject();
     const result = await invoiceService.listByProject(project.id);
     expect(result).toEqual([]);
+  });
+
+  it("M44: defaults to descending invoice-number order, independent of creation order", async () => {
+    const { project } = await createTestProject();
+
+    // Created out of number order — TP-05 first, TP-01 second — matching
+    // the real bug this milestone fixes (a backfilled/ingested invoice
+    // whose row-creation time doesn't match its natural number order).
+    const five = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ invoiceNumber: "TP-05" }),
+    );
+    const one = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ invoiceNumber: "TP-01" }),
+    );
+    const three = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ invoiceNumber: "TP-03" }),
+    );
+    createdInvoiceIds.push(five.id, one.id, three.id);
+
+    const result = await invoiceService.listByProject(project.id);
+
+    expect(result.map((invoice) => invoice.invoiceNumber)).toEqual([
+      "TP-05",
+      "TP-03",
+      "TP-01",
+    ]);
+  });
+
+  it("M44: sorts ascending when explicitly requested", async () => {
+    const { project } = await createTestProject();
+
+    const five = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ invoiceNumber: "TP-05" }),
+    );
+    const one = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ invoiceNumber: "TP-01" }),
+    );
+    createdInvoiceIds.push(five.id, one.id);
+
+    const result = await invoiceService.listByProject(project.id, "asc");
+
+    expect(result.map((invoice) => invoice.invoiceNumber)).toEqual([
+      "TP-01",
+      "TP-05",
+    ]);
   });
 });
 

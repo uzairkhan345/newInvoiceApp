@@ -66,7 +66,18 @@ function findMany(filters?: {
   projectId?: string;
   status?: InvoiceStatus;
   partyId?: string;
+  /**
+   * M44 — defaults to `createdAt`/`desc` (existing behavior for every
+   * caller that doesn't pass this). `listByProject` is the only caller
+   * that requests `invoiceNumber` — sorting mixed-project results by
+   * invoice-number text would interleave unrelated numbering schemes
+   * meaninglessly, so this is deliberately not the default.
+   */
+  orderBy?: "createdAt" | "invoiceNumber";
+  orderDirection?: "asc" | "desc";
 }): Promise<InvoiceListItem[]> {
+  const orderField = filters?.orderBy ?? "createdAt";
+  const orderDirection = filters?.orderDirection ?? "desc";
   return prisma.invoice.findMany({
     where: {
       ...(filters?.projectId ? { projectId: filters.projectId } : {}),
@@ -83,7 +94,7 @@ function findMany(filters?: {
         : {}),
     },
     include: LIST_ITEM_INCLUDE,
-    orderBy: { createdAt: "desc" },
+    orderBy: { [orderField]: orderDirection },
   });
 }
 
