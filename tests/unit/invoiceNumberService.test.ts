@@ -74,6 +74,34 @@ describe("invoiceNumberService.generateInvoiceNumber", () => {
     expect(result).toBe("TQ-2026-01");
   });
 
+  it("substitutes {year_short} as the last 2 digits of the year", () => {
+    const result = generateInvoiceNumber({
+      project: {
+        abbreviation: "TQ",
+        name: "Torque",
+        invoiceNumberFormat: "{abbreviation}-{year_short}/G/{number}",
+      },
+      existingInvoiceNumbers: [],
+      now: new Date(2026, 6, 9), // July 9, 2026 (local)
+    });
+
+    expect(result).toBe("TQ-26/G/01");
+  });
+
+  it("substitutes {month} and {day} as zero-padded 2-digit values", () => {
+    const result = generateInvoiceNumber({
+      project: {
+        abbreviation: "TQ",
+        name: "Torque",
+        invoiceNumberFormat: "{abbreviation}-{month}-{day}-{number}",
+      },
+      existingInvoiceNumbers: [],
+      now: new Date(2026, 0, 5), // Jan 5, 2026
+    });
+
+    expect(result).toBe("TQ-01-05-01");
+  });
+
   it("honors an explicit {date:DD-MM-YYYY} qualifier", () => {
     const result = generateInvoiceNumber({
       project: {
@@ -144,5 +172,19 @@ describe("invoiceNumberService.nextSequence", () => {
       "{abbreviation}-{year}-{number}",
     );
     expect(sequence).toBe(3);
+  });
+
+  it("treats {year_short}/{month}/{day} as wildcards when extracting the sequence", () => {
+    const sequence = nextSequence(
+      ["TQ-26/G/01", "TQ-26/G/02"],
+      "{abbreviation}-{year_short}/G/{number}",
+    );
+    expect(sequence).toBe(3);
+
+    const sequenceWithMonthDay = nextSequence(
+      ["TQ-01-05-01", "TQ-02-14-02"],
+      "{abbreviation}-{month}-{day}-{number}",
+    );
+    expect(sequenceWithMonthDay).toBe(3);
   });
 });
