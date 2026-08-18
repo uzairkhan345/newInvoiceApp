@@ -68,8 +68,9 @@ function todayEyebrow(): string {
   }).format(new Date());
 }
 
+/** Health is the default view — bare `/` (no `?view=`) resolves to it; List must be explicitly requested via `?view=list`. */
 function resolveView(value: string | undefined): DashboardView {
-  return value === "health" ? "health" : "list";
+  return value === "list" ? "list" : "health";
 }
 
 function resolveHealthFilter(value: string | undefined): DashboardHealthFilter {

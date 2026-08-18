@@ -6,13 +6,17 @@ import { formatDateToken, type InvoiceDateFormat } from "@/lib/dates";
  * `{abbreviation}`, `{number}`, `{date}` (or `{date:MM-DD-YYYY}` /
  * `{date:DD-MM-YYYY}` to pick the date format inline — there is no separate
  * Project.dateFormat column, so the format string itself is the one place
- * this is configured, consistent with the docs' own format examples), and
- * `{year}` — a standalone 4-digit year,
- * independent of `{date}`, for formats like `{abbreviation}-{year}-{number}`
- * that don't want a full date embedded.
+ * this is configured, consistent with the docs' own format examples),
+ * `{year}` (standalone 4-digit year, independent of `{date}`, for formats
+ * like `{abbreviation}-{year}-{number}` that don't want a full date
+ * embedded), `{year_short}` (the same year, last 2 digits only — `26` not
+ * `2026`), `{month}` (current month, zero-padded 2 digits), and `{day}`
+ * (current day-of-month, zero-padded 2 digits) — the latter three exist so
+ * a format can build its own date-like shape token-by-token without
+ * pulling in `{date}`'s fixed MM-DD-YYYY/DD-MM-YYYY ordering.
  */
 const TOKEN_PATTERN =
-  /\{abbreviation\}|\{number\}|\{year\}|\{date(?::(MM-DD-YYYY|DD-MM-YYYY))?\}/g;
+  /\{abbreviation\}|\{number\}|\{year_short\}|\{year\}|\{month\}|\{day\}|\{date(?::(MM-DD-YYYY|DD-MM-YYYY))?\}/g;
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -91,7 +95,12 @@ export function generateInvoiceNumber({
     (fullMatch, dateFormatGroup: InvoiceDateFormat | undefined) => {
       if (fullMatch.startsWith("{abbreviation}")) return abbreviation;
       if (fullMatch.startsWith("{number}")) return paddedNumber;
-      if (fullMatch.startsWith("{year}")) return String(now.getFullYear());
+      if (fullMatch === "{year_short}")
+        return String(now.getFullYear()).slice(-2);
+      if (fullMatch === "{year}") return String(now.getFullYear());
+      if (fullMatch === "{month}")
+        return String(now.getMonth() + 1).padStart(2, "0");
+      if (fullMatch === "{day}") return String(now.getDate()).padStart(2, "0");
       return formatDateToken(now, dateFormatGroup ?? "MM-DD-YYYY");
     },
   );
