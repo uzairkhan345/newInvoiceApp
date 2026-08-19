@@ -11,6 +11,7 @@ import {
   createInvoiceDraftAction,
   updateInvoiceDraftAction,
 } from "@/actions/invoice.actions";
+import { classifyAutofillNoteAction } from "@/actions/aiAssist.actions";
 import { LineItemsEditor } from "@/components/invoice/LineItemsEditor";
 import { FormField } from "@/components/shared/FormField";
 import { Input } from "@/components/ui/input";
@@ -291,15 +292,44 @@ export function InvoiceForm({
     setValue("itemsNote", generated, { shouldValidate: true });
   }, [periodStart, periodEnd, mode, getValues, setValue]);
 
-  /** M18 (Autofill) — items/notes only; invoiceNumber/dates/convertedTotal are left exactly as they are. */
-  function handleAutofill() {
+  const [autofillPending, setAutofillPending] = useState(false);
+
+  /**
+   * M18 (Autofill) — items/notes only; invoiceNumber/dates/convertedTotal
+   * are left exactly as they are. `itemsNote` gets one extra check before
+   * being copied over: if the old invoice's note is purely a period
+   * statement (e.g. "Covers services rendered Jul 1 – Jul 31, 2026."), it's
+   * regenerated against *this* invoice's own period instead of pasting in
+   * the old dates — otherwise it's copied verbatim, same as every other
+   * autofilled field. `lastAutoItemsNoteRef` is updated to match in the
+   * regenerated case only, so the M39 recompute effect above keeps treating
+   * it as "not yet manually customized" and continues auto-updating it if
+   * the period is edited again; left untouched in the verbatim case, so
+   * that effect leaves a real carried-over note alone, same as a hand-typed
+   * one.
+   */
+  async function handleAutofill() {
     if (!autofillData) return;
+    setAutofillPending(true);
+
+    let itemsNote = autofillData.itemsNote;
+    const currentPeriodStart = getValues("periodStart");
+    const currentPeriodEnd = getValues("periodEnd");
+    if (itemsNote.trim() && currentPeriodStart && currentPeriodEnd) {
+      const classification = await classifyAutofillNoteAction(itemsNote);
+      if (classification.success && classification.data.isDefaultPeriodNote) {
+        itemsNote = `Covers services rendered ${formatDisplayDate(new Date(currentPeriodStart))} – ${formatDisplayDate(new Date(currentPeriodEnd))}.`;
+        lastAutoItemsNoteRef.current = itemsNote;
+      }
+    }
+
     reset({
       ...getValues(),
       items: autofillData.items,
-      itemsNote: autofillData.itemsNote,
+      itemsNote,
       bottomNote: autofillData.bottomNote,
     });
+    setAutofillPending(false);
     toast.success("Filled in from the last invoice — review before saving.");
   }
 
@@ -361,9 +391,10 @@ export function InvoiceForm({
                       variant="outline"
                       className="h-7 px-2 text-[11px]"
                       onClick={handleAutofill}
+                      disabled={autofillPending}
                     >
                       <Sparkles className="h-3.5 w-3.5" />
-                      Use Last Invoice
+                      {autofillPending ? "Filling in…" : "Use Last Invoice"}
                     </Button>
                   ) : undefined
                 }

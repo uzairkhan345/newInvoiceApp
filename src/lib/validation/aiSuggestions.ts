@@ -43,3 +43,17 @@ export const invoiceAssistResponseSchema = z.discriminatedUnion(
 );
 
 export type InvoiceAssistResponse = z.infer<typeof invoiceAssistResponseSchema>;
+
+/**
+ * Autofill-from-last-invoice's `itemsNote` carryover — classifies whether a
+ * copied-in note is purely a period/date-range statement (safe to replace
+ * with the current invoice's own period, since it says nothing else) or
+ * contains other content (must be carried over verbatim, unchanged).
+ */
+export const invoiceNoteClassificationSchema = z.object({
+  isDefaultPeriodNote: z.boolean(),
+});
+
+export type InvoiceNoteClassification = z.infer<
+  typeof invoiceNoteClassificationSchema
+>;
