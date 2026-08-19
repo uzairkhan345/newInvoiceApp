@@ -169,6 +169,10 @@ export type ProjectBillingRow = {
   exposureTotal: string;
   exposureCurrency: string;
   exposureCount: number;
+  /** Count of SENT invoices past their due date — 0 when the project isn't overdue. */
+  overdueCount: number;
+  /** Count of DRAFT invoices for the project. */
+  draftCount: number;
   statusLabel: string;
   statusTone: BillingStatusTone;
 };
@@ -242,10 +246,15 @@ export function buildProjectBillingRows(input: {
     input.allInvoices,
   );
   const overdueByProjectId = new Map<string, InvoiceListItem>();
+  const overdueCountByProjectId = new Map<string, number>();
   for (const invoice of input.overdueInvoices) {
     if (!overdueByProjectId.has(invoice.projectId)) {
       overdueByProjectId.set(invoice.projectId, invoice);
     }
+    overdueCountByProjectId.set(
+      invoice.projectId,
+      (overdueCountByProjectId.get(invoice.projectId) ?? 0) + 1,
+    );
   }
   const staleDraftProjectIds = new Set(
     input.staleDrafts.map((invoice) => invoice.projectId),
@@ -286,6 +295,10 @@ export function buildProjectBillingRows(input: {
       (sum, invoice) => sum + Number(invoice.total),
       0,
     );
+    const draftCount = input.allInvoices.filter(
+      (invoice) =>
+        invoice.projectId === project.id && invoice.status === "DRAFT",
+    ).length;
 
     let statusLabel = "On track";
     let statusTone: BillingStatusTone = "positive";
@@ -329,6 +342,8 @@ export function buildProjectBillingRows(input: {
       exposureTotal: exposureTotal.toString(),
       exposureCurrency: lastInvoice?.currency ?? project.displayCurrency,
       exposureCount: outstandingInvoices.length,
+      overdueCount: overdueCountByProjectId.get(project.id) ?? 0,
+      draftCount,
       statusLabel,
       statusTone,
     };

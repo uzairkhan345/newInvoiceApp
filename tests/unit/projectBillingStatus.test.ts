@@ -32,6 +32,8 @@ function billingRow(overrides: Partial<ProjectBillingRow>): ProjectBillingRow {
     exposureTotal: "0",
     exposureCurrency: "USD",
     exposureCount: 0,
+    overdueCount: 0,
+    draftCount: 0,
     statusLabel: "On track",
     statusTone: "positive",
     ...overrides,
@@ -201,6 +203,42 @@ describe("buildProjectBillingRows", () => {
 
     expect(rows[0].statusTone).toBe("overdue");
     expect(rows[0].statusLabel).toBe("10 days overdue");
+    expect(rows[0].overdueCount).toBe(1);
+  });
+
+  it("counts every overdue invoice for a project, not just the oldest", () => {
+    const rows = buildProjectBillingRows({
+      activeProjects: [project({})],
+      allInvoices: [],
+      overdueInvoices: [
+        invoice({ id: "od-1", dueDate: new Date("2026-01-10") }),
+        invoice({ id: "od-2", dueDate: new Date("2026-01-15") }),
+      ],
+      staleDrafts: [],
+      firedAlertSchedules: [],
+      now: NOW,
+    });
+
+    expect(rows[0].overdueCount).toBe(2);
+    expect(rows[0].statusLabel).toBe("10 days overdue");
+  });
+
+  it("counts DRAFT invoices for the project separately from SENT/overdue", () => {
+    const rows = buildProjectBillingRows({
+      activeProjects: [project({})],
+      allInvoices: [
+        invoice({ id: "draft-1", status: "DRAFT" }),
+        invoice({ id: "draft-2", status: "DRAFT" }),
+        invoice({ id: "sent-1", status: "SENT" }),
+      ],
+      overdueInvoices: [],
+      staleDrafts: [],
+      firedAlertSchedules: [],
+      now: NOW,
+    });
+
+    expect(rows[0].draftCount).toBe(2);
+    expect(rows[0].exposureCount).toBe(1);
   });
 
   it("prioritizes overdue over a fired schedule or a stale draft", () => {

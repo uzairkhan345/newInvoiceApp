@@ -324,3 +324,110 @@ describe("projectService", () => {
     await expect(projectService.isDeletable(project.id)).resolves.toBe(true);
   });
 });
+
+describe("projectService reorder (sortOrder)", () => {
+  it("appends a newly created project after the current max sortOrder", async () => {
+    const contractor = await createTestParty("[test] Sort Contractor");
+    const client = await createTestParty("[test] Sort Client");
+
+    const a = await projectService.create(
+      baseProjectInput({
+        name: "[test] Sort A",
+        contractorId: contractor.id,
+        clientId: client.id,
+      }),
+    );
+    createdProjectIds.push(a.id);
+
+    const b = await projectService.create(
+      baseProjectInput({
+        name: "[test] Sort B",
+        contractorId: contractor.id,
+        clientId: client.id,
+      }),
+    );
+    createdProjectIds.push(b.id);
+
+    expect(b.sortOrder).toBeGreaterThan(a.sortOrder);
+  });
+
+  it("move swaps sortOrder with the adjacent ACTIVE project and is a no-op past the last one", async () => {
+    const contractor = await createTestParty("[test] Move Contractor");
+    const client = await createTestParty("[test] Move Client");
+
+    const a = await projectService.create(
+      baseProjectInput({
+        name: "[test] Move A",
+        contractorId: contractor.id,
+        clientId: client.id,
+      }),
+    );
+    createdProjectIds.push(a.id);
+    const b = await projectService.create(
+      baseProjectInput({
+        name: "[test] Move B",
+        contractorId: contractor.id,
+        clientId: client.id,
+      }),
+    );
+    createdProjectIds.push(b.id);
+
+    await projectService.move(b.id, "up");
+    const [aAfterUp, bAfterUp] = await Promise.all([
+      projectService.getById(a.id),
+      projectService.getById(b.id),
+    ]);
+    expect(bAfterUp!.sortOrder).toBeLessThan(aAfterUp!.sortOrder);
+    expect(new Set([aAfterUp!.sortOrder, bAfterUp!.sortOrder])).toEqual(
+      new Set([a.sortOrder, b.sortOrder]),
+    );
+
+    // b is now the highest sortOrder created so far in this test — nothing
+    // ACTIVE can be above it, so moving it further down is a no-op.
+    await projectService.move(aAfterUp!.id, "down");
+    const aAfterNoop = await projectService.getById(a.id);
+    expect(aAfterNoop!.sortOrder).toBe(aAfterUp!.sortOrder);
+  });
+
+  it("skips an ARCHIVED project sitting between two ACTIVE ones when finding a move neighbor", async () => {
+    const contractor = await createTestParty("[test] Skip Contractor");
+    const client = await createTestParty("[test] Skip Client");
+
+    const a = await projectService.create(
+      baseProjectInput({
+        name: "[test] Skip A",
+        contractorId: contractor.id,
+        clientId: client.id,
+      }),
+    );
+    createdProjectIds.push(a.id);
+    const archived = await projectService.create(
+      baseProjectInput({
+        name: "[test] Skip Archived",
+        contractorId: contractor.id,
+        clientId: client.id,
+        status: "ARCHIVED",
+      }),
+    );
+    createdProjectIds.push(archived.id);
+    const b = await projectService.create(
+      baseProjectInput({
+        name: "[test] Skip B",
+        contractorId: contractor.id,
+        clientId: client.id,
+      }),
+    );
+    createdProjectIds.push(b.id);
+
+    await projectService.move(b.id, "up");
+
+    const [aAfter, archivedAfter, bAfter] = await Promise.all([
+      projectService.getById(a.id),
+      projectService.getById(archived.id),
+      projectService.getById(b.id),
+    ]);
+    expect(bAfter!.sortOrder).toBe(a.sortOrder);
+    expect(aAfter!.sortOrder).toBe(b.sortOrder);
+    expect(archivedAfter!.sortOrder).toBe(archived.sortOrder);
+  });
+});
