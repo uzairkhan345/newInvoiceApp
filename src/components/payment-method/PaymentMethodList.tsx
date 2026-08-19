@@ -13,6 +13,7 @@ import type { PaymentMethod } from "@/generated/prisma/client";
 import type { PaymentMethodField } from "@/repositories/paymentMethodRepository";
 import type { ProjectRef } from "@/services/projectService";
 import { PAYMENT_METHOD_TYPE_LABELS } from "@/lib/paymentMethodLabels";
+import { withReturnTo } from "@/lib/backNavigation";
 
 /**
  * M3 — payment-method sub-list on the party
@@ -24,12 +25,15 @@ export function PaymentMethodList({
   paymentMethods,
   deletableIds,
   projectRefsByPaymentMethodId,
+  returnTo,
 }: {
   partyId: string;
   paymentMethods: PaymentMethod[];
   deletableIds: Set<string>;
   /** M25 — which project(s) (if any) use each method as their preferred payment method, ACTIVE projects only; each tag links to that project's detail page. */
   projectRefsByPaymentMethodId: Record<string, ProjectRef[]>;
+  /** The party page's own incoming returnTo — nested into each "used by" project link's own returnTo, so the chain survives that extra hop too. */
+  returnTo?: string;
 }) {
   const router = useRouter();
 
@@ -85,7 +89,13 @@ export function PaymentMethodList({
                         className="border-transparent bg-[var(--status-paid-bg)] font-normal normal-case text-[var(--status-paid-text)] transition-colors hover:bg-[#047857] hover:text-white"
                         render={
                           <Link
-                            href={`/projects/${project.id}?returnTo=${encodeURIComponent(`/parties/${partyId}?tab=payment-methods`)}`}
+                            href={withReturnTo(
+                              `/projects/${project.id}`,
+                              withReturnTo(
+                                `/parties/${partyId}?tab=payment-methods`,
+                                returnTo,
+                              ),
+                            )}
                           />
                         }
                       >

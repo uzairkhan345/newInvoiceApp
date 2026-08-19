@@ -37,3 +37,18 @@ export function resolveBackTarget(
   if (!isSafeReturnPath(returnTo)) return fallback;
   return { href: returnTo, label: labelForReturnPath(returnTo) };
 }
+
+/**
+ * Re-attaches the current `returnTo` to a same-page internal link (a tab
+ * switch, sort toggle, or edit/cancel link) — without this, following one of
+ * those links drops `returnTo` entirely (it's not part of the link's own
+ * href), so the back button silently reverts to the page's plain default
+ * the moment the user does anything other than immediately open the invoice/
+ * party/project they landed on. `href` may already have its own `?...`
+ * query string (e.g. `?tab=invoices`).
+ */
+export function withReturnTo(href: string, returnTo: string | undefined): string {
+  if (!isSafeReturnPath(returnTo)) return href;
+  const separator = href.includes("?") ? "&" : "?";
+  return `${href}${separator}returnTo=${encodeURIComponent(returnTo)}`;
+}

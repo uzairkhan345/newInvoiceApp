@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { withReturnTo } from "@/lib/backNavigation";
 
 export type InvoiceDetailTab = "summary" | "preview" | "activity";
 
@@ -18,10 +19,13 @@ export function InvoiceDetailTabs({
   invoiceId,
   active,
   activityCount,
+  returnTo,
 }: {
   invoiceId: string;
   active: InvoiceDetailTab;
   activityCount: number;
+  /** Carried through to each tab link so switching tabs doesn't drop the back-navigation origin — see `withReturnTo`. */
+  returnTo?: string;
 }) {
   return (
     <nav
@@ -30,10 +34,12 @@ export function InvoiceDetailTabs({
     >
       {TABS.map((tab) => {
         const isActive = tab.value === active;
-        const href =
+        const href = withReturnTo(
           tab.value === "summary"
             ? `/invoices/${invoiceId}`
-            : `/invoices/${invoiceId}?tab=${tab.value}`;
+            : `/invoices/${invoiceId}?tab=${tab.value}`,
+          returnTo,
+        );
         return (
           <Link
             key={tab.value}

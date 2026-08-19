@@ -89,6 +89,7 @@ export default async function InvoiceDetailPage({
           invoiceId={invoice.id}
           active={tab}
           activityCount={events.length}
+          returnTo={returnTo}
         />
         {tab === "summary" ? (
           <InvoiceSummaryTab invoice={invoice} data={data} />
