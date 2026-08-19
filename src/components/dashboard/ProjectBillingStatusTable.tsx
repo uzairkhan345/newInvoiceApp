@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
 import { formatShortDate } from "@/lib/dates";
+import { ProjectReorderButtons } from "@/components/project/ProjectReorderButtons";
 import type {
   ProjectBillingRow,
   BillingStatusTone,
@@ -25,9 +26,13 @@ const TONE_STYLES: Record<BillingStatusTone, string> = {
  */
 export function ProjectBillingStatusTable({
   rows,
+  reorderable = false,
 }: {
   rows: ProjectBillingRow[];
+  /** Only true for the unfiltered "All projects" view — see ProjectReorderButtons for why. */
+  reorderable?: boolean;
 }) {
+  const columnCount = reorderable ? 7 : 6;
   return (
     <Card className="gap-0 overflow-hidden py-0">
       <div className="flex items-center justify-between border-b border-border px-5 py-[18px]">
@@ -50,6 +55,11 @@ export function ProjectBillingStatusTable({
         <table className="w-full min-w-[580px] text-left">
           <thead>
             <tr className="bg-nav text-[10px] font-bold tracking-[0.05em] text-nav-muted uppercase">
+              {reorderable ? (
+                <th className="w-8 px-2 py-3 font-bold">
+                  <span className="sr-only">Reorder</span>
+                </th>
+              ) : null}
               <th className="px-4 py-3 font-bold">Project</th>
               <th className="px-3 py-3 font-bold">Last invoice</th>
               <th className="px-3 py-3 font-bold">Period covered</th>
@@ -62,7 +72,7 @@ export function ProjectBillingStatusTable({
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={columnCount}
                   className="px-5 py-8 text-center text-[12px] text-muted-foreground"
                 >
                   No active projects yet.
@@ -74,6 +84,15 @@ export function ProjectBillingStatusTable({
                   key={row.projectId}
                   className={cn(index > 0 && "border-t border-muted")}
                 >
+                  {reorderable ? (
+                    <td className="px-2 py-3.5">
+                      <ProjectReorderButtons
+                        projectId={row.projectId}
+                        disableUp={index === 0}
+                        disableDown={index === rows.length - 1}
+                      />
+                    </td>
+                  ) : null}
                   <td className="px-4 py-3.5">
                     <Link
                       href={`/projects/${row.projectId}`}
@@ -114,6 +133,29 @@ export function ProjectBillingStatusTable({
                     >
                       {row.statusLabel}
                     </span>
+                    {row.overdueCount > 0 ? (
+                      <span className="mt-1 block text-[10px] whitespace-nowrap text-muted-foreground">
+                        {row.overdueCount}{" "}
+                        {row.overdueCount === 1 ? "invoice" : "invoices"}{" "}
+                        overdue
+                      </span>
+                    ) : null}
+                    {row.exposureCount - row.overdueCount > 0 ? (
+                      <span className="mt-1 block text-[10px] whitespace-nowrap text-muted-foreground">
+                        {row.exposureCount - row.overdueCount}{" "}
+                        {row.exposureCount - row.overdueCount === 1
+                          ? "invoice"
+                          : "invoices"}{" "}
+                        sent
+                      </span>
+                    ) : null}
+                    {row.draftCount > 0 ? (
+                      <span className="mt-1 block text-[10px] whitespace-nowrap text-muted-foreground">
+                        {row.draftCount}{" "}
+                        {row.draftCount === 1 ? "invoice" : "invoices"} in
+                        draft
+                      </span>
+                    ) : null}
                   </td>
                 </tr>
               ))

@@ -268,7 +268,10 @@ export default async function DashboardPage({
             />
           </div>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.7fr_1fr]">
-            <ProjectBillingStatusTable rows={filteredRows} />
+            <ProjectBillingStatusTable
+              rows={filteredRows}
+              reorderable={healthFilter === "all"}
+            />
             <div className="flex flex-col gap-4">
               <UpcomingBillingCard rows={billingRows} />
               <ReceivablesAgeingCard ageing={ageing} />

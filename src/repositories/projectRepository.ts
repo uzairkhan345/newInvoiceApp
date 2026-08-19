@@ -43,7 +43,7 @@ function findMany(filters?: {
   return prisma.project.findMany({
     where: filters?.status ? { status: filters.status } : undefined,
     include: { client: true, contractor: true, preferredPaymentMethod: true },
-    orderBy: { name: "asc" },
+    orderBy: { sortOrder: "asc" },
   });
 }
 
@@ -55,19 +55,67 @@ function findById(id: string): Promise<ProjectWithRelations | null> {
 }
 
 /**
- * `createdByUserId` is a separate parameter, not part of `ProjectWriteInput`
- * (M28) — that type is shared with `update` below, and this field is set
- * once at creation only, never touched by an update.
+ * `createdByUserId`/`sortOrder` are separate parameters, not part of
+ * `ProjectWriteInput` (M28/reorder-M) — that type is shared with `update`
+ * below, and both fields are set once at creation only, never touched by an
+ * update (`sortOrder` only ever changes via `swapSortOrder`).
  */
 function create(
   data: ProjectWriteInput,
   createdByUserId: string | null,
+  sortOrder: number,
 ): Promise<Project> {
-  return prisma.project.create({ data: { ...data, createdByUserId } });
+  return prisma.project.create({
+    data: { ...data, createdByUserId, sortOrder },
+  });
 }
 
 function update(id: string, data: ProjectWriteInput): Promise<Project> {
   return prisma.project.update({ where: { id }, data });
+}
+
+/** Reorder — highest existing `sortOrder`, `null` when there are no projects yet (fresh append starts at 1). */
+async function findMaxSortOrder(): Promise<number | null> {
+  const result = await prisma.project.aggregate({ _max: { sortOrder: true } });
+  return result._max.sortOrder;
+}
+
+/**
+ * Reorder — the nearest ACTIVE project on one side of `sortOrder`, skipping
+ * any ARCHIVED project sitting numerically between them (an archived
+ * project isn't part of the visible up/down sequence on the dashboard).
+ * `null` when `sortOrder` is already at that end of the ACTIVE list.
+ */
+function findAdjacentActive(
+  sortOrder: number,
+  direction: "up" | "down",
+): Promise<Project | null> {
+  return prisma.project.findFirst({
+    where: {
+      status: "ACTIVE",
+      sortOrder: direction === "up" ? { lt: sortOrder } : { gt: sortOrder },
+    },
+    orderBy: { sortOrder: direction === "up" ? "desc" : "asc" },
+  });
+}
+
+/** Reorder — swaps two projects' `sortOrder` values so their relative order flips without renumbering anything else. */
+async function swapSortOrder(
+  firstId: string,
+  firstSortOrder: number,
+  secondId: string,
+  secondSortOrder: number,
+): Promise<void> {
+  await prisma.$transaction([
+    prisma.project.update({
+      where: { id: firstId },
+      data: { sortOrder: secondSortOrder },
+    }),
+    prisma.project.update({
+      where: { id: secondId },
+      data: { sortOrder: firstSortOrder },
+    }),
+  ]);
 }
 
 function deleteById(id: string): Promise<Project> {
@@ -163,6 +211,9 @@ export const projectRepository = {
   findById,
   create,
   update,
+  findMaxSortOrder,
+  findAdjacentActive,
+  swapSortOrder,
   delete: deleteById,
   countInvoices,
   findMissingPreferredPaymentMethod,
