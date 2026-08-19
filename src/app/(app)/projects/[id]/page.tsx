@@ -26,6 +26,7 @@ import { invoiceService } from "@/services/invoiceService";
 import { projectAlertScheduleService } from "@/services/projectAlertScheduleService";
 import { buildProjectBillingRows } from "@/lib/projectBillingStatus";
 import { toInvoiceTableRow } from "@/lib/invoiceTableRow";
+import { resolveBackTarget } from "@/lib/backNavigation";
 import type { PaymentMethod } from "@/generated/prisma/client";
 
 function resolveTab(value: string | undefined): ProjectDetailTab {
@@ -42,13 +43,22 @@ export default async function ProjectDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string; edit?: string; sort?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    edit?: string;
+    sort?: string;
+    returnTo?: string;
+  }>;
 }) {
   const { id } = await params;
-  const { tab: tabParam, edit, sort: sortParam } = await searchParams;
+  const { tab: tabParam, edit, sort: sortParam, returnTo } = await searchParams;
   const tab = resolveTab(tabParam);
   const isEditingSetup = tab === "setup" && edit === "1";
   const sort = resolveSort(sortParam);
+  const back = resolveBackTarget(returnTo, {
+    href: "/projects",
+    label: "Back to Projects",
+  });
 
   const project = await projectService.getById(id);
   if (!project) {
@@ -71,8 +81,8 @@ export default async function ProjectDetailPage({
           </>
         }
         subtitle="View project details and invoicing configuration."
-        backHref="/projects"
-        backLabel="Back to Projects"
+        backHref={back.href}
+        backLabel={back.label}
         action={
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -246,6 +256,7 @@ function InvoicesAndAlertsTab({
         <InvoiceTable
           invoices={invoices.map(toInvoiceTableRow)}
           hideProjectColumn
+          returnTo={`/projects/${project.id}?tab=invoices`}
         />
       )}
 

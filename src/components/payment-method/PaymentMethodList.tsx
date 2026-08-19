@@ -83,7 +83,11 @@ export function PaymentMethodList({
                         key={project.id}
                         variant="outline"
                         className="border-transparent bg-[var(--status-paid-bg)] font-normal normal-case text-[var(--status-paid-text)] transition-colors hover:bg-[#047857] hover:text-white"
-                        render={<Link href={`/projects/${project.id}`} />}
+                        render={
+                          <Link
+                            href={`/projects/${project.id}?returnTo=${encodeURIComponent(`/parties/${partyId}?tab=payment-methods`)}`}
+                          />
+                        }
                       >
                         {project.name}
                       </Badge>

@@ -42,14 +42,21 @@ function periodLabel(row: InvoiceTableRow): string | null {
 export function InvoiceTable({
   invoices,
   hideProjectColumn,
+  returnTo,
 }: {
   invoices: InvoiceTableRow[];
   /** M19.3a — the Project column/line is redundant when this table is already scoped to one project. */
   hideProjectColumn?: boolean;
+  /** The embedding page's own path (e.g. `/projects/{id}?tab=invoices`) — carried through each row's link so the invoice detail page's back button returns here instead of defaulting to the top-level Invoices list. Omitted at the top-level `/invoices` list itself, where that default is already correct. */
+  returnTo?: string;
 }) {
   const gridCols = hideProjectColumn
     ? DESKTOP_GRID_WITHOUT_PROJECT
     : DESKTOP_GRID_WITH_PROJECT;
+  const invoiceHref = (invoiceId: string) =>
+    returnTo
+      ? `/invoices/${invoiceId}?returnTo=${encodeURIComponent(returnTo)}`
+      : `/invoices/${invoiceId}`;
 
   return (
     <>
@@ -79,7 +86,7 @@ export function InvoiceTable({
             )}
           >
             <RowOpenLink
-              href={`/invoices/${invoice.id}`}
+              href={invoiceHref(invoice.id)}
               ariaLabel={`Open invoice ${invoice.invoiceNumber}`}
             />
             <span className="truncate font-mono text-[13px] font-semibold text-foreground">
@@ -133,7 +140,7 @@ export function InvoiceTable({
             className="relative flex flex-col gap-1.5 rounded-xl border border-border bg-card p-4"
           >
             <RowOpenLink
-              href={`/invoices/${invoice.id}`}
+              href={invoiceHref(invoice.id)}
               ariaLabel={`Open invoice ${invoice.invoiceNumber}`}
             />
             <div className="flex items-center justify-between gap-2">
