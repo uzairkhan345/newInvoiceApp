@@ -72,6 +72,19 @@ export async function updateProjectAction(
   }
 }
 
+export async function moveProjectAction(
+  id: string,
+  direction: "up" | "down",
+): Promise<ActionResult<null>> {
+  const check = await requireRole(["ADMIN", "STANDARD"]);
+  if (!check.ok) return { success: false, error: check.error };
+
+  await projectService.move(id, direction);
+  revalidatePath("/");
+  revalidatePath("/projects");
+  return { success: true, data: null };
+}
+
 export async function deleteProjectAction(
   id: string,
 ): Promise<ActionResult<null>> {

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formatCurrency } from "@/lib/currency";
-import { formatDisplayDate } from "@/lib/dates";
+import { formatDisplayDate, formatShortDate } from "@/lib/dates";
 import { resolveNextOccurrence } from "@/lib/alertScheduleFiring";
 import { cn } from "@/lib/utils";
 import type { ProjectBillingRow } from "@/lib/projectBillingStatus";
@@ -13,15 +13,6 @@ const TONE_TEXT: Record<ProjectBillingRow["statusTone"], string> = {
   setupIncomplete: "text-[var(--status-sent-text)]",
   upcoming: "text-[var(--status-upcoming-text)]",
   positive: "text-[var(--status-paid-text)]",
-};
-
-const TONE_SUBTEXT: Record<ProjectBillingRow["statusTone"], string> = {
-  overdue: "Payment is overdue.",
-  prepare: "A new invoice is due to be created.",
-  draft: "A draft invoice is awaiting review.",
-  setupIncomplete: "No preferred payment method is set for this project.",
-  upcoming: "A payment is due soon.",
-  positive: "No outstanding billing issues.",
 };
 
 function nextOccurrenceOf(
@@ -96,7 +87,11 @@ export function ProjectHealthCards({
         label="Billing health"
         value={billingRow.statusLabel}
         valueClassName={TONE_TEXT[billingRow.statusTone]}
-        subtext={TONE_SUBTEXT[billingRow.statusTone]}
+        subtext={
+          billingRow.lastCoveredPeriod
+            ? `Last billed ${formatShortDate(billingRow.lastCoveredPeriod.start)} – ${formatShortDate(billingRow.lastCoveredPeriod.end)}.`
+            : "No billed period recorded."
+        }
         actionLabel="View history →"
         actionHref={`/projects/${projectId}?tab=invoices`}
       />

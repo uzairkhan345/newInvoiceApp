@@ -68,16 +68,24 @@ export function ProjectCardGrid({
               </div>
             </div>
             <div className="flex items-center justify-between border-y border-muted bg-muted/30 px-5 py-2.5">
-              <span
-                className={cn(
-                  "rounded-md px-2 py-1 text-[10px] font-bold whitespace-nowrap uppercase",
-                  billingRow
-                    ? BILLING_TONE_PILL[billingRow.statusTone]
-                    : "bg-muted text-muted-foreground",
-                )}
-              >
-                {billingRow ? billingRow.statusLabel : "Archived"}
-              </span>
+              <div className="flex items-center gap-2">
+                <span
+                  className={cn(
+                    "rounded-md px-2 py-1 text-[10px] font-bold whitespace-nowrap uppercase",
+                    billingRow
+                      ? BILLING_TONE_PILL[billingRow.statusTone]
+                      : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {billingRow ? billingRow.statusLabel : "Archived"}
+                </span>
+                {billingRow && billingRow.overdueCount > 0 ? (
+                  <span className="text-[10px] font-semibold whitespace-nowrap text-[var(--status-overdue-text)]">
+                    {billingRow.overdueCount} overdue{" "}
+                    {billingRow.overdueCount === 1 ? "invoice" : "invoices"}
+                  </span>
+                ) : null}
+              </div>
               {billingRow && Number(billingRow.exposureTotal) > 0 ? (
                 <span className="font-mono text-[13px] font-semibold text-foreground">
                   {formatCurrency(
@@ -90,10 +98,12 @@ export function ProjectCardGrid({
             <dl className="grid grid-cols-2 gap-x-3 gap-y-3 px-5 py-3.5 text-[11px]">
               <div>
                 <dt className="font-bold tracking-wide text-muted-foreground uppercase">
-                  Billing cycle
+                  Last billed
                 </dt>
                 <dd className="mt-1 text-foreground">
-                  {billingRow?.billingLabel ?? "—"}
+                  {billingRow?.lastCoveredPeriod
+                    ? `${formatShortDate(billingRow.lastCoveredPeriod.start)} – ${formatShortDate(billingRow.lastCoveredPeriod.end)}`
+                    : "—"}
                 </dd>
               </div>
               <div>

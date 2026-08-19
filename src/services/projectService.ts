@@ -178,7 +178,35 @@ async function create(
     data.preferredPaymentMethodId,
     data.contractorId,
   );
-  return projectRepository.create(data, createdByUserId);
+  const maxSortOrder = await projectRepository.findMaxSortOrder();
+  return projectRepository.create(data, createdByUserId, (maxSortOrder ?? 0) + 1);
+}
+
+/**
+ * Dashboard up/down arrows — moves a project one slot within the ACTIVE
+ * list by swapping `sortOrder` with its nearest ACTIVE neighbor. Silently a
+ * no-op if the project is missing/ARCHIVED, or already at that end of the
+ * list — the UI only ever offers this on a visible ACTIVE row, so those
+ * cases shouldn't occur in practice, and there's nothing more useful to do
+ * than nothing. This same `sortOrder` also drives the Projects page
+ * card/table order, so the move is visible there too.
+ */
+async function move(id: string, direction: "up" | "down"): Promise<void> {
+  const project = await projectRepository.findById(id);
+  if (!project || project.status !== "ACTIVE") return;
+
+  const neighbor = await projectRepository.findAdjacentActive(
+    project.sortOrder,
+    direction,
+  );
+  if (!neighbor) return;
+
+  await projectRepository.swapSortOrder(
+    project.id,
+    project.sortOrder,
+    neighbor.id,
+    neighbor.sortOrder,
+  );
 }
 
 async function update(id: string, input: ProjectInput): Promise<Project> {
@@ -208,6 +236,7 @@ export const projectService = {
   getById,
   create,
   update,
+  move,
   isDeletable,
   delete: deleteProject,
   countActive,
