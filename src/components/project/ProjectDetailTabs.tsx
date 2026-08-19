@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { withReturnTo } from "@/lib/backNavigation";
 
 export type ProjectDetailTab = "overview" | "invoices" | "setup";
 
@@ -20,10 +21,13 @@ export function ProjectDetailTabs({
   projectId,
   active,
   invoicesCount,
+  returnTo,
 }: {
   projectId: string;
   active: ProjectDetailTab;
   invoicesCount: number;
+  /** Carried through to each tab link so switching tabs doesn't drop the back-navigation origin — see `withReturnTo`. */
+  returnTo?: string;
 }) {
   return (
     <nav
@@ -32,10 +36,12 @@ export function ProjectDetailTabs({
     >
       {TABS.map((tab) => {
         const isActive = tab.value === active;
-        const href =
+        const href = withReturnTo(
           tab.value === "overview"
             ? `/projects/${projectId}`
-            : `/projects/${projectId}?tab=${tab.value}`;
+            : `/projects/${projectId}?tab=${tab.value}`,
+          returnTo,
+        );
         return (
           <Link
             key={tab.value}

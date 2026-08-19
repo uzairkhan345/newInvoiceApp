@@ -18,7 +18,7 @@ import { projectService } from "@/services/projectService";
 import { invoiceService } from "@/services/invoiceService";
 import { toInvoiceTableRow } from "@/lib/invoiceTableRow";
 import { getAiAssistConfigSummary } from "@/lib/ai-providers/config";
-import { resolveBackTarget } from "@/lib/backNavigation";
+import { resolveBackTarget, withReturnTo } from "@/lib/backNavigation";
 import type { Party } from "@/generated/prisma/client";
 
 function resolveTab(value: string | undefined): PartyDetailTab {
@@ -60,7 +60,9 @@ export default async function PartyDetailPage({
             <Button
               variant="outline"
               nativeButton={false}
-              render={<Link href={`/parties/${party.id}`} />}
+              render={
+                <Link href={withReturnTo(`/parties/${party.id}`, returnTo)} />
+              }
             >
               Cancel
             </Button>
@@ -112,24 +114,34 @@ export default async function PartyDetailPage({
         active={tab}
         paymentMethodsCount={paymentMethodsCount}
         invoicesCount={invoicesCount}
+        returnTo={returnTo}
       />
 
       {tab === "overview" ? (
         <PartyDetailCard
           party={party}
-          editHref={`/parties/${party.id}?tab=overview&edit=1`}
+          editHref={withReturnTo(
+            `/parties/${party.id}?tab=overview&edit=1`,
+            returnTo,
+          )}
         />
       ) : tab === "payment-methods" ? (
-        <PaymentMethodsTab party={party} />
+        <PaymentMethodsTab party={party} returnTo={returnTo} />
       ) : (
-        <InvoicesTab party={party} />
+        <InvoicesTab party={party} returnTo={returnTo} />
       )}
     </>
   );
 }
 
 /** Fetches the full payment-method list itself — only rendered when this tab is active, see the party detail page's own tab-count fetch above. */
-async function PaymentMethodsTab({ party }: { party: Party }) {
+async function PaymentMethodsTab({
+  party,
+  returnTo,
+}: {
+  party: Party;
+  returnTo?: string;
+}) {
   const paymentMethods = await paymentMethodService.listForParty(party.id);
   const [deletableFlags, projectRefsByPaymentMethodId] = await Promise.all([
     Promise.all(
@@ -171,13 +183,20 @@ async function PaymentMethodsTab({ party }: { party: Party }) {
         paymentMethods={paymentMethods}
         deletableIds={deletableIds}
         projectRefsByPaymentMethodId={projectRefsByPaymentMethodId}
+        returnTo={returnTo}
       />
     </>
   );
 }
 
 /** Fetches the full invoice list itself — only rendered when this tab is active, see the party detail page's own tab-count fetch above. */
-async function InvoicesTab({ party }: { party: Party }) {
+async function InvoicesTab({
+  party,
+  returnTo,
+}: {
+  party: Party;
+  returnTo?: string;
+}) {
   const invoices = await invoiceService.listByParty(party.id);
   return (
     <>
@@ -195,7 +214,10 @@ async function InvoicesTab({ party }: { party: Party }) {
       ) : (
         <InvoiceTable
           invoices={invoices.map(toInvoiceTableRow)}
-          returnTo={`/parties/${party.id}?tab=invoices`}
+          returnTo={withReturnTo(
+            `/parties/${party.id}?tab=invoices`,
+            returnTo,
+          )}
         />
       )}
     </>

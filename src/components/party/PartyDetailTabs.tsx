@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { withReturnTo } from "@/lib/backNavigation";
 
 export type PartyDetailTab = "overview" | "payment-methods" | "invoices";
 
@@ -20,11 +21,14 @@ export function PartyDetailTabs({
   active,
   paymentMethodsCount,
   invoicesCount,
+  returnTo,
 }: {
   partyId: string;
   active: PartyDetailTab;
   paymentMethodsCount: number;
   invoicesCount: number;
+  /** Carried through to each tab link so switching tabs doesn't drop the back-navigation origin — see `withReturnTo`. */
+  returnTo?: string;
 }) {
   return (
     <nav
@@ -33,10 +37,12 @@ export function PartyDetailTabs({
     >
       {TABS.map((tab) => {
         const isActive = tab.value === active;
-        const href =
+        const href = withReturnTo(
           tab.value === "overview"
             ? `/parties/${partyId}`
-            : `/parties/${partyId}?tab=${tab.value}`;
+            : `/parties/${partyId}?tab=${tab.value}`,
+          returnTo,
+        );
         const count =
           tab.value === "payment-methods"
             ? paymentMethodsCount

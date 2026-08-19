@@ -26,7 +26,7 @@ import { invoiceService } from "@/services/invoiceService";
 import { projectAlertScheduleService } from "@/services/projectAlertScheduleService";
 import { buildProjectBillingRows } from "@/lib/projectBillingStatus";
 import { toInvoiceTableRow } from "@/lib/invoiceTableRow";
-import { resolveBackTarget } from "@/lib/backNavigation";
+import { resolveBackTarget, withReturnTo } from "@/lib/backNavigation";
 import type { PaymentMethod } from "@/generated/prisma/client";
 
 function resolveTab(value: string | undefined): ProjectDetailTab {
@@ -89,7 +89,12 @@ export default async function ProjectDetailPage({
               variant="outline"
               nativeButton={false}
               render={
-                <Link href={`/projects/${project.id}?tab=setup&edit=1`} />
+                <Link
+                  href={withReturnTo(
+                    `/projects/${project.id}?tab=setup&edit=1`,
+                    returnTo,
+                  )}
+                />
               }
             >
               <Pencil className="h-3.5 w-3.5" />
@@ -114,6 +119,7 @@ export default async function ProjectDetailPage({
         projectId={project.id}
         active={tab}
         invoicesCount={invoices.length}
+        returnTo={returnTo}
       />
 
       {tab === "overview" ? (
@@ -124,9 +130,14 @@ export default async function ProjectDetailPage({
           invoices={invoices}
           alertSchedules={alertSchedules}
           sort={sort}
+          returnTo={returnTo}
         />
       ) : (
-        <BillingSetupTab project={project} isEditing={isEditingSetup} />
+        <BillingSetupTab
+          project={project}
+          isEditing={isEditingSetup}
+          returnTo={returnTo}
+        />
       )}
     </>
   );
@@ -205,6 +216,7 @@ function InvoicesAndAlertsTab({
   invoices,
   alertSchedules,
   sort,
+  returnTo,
 }: {
   project: NonNullable<Awaited<ReturnType<typeof projectService.getById>>>;
   invoices: Awaited<ReturnType<typeof invoiceService.listByProject>>;
@@ -212,6 +224,7 @@ function InvoicesAndAlertsTab({
     ReturnType<typeof projectAlertScheduleService.listForProjectWithFiringState>
   >;
   sort: "asc" | "desc";
+  returnTo?: string;
 }) {
   return (
     <>
@@ -226,7 +239,11 @@ function InvoicesAndAlertsTab({
         </div>
         {invoices.length > 0 ? (
           <div className="flex items-center gap-2">
-            <InvoiceSortToggle projectId={project.id} sort={sort} />
+            <InvoiceSortToggle
+              projectId={project.id}
+              sort={sort}
+              returnTo={returnTo}
+            />
             <Button
               variant="outline"
               className="h-8 px-3 text-[12px]"
@@ -256,7 +273,10 @@ function InvoicesAndAlertsTab({
         <InvoiceTable
           invoices={invoices.map(toInvoiceTableRow)}
           hideProjectColumn
-          returnTo={`/projects/${project.id}?tab=invoices`}
+          returnTo={withReturnTo(
+            `/projects/${project.id}?tab=invoices`,
+            returnTo,
+          )}
         />
       )}
 
@@ -289,9 +309,11 @@ function InvoicesAndAlertsTab({
 async function BillingSetupTab({
   project,
   isEditing,
+  returnTo,
 }: {
   project: NonNullable<Awaited<ReturnType<typeof projectService.getById>>>;
   isEditing: boolean;
+  returnTo?: string;
 }) {
   if (!isEditing) {
     const nextInvoiceNumber = await invoiceService.previewNextInvoiceNumber(
@@ -300,7 +322,10 @@ async function BillingSetupTab({
     return (
       <ProjectDetailCard
         project={project}
-        editHref={`/projects/${project.id}?tab=setup&edit=1`}
+        editHref={withReturnTo(
+          `/projects/${project.id}?tab=setup&edit=1`,
+          returnTo,
+        )}
         nextInvoiceNumber={nextInvoiceNumber}
       />
     );
@@ -331,7 +356,11 @@ async function BillingSetupTab({
           variant="outline"
           className="h-8 px-3 text-[12px]"
           nativeButton={false}
-          render={<Link href={`/projects/${project.id}?tab=setup`} />}
+          render={
+            <Link
+              href={withReturnTo(`/projects/${project.id}?tab=setup`, returnTo)}
+            />
+          }
         >
           Cancel
         </Button>

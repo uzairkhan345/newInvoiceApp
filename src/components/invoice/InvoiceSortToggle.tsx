@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowDown01, ArrowUp01 } from "lucide-react";
+import { withReturnTo } from "@/lib/backNavigation";
 
 /**
  * M44 — the project detail page's Invoices tab sorts by `InvoiceNumber`
@@ -13,9 +14,12 @@ import { ArrowDown01, ArrowUp01 } from "lucide-react";
 export function InvoiceSortToggle({
   projectId,
   sort,
+  returnTo,
 }: {
   projectId: string;
   sort: "asc" | "desc";
+  /** Carried through so toggling sort doesn't drop the back-navigation origin — see `withReturnTo`. */
+  returnTo?: string;
 }) {
   const nextSort = sort === "desc" ? "asc" : "desc";
   const label =
@@ -25,7 +29,10 @@ export function InvoiceSortToggle({
 
   return (
     <Link
-      href={`/projects/${projectId}?tab=invoices&sort=${nextSort}`}
+      href={withReturnTo(
+        `/projects/${projectId}?tab=invoices&sort=${nextSort}`,
+        returnTo,
+      )}
       aria-label={label}
       title={label}
       className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
