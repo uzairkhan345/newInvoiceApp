@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { InvoiceAssistResponse } from "@/lib/validation/aiSuggestions";
 
 /**
  * M35 — runInvoicePrompt must force isReferralCredit: false on every
@@ -7,9 +6,11 @@ import type { InvoiceAssistResponse } from "@/lib/validation/aiSuggestions";
  * only ever meant to be set through the dedicated "Add Referral Credit"
  * button. runWithFallback (already covered in isolation by
  * aiProviderFallback.test.ts) is mocked here so this test can focus purely
- * on the post-processing step.
+ * on the post-processing step. Untyped (`unknown`) since this file's mock
+ * also stands in for classifyItemsNotePeriod's differently-shaped response
+ * below.
  */
-const runWithFallback = vi.fn<() => Promise<InvoiceAssistResponse | null>>();
+const runWithFallback = vi.fn<() => Promise<unknown>>();
 vi.mock("@/lib/ai-providers/fallbackRunner", () => ({
   runWithFallback: () => runWithFallback(),
 }));
@@ -84,5 +85,35 @@ describe("aiAssistService.runInvoicePrompt — Referral Credit guard (M35)", () 
       responseType: "clarification",
       question: "Which rate applies to the second item?",
     });
+  });
+});
+
+describe("aiAssistService.classifyItemsNotePeriod — Autofill note carryover", () => {
+  it("returns true for a note classified as a pure period statement", async () => {
+    runWithFallback.mockResolvedValue({ isDefaultPeriodNote: true });
+
+    await expect(
+      aiAssistService.classifyItemsNotePeriod(
+        "Covers services rendered Jul 1 – Jul 31, 2026.",
+      ),
+    ).resolves.toBe(true);
+  });
+
+  it("returns false for a note classified as containing other content", async () => {
+    runWithFallback.mockResolvedValue({ isDefaultPeriodNote: false });
+
+    await expect(
+      aiAssistService.classifyItemsNotePeriod(
+        "Includes a one-time setup fee in addition to the monthly retainer.",
+      ),
+    ).resolves.toBe(false);
+  });
+
+  it("returns null (not false) when every provider fails/is unconfigured", async () => {
+    runWithFallback.mockResolvedValue(null);
+
+    await expect(
+      aiAssistService.classifyItemsNotePeriod("Some note."),
+    ).resolves.toBeNull();
   });
 });

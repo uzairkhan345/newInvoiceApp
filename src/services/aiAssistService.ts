@@ -5,6 +5,7 @@ import {
   partySuggestionSchema,
   paymentMethodSuggestionSchema,
   invoiceAssistResponseSchema,
+  invoiceNoteClassificationSchema,
   type PartySuggestion,
   type PaymentMethodSuggestion,
   type InvoiceAssistResponse,
@@ -169,4 +170,31 @@ async function runInvoicePrompt(params: {
   return response;
 }
 
-export const aiAssistService = { runPrompt, runInvoicePrompt };
+const NOTE_CLASSIFICATION_SYSTEM_PROMPT = `You look at the "Items note" field copied from a contractor's previous invoice on an invoicing app, while it's being carried over to a new invoice for the same project. This note sits below the invoice's line items, and is very often just a plain-English sentence stating the billing period the old invoice covered (e.g. "Covers services rendered Jul 1 – Jul 31, 2026." or similar phrasing that ONLY states a date range and nothing else) — the new invoice will cover a different period, so a note like that must not be copied over verbatim.
+
+Decide whether the note ONLY states a period/date range with no other content, or whether it also says something else (extra description, conditions, a different subject entirely, or anything beyond just naming the dates it covers).
+
+${JSON_ONLY_RULE}
+JSON shape: { "isDefaultPeriodNote": boolean } — true if the note is purely a period/date-range statement with no other content; false if it says anything more or different, even alongside a period statement.`;
+
+/**
+ * Autofill-from-last-invoice's `itemsNote` carryover — see
+ * `invoiceNoteClassificationSchema`. `null` (not `false`) on any provider
+ * failure/unconfigured state, same "never throws, null means unknown" shape
+ * as the rest of this module — the caller falls back to the safer default
+ * (copy the note verbatim) when it can't confidently classify.
+ */
+async function classifyItemsNotePeriod(note: string): Promise<boolean | null> {
+  const result = await runWithFallback({
+    systemPrompt: NOTE_CLASSIFICATION_SYSTEM_PROMPT,
+    userPrompt: note,
+    schema: invoiceNoteClassificationSchema,
+  });
+  return result?.isDefaultPeriodNote ?? null;
+}
+
+export const aiAssistService = {
+  runPrompt,
+  runInvoicePrompt,
+  classifyItemsNotePeriod,
+};

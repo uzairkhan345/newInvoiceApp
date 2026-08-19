@@ -106,3 +106,32 @@ export async function runInvoiceAiAssistAction(
 
   return { success: true, data: result };
 }
+
+/**
+ * Autofill-from-last-invoice's `itemsNote` carryover — classifies the
+ * previous invoice's note so InvoiceForm.tsx's `handleAutofill` can decide
+ * whether to regenerate it against the new invoice's own period (a pure
+ * period statement) or copy it over unchanged (anything else). A failed
+ * classification is reported as a normal, non-blocking result — the caller
+ * falls back to copying the note verbatim, same as before this existed.
+ */
+export async function classifyAutofillNoteAction(
+  note: string,
+): Promise<ActionResult<{ isDefaultPeriodNote: boolean }>> {
+  const check = await requireSession();
+  if (!check.ok) return { success: false, error: check.error };
+
+  const parsed = z.string().trim().min(1).safeParse(note);
+  if (!parsed.success) {
+    return { success: false, error: "No note to check." };
+  }
+
+  const isDefaultPeriodNote = await aiAssistService.classifyItemsNotePeriod(
+    parsed.data,
+  );
+  if (isDefaultPeriodNote === null) {
+    return { success: false, error: "Couldn't check the note right now." };
+  }
+
+  return { success: true, data: { isDefaultPeriodNote } };
+}
