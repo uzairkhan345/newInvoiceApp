@@ -18,6 +18,7 @@ import { projectService } from "@/services/projectService";
 import { invoiceService } from "@/services/invoiceService";
 import { toInvoiceTableRow } from "@/lib/invoiceTableRow";
 import { getAiAssistConfigSummary } from "@/lib/ai-providers/config";
+import { resolveBackTarget } from "@/lib/backNavigation";
 import type { Party } from "@/generated/prisma/client";
 
 function resolveTab(value: string | undefined): PartyDetailTab {
@@ -30,12 +31,16 @@ export default async function PartyDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string; edit?: string }>;
+  searchParams: Promise<{ tab?: string; edit?: string; returnTo?: string }>;
 }) {
   const { id } = await params;
-  const { tab: tabParam, edit } = await searchParams;
+  const { tab: tabParam, edit, returnTo } = await searchParams;
   const tab = resolveTab(tabParam);
   const isEditingOverview = tab === "overview" && edit === "1";
+  const back = resolveBackTarget(returnTo, {
+    href: "/parties",
+    label: "Back to Parties",
+  });
 
   const party = await partyService.getById(id);
   if (!party) {
@@ -49,8 +54,8 @@ export default async function PartyDetailPage({
         <PageHeader
           title={party.name}
           subtitle="Edit party details and address."
-          backHref="/parties"
-          backLabel="Back to Parties"
+          backHref={back.href}
+          backLabel={back.label}
           action={
             <Button
               variant="outline"
@@ -92,8 +97,8 @@ export default async function PartyDetailPage({
       <PageHeader
         title={party.name}
         subtitle="View party details and address."
-        backHref="/parties"
-        backLabel="Back to Parties"
+        backHref={back.href}
+        backLabel={back.label}
         action={
           <PartyDeleteButton
             partyId={party.id}
@@ -188,7 +193,10 @@ async function InvoicesTab({ party }: { party: Party }) {
           description="Invoices will appear here once this party is used as a project's client or contractor."
         />
       ) : (
-        <InvoiceTable invoices={invoices.map(toInvoiceTableRow)} />
+        <InvoiceTable
+          invoices={invoices.map(toInvoiceTableRow)}
+          returnTo={`/parties/${party.id}?tab=invoices`}
+        />
       )}
     </>
   );

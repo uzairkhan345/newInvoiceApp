@@ -19,6 +19,7 @@ import { documentService } from "@/services/documentService";
 import { toDateInputValue, isOverdue } from "@/lib/dates";
 import { buildInvoiceActivity } from "@/lib/invoiceActivity";
 import { getAiAssistConfigSummary } from "@/lib/ai-providers/config";
+import { resolveBackTarget } from "@/lib/backNavigation";
 
 function resolveTab(value: string | undefined): InvoiceDetailTab {
   if (value === "preview" || value === "activity") return value;
@@ -30,10 +31,14 @@ export default async function InvoiceDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; returnTo?: string }>;
 }) {
   const { id } = await params;
-  const { tab: tabParam } = await searchParams;
+  const { tab: tabParam, returnTo } = await searchParams;
+  const back = resolveBackTarget(returnTo, {
+    href: "/invoices",
+    label: "Back to Invoices",
+  });
   const invoice = await invoiceService.getById(id);
   if (!invoice) {
     notFound();
@@ -76,8 +81,8 @@ export default async function InvoiceDetailPage({
               />
             </div>
           }
-          backHref="/invoices"
-          backLabel="Back to Invoices"
+          backHref={back.href}
+          backLabel={back.label}
         />
         {overdue ? <InvoiceOverdueBanner dueDate={invoice.dueDate} /> : null}
         <InvoiceDetailTabs
@@ -156,8 +161,8 @@ export default async function InvoiceDetailPage({
           </>
         }
         action={headerAction}
-        backHref="/invoices"
-        backLabel="Back to Invoices"
+        backHref={back.href}
+        backLabel={back.label}
       />
       <InvoiceForm
         mode="edit"

@@ -76,7 +76,7 @@ export function ProjectBillingStatusTable({
                 >
                   <td className="px-4 py-3.5">
                     <Link
-                      href={`/projects/${row.projectId}`}
+                      href={`/projects/${row.projectId}?returnTo=%2F`}
                       className="block text-[13px] font-semibold text-foreground hover:text-brand hover:underline"
                     >
                       {row.projectName}

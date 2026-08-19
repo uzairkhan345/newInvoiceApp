@@ -212,7 +212,7 @@ export function ActionRequiredPanel({
                         {item.tier}
                       </span>
                       <Link
-                        href={`/projects/${item.projectId}`}
+                        href={`/projects/${item.projectId}?returnTo=%2F`}
                         className="truncate text-[13px] font-bold text-foreground hover:text-brand hover:underline"
                       >
                         {item.projectName}
