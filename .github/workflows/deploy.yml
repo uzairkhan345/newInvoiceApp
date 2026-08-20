@@ -1,0 +1,82 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+      NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+      PDF_ADAPTER: pdf-lib
+      # Build-time only, matches ci.yml's placeholder — the real key used to
+      # decrypt production data lives solely in the droplet's own .env, never
+      # in CI, since nothing at build time needs to decrypt anything real.
+      SETTINGS_ENCRYPTION_KEY: ci-placeholder-key-not-used-in-production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Applied directly against production Neon — never run on the droplet.
+      - name: Apply migrations
+        run: pnpm prisma migrate deploy
+
+      - name: Build
+        run: pnpm build
+
+      # `output: "standalone"` doesn't include .next/static or public/ —
+      # both need to be copied alongside server.js by hand.
+      - name: Assemble standalone artifact
+        run: |
+          cp -r .next/static .next/standalone/.next/static
+          cp -r public .next/standalone/public
+          tar -czf deploy.tar.gz -C .next/standalone .
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Pinned droplet host key (fetched and cross-checked out-of-band
+          # against the admin session's own known_hosts) — not TOFU.
+          echo "${{ secrets.DEPLOY_HOST }} ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGNLoACiLmXAUObdlVAVf8fKFQ25PoKUIJEU9dpF54TR" >> ~/.ssh/known_hosts
+
+      # Extracted directly into the app's own directory — never touches
+      # /opt/newinvoice/.env, which isn't part of this tarball at all.
+      - name: Deploy artifact
+        run: |
+          scp -i ~/.ssh/deploy_key deploy.tar.gz \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/opt/newinvoice/deploy.tar.gz
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} '
+            set -e
+            tar -xzf /opt/newinvoice/deploy.tar.gz -C /opt/newinvoice
+            rm /opt/newinvoice/deploy.tar.gz
+            sudo systemctl restart newinvoice.service
+          '
+
+      - name: Verify service is running
+        run: |
+          sleep 3
+          # No --no-pager: the sudoers NOPASSWD rule matches this exact
+          # command with no extra args (systemd auto-disables paging anyway
+          # for non-tty output, so this is a no-op change in behavior).
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            'sudo systemctl status newinvoice.service'
+          curl -sf -o /dev/null -w "HTTP %{http_code}\n" "${{ secrets.NEXT_PUBLIC_APP_URL }}"
