@@ -13,6 +13,14 @@ const nextConfig: NextConfig = {
   // `pnpm install` on the host. `.next/static` and `public/` aren't
   // included automatically and must be copied alongside it separately.
   output: "standalone",
+  // schema.prisma's generator outputs the client (and its native query
+  // engine binary) to src/generated/prisma, outside node_modules — Next's
+  // standalone file tracer doesn't discover custom output paths like this
+  // on its own, so the query engine silently goes missing at runtime
+  // without this explicit include.
+  outputFileTracingIncludes: {
+    "/**/*": ["./src/generated/prisma/**/*"],
+  },
 };
 
 export default nextConfig;
