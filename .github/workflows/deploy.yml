@@ -58,8 +58,9 @@ jobs:
           # against the admin session's own known_hosts) — not TOFU.
           echo "${{ secrets.DEPLOY_HOST }} ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGNLoACiLmXAUObdlVAVf8fKFQ25PoKUIJEU9dpF54TR" >> ~/.ssh/known_hosts
 
-      # Extracted directly into the app's own directory — never touches
-      # /opt/newinvoice/.env, which isn't part of this tarball at all.
+      # Extracted directly into the app's own directory — never bulk-touches
+      # /opt/newinvoice/.env (not part of this tarball at all), except for
+      # one line rewritten in place below.
       - name: Deploy artifact
         run: |
           scp -i ~/.ssh/deploy_key deploy.tar.gz \
@@ -68,6 +69,26 @@ jobs:
             set -e
             tar -xzf /opt/newinvoice/deploy.tar.gz -C /opt/newinvoice
             rm /opt/newinvoice/deploy.tar.gz
+
+            # The Prisma client is generated to a custom local output path
+            # (src/generated/prisma, not the @prisma/client package), so
+            # Next bundles it into a single server chunk and breaks its own
+            # __dirname-relative query engine lookup, even though the
+            # engine binary is right there on disk. PRISMA_QUERY_ENGINE_LIBRARY
+            # bypasses that broken auto-detection — computed fresh on every
+            # deploy (never hardcoded) since the exact engine filename is
+            # Prisma-version/target-specific and would silently go stale.
+            ENGINE_PATH=$(find /opt/newinvoice/src/generated/prisma -maxdepth 1 -name "libquery_engine-*.so.node" | head -1)
+            if [ -z "$ENGINE_PATH" ]; then
+              echo "ERROR: no Prisma query engine binary found after deploy" >&2
+              exit 1
+            fi
+            if grep -q "^PRISMA_QUERY_ENGINE_LIBRARY=" /opt/newinvoice/.env; then
+              sed -i "s|^PRISMA_QUERY_ENGINE_LIBRARY=.*|PRISMA_QUERY_ENGINE_LIBRARY=$ENGINE_PATH|" /opt/newinvoice/.env
+            else
+              echo "PRISMA_QUERY_ENGINE_LIBRARY=$ENGINE_PATH" >> /opt/newinvoice/.env
+            fi
+
             sudo systemctl restart newinvoice.service
           '
 
