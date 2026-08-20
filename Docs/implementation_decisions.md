@@ -17,16 +17,16 @@ The application is a **single-tenant** invoice tracking application. No multi-te
 | Architecture | Modular monolith |
 | ORM | Prisma |
 | Local database | Local PostgreSQL |
-| Production database | Neon PostgreSQL (target; hosting decision itself deferred, see §21) |
-| Production hosting | Deferred — see §21 |
+| Production database | Neon PostgreSQL (see §21) |
+| Production hosting | DigitalOcean droplet (see §21) |
 
 ## 3. Local Development Decision
 
-Local development runs on the developer machine: Next.js app, Prisma, local PostgreSQL, `.env.local`, development/test data only. **Per §21, local development is the current build focus — production concerns should not block or complicate the local build.**
+Local development runs on the developer machine: Next.js app, Prisma, local PostgreSQL, `.env.local`, development/test data only. Production concerns (§21) should not block or complicate the local build.
 
 ## 4. Production Deployment Decision
 
-Deferred — see §21. Do not assume Vercel-specific constraints (or any other target's constraints) in the core application code. The only piece of the system allowed to vary by deployment target is the PDF-generation adapter (§12.2).
+See §21. Do not assume Vercel-specific constraints (or any other target's constraints) in the core application code. The only piece of the system allowed to vary by deployment target is the PDF-generation adapter (§12.2).
 
 ## 5. Modular Monolith Decision
 
@@ -170,11 +170,21 @@ This is a standing pattern, not a one-off: any future dependent-entity flow shou
 
 ## 21. Deployment Target Decision
 
-The production hosting target is a **DigitalOcean droplet** (a persistent VM), to be deployed at a later date — not decided implicitly by how the code is written, and not required for local development, which is what the app currently runs against exclusively.
+Production runs on a **DigitalOcean droplet** (a persistent VM) — a single small instance (1 vCPU / 1GB RAM), reached over HTTPS via a `sslip.io` hostname (wildcard DNS that resolves directly off the droplet's own public IP, with zero registration — satisfies both the reverse proxy's automatic-HTTPS requirement and Google OAuth's HTTPS-only redirect-URI rule without needing a purchased domain).
 
-The application must be built so that it runs correctly in local development without assuming any particular production target's constraints. The **only** part of the system permitted to be deployment-target-specific is the PDF-generation adapter (§12.2) — everything else (database access via `DATABASE_URL`, business logic, the AI-assist provider abstraction, Excel generation) is already environment-driven and needs no target-specific branching.
+The application is built so that it runs correctly in local development without assuming any particular production target's constraints. The **only** part of the system permitted to be deployment-target-specific is the PDF-generation adapter (§12.2) — everything else (database access via `DATABASE_URL`, business logic, the AI-assist provider abstraction, Excel generation) is environment-driven and needs no target-specific branching. Production uses the `pdf-lib` adapter (§12.2), sized for the droplet's memory budget.
 
-A persistent VM avoids the serverless-specific concerns a platform like Vercel would introduce (connection-pool exhaustion under concurrency, Puppeteer cold-start/bundle-size limits, function execution time limits) — one long-lived process needs none of that — at the cost of self-managed OS patching, process supervision (pm2/systemd), and TLS/reverse-proxy setup, none of which is built yet. Deployment readiness (the actual droplet setup, process supervision, reverse proxy, and whatever else the DigitalOcean target specifically needs) is intentionally not scoped until it's actually being done.
+A persistent VM avoids the serverless-specific concerns a platform like Vercel would introduce (connection-pool exhaustion under concurrency, Puppeteer cold-start/bundle-size limits, function execution time limits) — one long-lived process needs none of that.
+
+**Database**: managed Postgres (Neon), not DigitalOcean's own Managed Database offering — avoids that cost entirely for a single-tenant, low-volume app. The app connects with a direct (non-pooled) connection string: it's one persistent Node process maintaining its own small connection pool, not a fleet of short-lived serverless functions, so a connection pooler (PgBouncer-style) solves a problem this deployment shape doesn't have, and would add prepared-statement friction with Prisma for no benefit here.
+
+**Process supervision**: systemd, running the app under a dedicated non-root system user (never root, for a public-facing process).
+
+**Reverse proxy / TLS**: Caddy, with automatic HTTPS certificate provisioning and renewal.
+
+**Build and deploy**: the production build (`next build` with `output: "standalone"`) happens in CI, never on the droplet itself — the droplet has too little memory headroom for a full build alongside the running app. CI also applies Prisma migrations directly against the production database. The resulting build artifact is shipped to the droplet over SSH via a narrowly-scoped, deploy-only credential (distinct from any admin access), and the app process is restarted. Deploys are manually triggered, not automatic on every merge to `main`.
+
+**Auth behind the reverse proxy**: Auth.js needs its production base URL set explicitly (an `AUTH_URL`-style environment variable) rather than relying solely on proxied-request header detection to resolve the correct external host — otherwise OAuth redirect URIs can resolve incorrectly.
 
 ## 22. Additional Resolved Decisions
 
