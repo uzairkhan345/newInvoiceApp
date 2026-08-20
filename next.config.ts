@@ -8,6 +8,11 @@ import type { NextConfig } from "next";
  */
 const nextConfig: NextConfig = {
   serverExternalPackages: ["puppeteer", "puppeteer-core", "@sparticuz/chromium"],
+  // Standalone output is copied to the deploy target as a self-contained
+  // server (its own minimal node_modules), rather than requiring a full
+  // `pnpm install` on the host. `.next/static` and `public/` aren't
+  // included automatically and must be copied alongside it separately.
+  output: "standalone",
 };
 
 export default nextConfig;
