@@ -273,7 +273,7 @@ A chat-style assistant is available on the **Party**, **Payment Method**, and **
 | Backend / Server Logic | Next.js Server Actions or API Routes | Business operations. |
 | ORM / Database Access | Prisma | Schema, migrations, typed DB client. |
 | Database | PostgreSQL | All structured/relational/snapshot data. |
-| Production hosting | **Deferred** — see `Docs/implementation_decisions.md` §21. Local development is the current build focus. |
+| Production hosting | DigitalOcean droplet — see `Docs/implementation_decisions.md` §21. |
 
 ## 10. Authentication Scope
 
