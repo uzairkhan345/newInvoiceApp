@@ -34,7 +34,9 @@ export async function GET(
 
   const pdfBuffer =
     process.env.PDF_ADAPTER === "pdf-lib"
-      ? await renderInvoicePdf(documentService.assembleInvoiceDocumentData(invoice))
+      ? await renderInvoicePdf(
+          documentService.assembleInvoiceDocumentData(invoice),
+        )
       : await (
           await import("@/lib/pdf/renderViaBrowser")
         ).renderInvoicePdfViaBrowser(id, request.headers.get("cookie"));

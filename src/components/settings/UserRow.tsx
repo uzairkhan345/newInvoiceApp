@@ -23,13 +23,7 @@ import type { User, Role } from "@/generated/prisma/client";
  * shown on failure — the real guard is `userService`'s last-admin check,
  * enforced server-side regardless of what this component knows.
  */
-export function UserRow({
-  user,
-  isSelf,
-}: {
-  user: User;
-  isSelf: boolean;
-}) {
+export function UserRow({ user, isSelf }: { user: User; isSelf: boolean }) {
   const router = useRouter();
   const [isChangingRole, setIsChangingRole] = useState(false);
 

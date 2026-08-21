@@ -264,8 +264,8 @@ export function PaymentMethodForm({
           </label>
         </div>
         <p className="pl-6 text-[11px] text-muted-foreground">
-          This is what a Project&rsquo;s Preferred Payment Method picker
-          selects by default for this party.
+          This is what a Project&rsquo;s Preferred Payment Method picker selects
+          by default for this party.
         </p>
       </div>
 

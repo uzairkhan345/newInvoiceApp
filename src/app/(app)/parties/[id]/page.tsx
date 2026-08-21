@@ -145,7 +145,9 @@ async function PaymentMethodsTab({
   const paymentMethods = await paymentMethodService.listForParty(party.id);
   const [deletableFlags, projectRefsByPaymentMethodId] = await Promise.all([
     Promise.all(
-      paymentMethods.map((method) => paymentMethodService.isDeletable(method.id)),
+      paymentMethods.map((method) =>
+        paymentMethodService.isDeletable(method.id),
+      ),
     ),
     projectService.listProjectRefsByPreferredPaymentMethod(
       paymentMethods.map((method) => method.id),
@@ -214,10 +216,7 @@ async function InvoicesTab({
       ) : (
         <InvoiceTable
           invoices={invoices.map(toInvoiceTableRow)}
-          returnTo={withReturnTo(
-            `/parties/${party.id}?tab=invoices`,
-            returnTo,
-          )}
+          returnTo={withReturnTo(`/parties/${party.id}?tab=invoices`, returnTo)}
         />
       )}
     </>

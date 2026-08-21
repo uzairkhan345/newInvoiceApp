@@ -6,7 +6,7 @@ import { launchBrowser } from "@/lib/pdf/localAdapter";
  * mechanism (Puppeteer launch + page.pdf()) in this environment. It
  * deliberately does NOT drive the real /invoices/[id]/print route over
  * HTTP — that requires a running Next.js server, which `pnpm test` doesn't
- * spin up (this repo has no formal E2E suite, per 
+ * spin up (this repo has no formal E2E suite, per
  * "Locked-in environment facts"). The real route is exercised via manual
  * browser/curl verification instead (see the M9 addendum in
  * ).

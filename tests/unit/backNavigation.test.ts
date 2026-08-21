@@ -40,7 +40,10 @@ describe("resolveBackTarget", () => {
   it("labels a project return path", () => {
     expect(
       resolveBackTarget("/projects/abc123?tab=invoices", FALLBACK),
-    ).toEqual({ href: "/projects/abc123?tab=invoices", label: "Back to Project" });
+    ).toEqual({
+      href: "/projects/abc123?tab=invoices",
+      label: "Back to Project",
+    });
   });
 
   it("labels a party return path", () => {
@@ -84,9 +87,9 @@ describe("withReturnTo", () => {
   });
 
   it("leaves the href unchanged when returnTo is unsafe, never trusting it", () => {
-    expect(
-      withReturnTo("/projects/abc123", "https://evil.example.com"),
-    ).toBe("/projects/abc123");
+    expect(withReturnTo("/projects/abc123", "https://evil.example.com")).toBe(
+      "/projects/abc123",
+    );
   });
 
   it("nests through multiple hops without a fixed depth limit — dashboard → project → invoice → back to project still remembers the dashboard", () => {

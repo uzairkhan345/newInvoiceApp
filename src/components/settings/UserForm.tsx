@@ -92,9 +92,7 @@ export function UserForm({ onSaved }: { onSaved: () => void }) {
                 <SelectItem value="RESTRICTED">
                   {ROLE_LABELS.RESTRICTED}
                 </SelectItem>
-                <SelectItem value="STANDARD">
-                  {ROLE_LABELS.STANDARD}
-                </SelectItem>
+                <SelectItem value="STANDARD">{ROLE_LABELS.STANDARD}</SelectItem>
                 <SelectItem value="ADMIN">{ROLE_LABELS.ADMIN}</SelectItem>
               </SelectContent>
             </Select>

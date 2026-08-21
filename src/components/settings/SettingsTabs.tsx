@@ -18,7 +18,9 @@ export function SettingsTabs({
       <FilterChips
         options={TABS}
         active={active}
-        hrefFor={(value) => (value === "providers" ? "/settings" : "/settings/users")}
+        hrefFor={(value) =>
+          value === "providers" ? "/settings" : "/settings/users"
+        }
       />
     </div>
   );

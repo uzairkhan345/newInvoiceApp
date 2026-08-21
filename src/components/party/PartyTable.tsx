@@ -35,7 +35,8 @@ const HEALTH_STYLES: Record<PartyHealthTone, string> = {
 };
 
 const RELATIONSHIP_STYLES: Record<PartyRelationship, string> = {
-  client: "bg-[var(--relationship-client-bg)] text-[var(--relationship-client-text)]",
+  client:
+    "bg-[var(--relationship-client-bg)] text-[var(--relationship-client-text)]",
   contractor:
     "bg-[var(--relationship-contractor-bg)] text-[var(--relationship-contractor-text)]",
   both: "bg-[var(--relationship-both-bg)] text-[var(--relationship-both-text)]",

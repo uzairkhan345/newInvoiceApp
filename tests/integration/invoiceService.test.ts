@@ -654,9 +654,7 @@ describe("invoiceService.createDraft/updateDraft — billing period (M39)", () =
     );
     createdInvoiceIds.push(invoice.id);
 
-    expect(invoice.periodStart?.toISOString().slice(0, 10)).toBe(
-      "2026-01-01",
-    );
+    expect(invoice.periodStart?.toISOString().slice(0, 10)).toBe("2026-01-01");
     expect(invoice.periodEnd?.toISOString().slice(0, 10)).toBe("2026-01-31");
   });
 
@@ -685,9 +683,7 @@ describe("invoiceService.createDraft/updateDraft — billing period (M39)", () =
       baseInvoiceInput({ periodStart: "2026-02-01", periodEnd: "2026-02-28" }),
     );
 
-    expect(updated.periodStart?.toISOString().slice(0, 10)).toBe(
-      "2026-02-01",
-    );
+    expect(updated.periodStart?.toISOString().slice(0, 10)).toBe("2026-02-01");
     expect(updated.periodEnd?.toISOString().slice(0, 10)).toBe("2026-02-28");
   });
 });
@@ -1365,9 +1361,7 @@ describe("invoiceService.getAutofillDataForProject", () => {
     );
     createdInvoiceIds.push(invoice.id);
 
-    const autofill = await invoiceService.getAutofillDataForProject(
-      project.id,
-    );
+    const autofill = await invoiceService.getAutofillDataForProject(project.id);
     const credit = autofill!.items.find((i) => i.isReferralCredit)!;
     expect(credit.description).toBe("Referral Credit (Thank you!)");
     expect(credit.amount).toBe("");

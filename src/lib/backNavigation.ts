@@ -47,7 +47,10 @@ export function resolveBackTarget(
  * party/project they landed on. `href` may already have its own `?...`
  * query string (e.g. `?tab=invoices`).
  */
-export function withReturnTo(href: string, returnTo: string | undefined): string {
+export function withReturnTo(
+  href: string,
+  returnTo: string | undefined,
+): string {
   if (!isSafeReturnPath(returnTo)) return href;
   const separator = href.includes("?") ? "&" : "?";
   return `${href}${separator}returnTo=${encodeURIComponent(returnTo)}`;

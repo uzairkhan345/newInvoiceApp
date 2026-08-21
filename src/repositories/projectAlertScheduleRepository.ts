@@ -24,7 +24,9 @@ function findById(id: string): Promise<ProjectAlertSchedule | null> {
   return prisma.projectAlertSchedule.findUnique({ where: { id } });
 }
 
-function create(data: ProjectAlertScheduleWriteInput): Promise<ProjectAlertSchedule> {
+function create(
+  data: ProjectAlertScheduleWriteInput,
+): Promise<ProjectAlertSchedule> {
   return prisma.projectAlertSchedule.create({
     data: {
       projectId: data.projectId,
@@ -67,7 +69,9 @@ function clear(id: string, clearedAt: Date): Promise<ProjectAlertSchedule> {
  * math stays in application code (src/lib/alertScheduleFiring.ts), same
  * philosophy as invoicePeriod.ts's computeDueDate never living in SQL.
  */
-function findFireableAcrossActiveProjects(): Promise<AlertScheduleWithProject[]> {
+function findFireableAcrossActiveProjects(): Promise<
+  AlertScheduleWithProject[]
+> {
   return prisma.projectAlertSchedule.findMany({
     where: {
       project: { status: "ACTIVE" },

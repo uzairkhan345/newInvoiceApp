@@ -31,7 +31,8 @@ export async function listFiredAlertSchedulesAction(): Promise<
   const check = await requireSession();
   if (!check.ok) return { success: false, error: check.error };
 
-  const schedules = await projectAlertScheduleService.listFiredAcrossActiveProjects();
+  const schedules =
+    await projectAlertScheduleService.listFiredAcrossActiveProjects();
   return { success: true, data: schedules };
 }
 
@@ -51,7 +52,10 @@ export async function createProjectAlertScheduleAction(
     };
   }
 
-  const schedule = await projectAlertScheduleService.create(projectId, parsed.data);
+  const schedule = await projectAlertScheduleService.create(
+    projectId,
+    parsed.data,
+  );
   revalidateAlertSchedulePaths(projectId);
   return { success: true, data: { id: schedule.id } };
 }

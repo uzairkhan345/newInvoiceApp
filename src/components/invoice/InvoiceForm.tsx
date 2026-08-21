@@ -458,8 +458,8 @@ export function InvoiceForm({
                     {...register("periodStart")}
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    Optional — the billing period this invoice covers, not
-                    when it&rsquo;s due
+                    Optional — the billing period this invoice covers, not when
+                    it&rsquo;s due
                   </p>
                 </FormField>
                 <FormField

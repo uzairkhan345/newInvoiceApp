@@ -365,8 +365,8 @@ export function ProjectForm({
               )}
             />
             <p className="text-[11px] text-muted-foreground">
-              Used only to suggest a due date on the invoice create form —
-              never enforced.
+              Used only to suggest a due date on the invoice create form — never
+              enforced.
             </p>
           </FormField>
 

@@ -126,11 +126,7 @@ export const invoiceSchema = invoiceBaseSchema.superRefine((data, ctx) => {
     });
   }
   // M39 — only checked when both are actually set; either/both blank is fine.
-  if (
-    data.periodStart &&
-    data.periodEnd &&
-    data.periodEnd < data.periodStart
-  ) {
+  if (data.periodStart && data.periodEnd && data.periodEnd < data.periodStart) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["periodEnd"],

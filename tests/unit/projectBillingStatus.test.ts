@@ -9,9 +9,7 @@ import {
   isDueWithin14Days,
   resolveHealthCategory,
 } from "@/lib/projectBillingStatus";
-import type {
-  InvoiceListItem,
-} from "@/repositories/invoiceRepository";
+import type { InvoiceListItem } from "@/repositories/invoiceRepository";
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
 import type { AlertScheduleWithProject } from "@/repositories/projectAlertScheduleRepository";
 import type { ProjectBillingRow } from "@/lib/projectBillingStatus";

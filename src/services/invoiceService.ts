@@ -433,7 +433,9 @@ async function previewNextInvoiceNumber(projectId: string): Promise<string> {
  * a project's first invoice, or if that prior invoice never had a period
  * set — nothing to chain off either way.
  */
-async function previewNextPeriodStart(projectId: string): Promise<string | null> {
+async function previewNextPeriodStart(
+  projectId: string,
+): Promise<string | null> {
   const lastInvoice =
     await invoiceRepository.findMostRecentSentOrPaidByProject(projectId);
   if (!lastInvoice?.periodEnd) return null;
@@ -565,9 +567,7 @@ function collectSendValidationReasons(
       `Enter a converted total in ${project.displayCurrency} before sending.`,
     );
   }
-  const referralCredit = existing.items.find(
-    (item) => item.isReferralCredit,
-  );
+  const referralCredit = existing.items.find((item) => item.isReferralCredit);
   if (referralCredit && referralCredit.amount.isZero()) {
     reasons.push(
       "Enter a nonzero amount for the referral credit line item before sending, or remove it.",
