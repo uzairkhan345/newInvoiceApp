@@ -112,9 +112,9 @@ As the admin, I want to create a project linking a contractor and a client so in
 - Requires: project name, a Contractor (picked from the full party list), a Client (picked from the same full party list — no role filtering, the same party may even be picked for both).
 - If the party needed doesn't exist yet, an inline "**+ Create new party**" option is available directly from the picker, so the admin doesn't have to abandon the project form.
 - Optional preferred payment method, which must belong to the selected contractor.
-- A `DisplayCurrency` setting (`USD`, `AUD`, or `GBP`; default `USD`) — governs only whether invoices under this project show an additional converted total, never what currency the core invoice amounts are computed in (always USD).
+- A currency mode and `DisplayCurrency` setting — see `Docs/product_spec.md` §5 for the current `SINGLE`/`DUAL` model and supported currency list.
 - Project status: `ACTIVE` or `ARCHIVED`.
-- An optional `Abbreviation` (short code, e.g. `TQ`) used to resolve the `{abbreviation}` placeholder in the invoice number format (Story 3.2); auto-derived from the project name's initials if left blank *(new — see `Docs/implementation_decisions.md` §22)*.
+- An optional `Abbreviation` (short code, e.g. `TQ`) used to resolve the `{abbreviation}` placeholder in the invoice number format (Story 3.2); auto-derived from the project name's initials if left blank (see `Docs/implementation_decisions.md` §22).
 - **There is no AI-assist chat panel on this form** — it is filled manually.
 
 ## Story 3.2: Configure Invoice Number Format Per Project
@@ -165,7 +165,7 @@ As the admin, I want to create a draft invoice from a project so I can review an
 
 Unchanged from the original except **no tax**: description (required), quantity (`> 0`), unit price (`>= 0`), amount = `quantity * unitPrice` (backend-calculated, source of truth).
 
-## Story 4.5: Flat-Amount Line Items and Invoice Notes *(new — M14/M15, 2026-07-16)*
+## Story 4.5: Flat-Amount Line Items and Invoice Notes
 
 As the admin, I want some line items to be a flat lump-sum amount instead of hours × rate, and to attach notes to the invoice, so I can bill retainers/arrears the same way I actually invoice clients.
 
@@ -242,7 +242,7 @@ Unchanged — `OVERDUE` is never stored; an invoice displays as overdue when `st
 - `VOID`: fully read-only (terminal).
 - The backend enforces all of this — never only the frontend.
 
-## Story 5.6: Delete Invoice *(new — resolved during blueprint planning, see `Docs/implementation_decisions.md` §22)*
+## Story 5.6: Delete Invoice
 
 As the admin, I want to delete an invoice that's no longer needed, including to unblock deleting its parent project.
 
@@ -351,17 +351,12 @@ As a developer, I want the app structured so a production hosting decision can b
 
 ### Acceptance Criteria
 
-- The production hosting target (Vercel, a droplet, or otherwise) is **not decided** and the app must not assume any target's constraints (see `Docs/implementation_decisions.md` §21).
+- The production hosting target was left undecided during MVP development; a DigitalOcean droplet was chosen and deployed afterward (see `Docs/implementation_decisions.md` §21).
 - The only deployment-sensitive code is the PDF browser-launch adapter (Story 7.2) — everything else works identically regardless of target, driven purely by `DATABASE_URL` and standard environment variables.
 
-## Story 9.3: Add Single Admin Login (Deferred Beyond MVP Development)
+## Story 9.3: Authentication (Deferred Beyond MVP Development)
 
-As the application owner, I want a single admin login so the app isn't publicly open once it's exposed beyond local development.
-
-### Acceptance Criteria
-
-- **Not implemented during MVP development** — deferred by explicit decision.
-- When implemented, the intended approach is simple credentials plus a signed cookie session — no third-party auth provider, no multi-user roles.
+Not implemented during MVP development — deferred by explicit decision. Built afterward as Google OAuth via Auth.js with three roles (`ADMIN`/`STANDARD`/`RESTRICTED`), superseding the simple-credentials/single-admin approach originally floated here — see `Docs/implementation_decisions.md` §8 and `Docs/product_spec.md` §10 for the current shape.
 
 ---
 
@@ -389,7 +384,7 @@ Tests verify `Party`/`PaymentMethod`/`Project` deletion is blocked exactly when 
 
 ---
 
-# Epic 11: AI-Assisted Data Entry *(new)*
+# Epic 11: AI-Assisted Data Entry
 
 ## Story 11.1: Use AI Assist to Fill the Party Form
 
@@ -428,7 +423,7 @@ As the admin, I want to choose which AI provider/model is used and what happens 
 
 Deferred from the original list (still not required for MVP):
 
-- Multi-user role-based access control. Multi-tenant support.
+- Multi-tenant support.
 - Automated invoice email sending. Recurring invoices.
 - Permanent generated file storage. Revenue analytics dashboard.
 - Full audit log. Client portal. Online payment collection.
