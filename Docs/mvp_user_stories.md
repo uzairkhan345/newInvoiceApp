@@ -1,6 +1,6 @@
 # MVP User Stories
 
-The MVP epics, stories, and acceptance criteria. Use together with `Docs/product_spec.md` and `Docs/implementation_decisions.md`.
+Historical record of the MVP (M0–M16) epics, stories, and acceptance criteria — not maintained for post-MVP features. For current-state schema and rationale, see `Docs/product_spec.md` and `Docs/implementation_decisions.md`.
 
 ## MVP Scope Summary
 
