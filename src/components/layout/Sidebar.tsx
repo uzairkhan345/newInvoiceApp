@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getNavItems, isActiveNavHref } from "./navItems";
 import { AlertsBell } from "./AlertsBell";
+import { signOutAction } from "@/actions/auth.actions";
 import type { Role } from "@/generated/prisma/client";
 
 /**
@@ -60,13 +62,26 @@ export function Sidebar({ role }: { role: Role }) {
         })}
       </nav>
 
-      <div className="flex items-center gap-2.5 border-t border-nav-border px-5 py-4">
-        <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
-          Z
+      <div className="border-t border-nav-border">
+        <div className="flex items-center gap-2.5 px-5 py-3">
+          <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
+            Z
+          </div>
+          <span className="truncate text-xs font-semibold text-white">
+            Operational view
+          </span>
         </div>
-        <span className="truncate text-xs font-semibold text-white">
-          Operational view
-        </span>
+        <form action={signOutAction} className="px-3 pb-3">
+          <button
+            type="submit"
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-[9px] text-[13px] font-semibold text-nav-muted transition-colors hover:bg-white/[0.06] hover:text-white"
+          >
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-nav-icon text-nav-muted">
+              <LogOut className="h-3 w-3" />
+            </span>
+            Sign out
+          </button>
+        </form>
       </div>
     </aside>
   );

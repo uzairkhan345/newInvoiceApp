@@ -9,7 +9,6 @@ import {
   DashboardViewToggle,
   type DashboardView,
 } from "@/components/dashboard/DashboardViewToggle";
-import { PortfolioPulseStats } from "@/components/dashboard/PortfolioPulseStats";
 import { FilterChips } from "@/components/shared/FilterChips";
 import { Button } from "@/components/ui/button";
 import { invoiceService } from "@/services/invoiceService";
@@ -239,11 +238,7 @@ export default async function DashboardPage({
         />
       ) : (
         <>
-          <PortfolioPulseStats
-            rows={billingRows}
-            now={now}
-            activeFilter={healthFilter}
-          />
+          {/* PortfolioPulseStats hidden for now — pending a toggle to show/hide it */}
           <div className="mb-4">
             <FilterChips
               options={[
@@ -263,7 +258,9 @@ export default async function DashboardPage({
               ]}
               active={healthFilter}
               hrefFor={(value) =>
-                value === "all" ? "/?view=health" : `/?view=health&health=${value}`
+                value === "all"
+                  ? "/?view=health"
+                  : `/?view=health&health=${value}`
               }
             />
           </div>
