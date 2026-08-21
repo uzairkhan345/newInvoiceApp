@@ -30,7 +30,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   session: { strategy: "database" },
-  pages: { signIn: "/login" },
+  // `error` is set explicitly (not left to Auth.js's implicit "falls back
+  // to signIn page" behavior) so every failure mode — not just a rejected
+  // signIn callback — reliably lands on the app's own styled /login page
+  // instead of Auth.js's unstyled built-in error UI.
+  pages: { signIn: "/login", error: "/login" },
   callbacks: {
     async signIn({ user }) {
       if (!user.email) return false;
