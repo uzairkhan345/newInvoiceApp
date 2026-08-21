@@ -35,7 +35,8 @@ function listForProject(projectId: string): Promise<ProjectAlertSchedule[]> {
 async function listForProjectWithFiringState(
   projectId: string,
 ): Promise<ProjectAlertScheduleWithFiringState[]> {
-  const schedules = await projectAlertScheduleRepository.findByProject(projectId);
+  const schedules =
+    await projectAlertScheduleRepository.findByProject(projectId);
   const now = new Date();
   return schedules.map((schedule) => ({
     ...schedule,
@@ -81,7 +82,9 @@ function clear(id: string): Promise<ProjectAlertSchedule> {
  * project shouldn't keep nagging the dashboard, matching the precedent set
  * by the missing-payment-method dashboard query and M25's "Used by" tags.
  */
-async function listFiredAcrossActiveProjects(): Promise<AlertScheduleWithProject[]> {
+async function listFiredAcrossActiveProjects(): Promise<
+  AlertScheduleWithProject[]
+> {
   const candidates =
     await projectAlertScheduleRepository.findFireableAcrossActiveProjects();
   const now = new Date();

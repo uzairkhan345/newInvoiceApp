@@ -1,20 +1,25 @@
 # Handoff: Invoice App UI Redesign (Concept B / "v2")
 
 ## Overview
+
 A UI redesign of the invoice application's Dashboard, Invoices, and Projects pages, plus a new responsive navigation shell (dark desktop sidebar + mobile bottom tab bar). Solves three problems in the current app: a plain/flat dashboard, a boring "Needs Attention" list, and zero mobile support (the sidebar currently just disappears below 1024px with nothing replacing it).
 
 ## About the Design Files
+
 The file in this bundle (`Dashboard Redesign v2.dc.html`) is a **design reference built in HTML** — an interactive prototype showing intended layout, styling, states, and behavior. It is not production code to copy directly. The task is to **recreate this design in the app's existing Next.js/React + Tailwind codebase**, using its established component patterns (see `src/components/ui/*`, `src/components/layout/*`) rather than porting the HTML/inline-styles as-is.
 
 The prototype file is self-contained (uses a lightweight templating runtime for live preview) — treat it as a visual/behavioral spec, not a library to import.
 
 ## Fidelity
+
 **High-fidelity.** Colors, type scale, spacing, and component states below are final — implement pixel-for-pixel. Copy/labels are representative sample data; wire up real data from existing services (`projectService`, invoice repository, etc.).
 
 ## Screens / Views
 
 ### 1. Navigation shell (all pages)
+
 **Desktop (≥1024px):**
+
 - Fixed-width 240px sidebar, background `#0f172a` (near-black navy), full height, sticky.
 - Logo row: 30×30px indigo (`#6366f1`) square, 8px radius, white "I" mark + "Invoice App" wordmark, 14px/700 white text, left-aligned; trailing right: alerts bell (30×30px, `rgba(99,102,241,0.2)` bg, `#a5b4fc` icon), badge (red, white count text) shown only when count > 0. Padding 22px 20px, `space-between`. Click opens a popover panel (right side, 320px wide) listing each fired alert with an inline Clear button.
 - Nav items: vertical stack, 3px gap, 12px horizontal padding container. Each item: 9px 12px padding, 8px radius, flex row, 10px gap.
@@ -25,6 +30,7 @@ The prototype file is self-contained (uses a lightweight templating runtime for 
 - Footer: user row, 30×30px circular indigo avatar, name (12px/600 white) + email (11px `#64748b`), top border `rgba(255,255,255,0.08)`.
 
 **Mobile (<1024px):**
+
 - Sidebar is replaced entirely (never just hidden).
 - Top bar: fixed, 52px tall, full width, bg `#0f172a`, `space-between`. Logo (26×26px) + wordmark on the left — no hamburger, no page title needed here; alerts bell (26×26px, same badge treatment as desktop) trailing on the right.
 - Bottom tab bar: fixed to viewport bottom, bg `#0f172a`, `display:grid` 5 equal columns, padding `6px 4px 10px` (extra bottom padding for home-indicator safe area). One tab per nav item: mono glyph letter above a 10px/600 label. Active tab text `#a5b4fc`; inactive `#64748b`.
@@ -32,6 +38,7 @@ The prototype file is self-contained (uses a lightweight templating runtime for 
 - Breakpoint: **1024px** (matches current app's existing sidebar collapse point — don't change it, just add the mobile replacement).
 
 ### 2. Dashboard
+
 Layout: content max-width 1200px, centered, padding 40px desktop / 16-20px mobile.
 
 - **Header row**: flex, space-between, wraps on mobile. Title "Dashboard" 24px/800/`-0.02em` tracking, `#0f172a`. Subtitle 13px `#475569`. Right-aligned primary button: "+ New Invoice", 36px tall, 16px horizontal padding, 8px radius, bg `#6366f1`, white 13px/600 text, no border.
@@ -59,6 +66,7 @@ Layout: content max-width 1200px, centered, padding 40px desktop / 16-20px mobil
   - **Long-list state**: feed becomes independently scrollable at `max-height: 520px`.
 
 ### 3. Invoices
+
 - Same header pattern as Dashboard ("Invoices" title + "+ New Invoice" button).
 - **Status filter chips** row above the list: All / Draft / Sent / Paid / Overdue / Void. Pill buttons, 999px radius, 6px/14px padding, 12px/600. Active: `#e0e7ff` bg, `#6366f1` text, `#6366f1` border. Inactive: white bg, `#475569` text, `#e2e8f0` border.
 - **Desktop table** (≥1024px): white card, `#e2e8f0` border, 12px radius, overflow hidden. Header row: dark bg `#0f172a`, `#94a3b8` 11px/700/uppercase text, grid columns `1.1fr 1.3fr 1.3fr 0.9fr 0.9fr 0.9fr 0.3fr` (Invoice, Client, Project, Amount, Due, Status, chevron). Body rows: same grid, 14px/20px padding, top border `#f1f5f9`, invoice number in JetBrains Mono/600, amount in JetBrains Mono, status as colored badge pill (see badge colors below), trailing `›` chevron in `#cbd5e1`.
@@ -66,7 +74,9 @@ Layout: content max-width 1200px, centered, padding 40px desktop / 16-20px mobil
 - **Empty state**: centered document icon (grey circle), "No invoices yet" / "Create your first invoice."
 
 ### 4. Projects
+
 Same structural pattern as Invoices:
+
 - Filter chips: All / Active / Archived.
 - **Desktop table** columns: `1.6fr 1.2fr 1fr 1.4fr 0.7fr 0.3fr` — Project (with a 28×28px indigo-tinted initials avatar, `#ede9fe` bg / `#6366f1` text, mono 2-letter abbreviation), Client, Status (badge), Payment Method, Currency (mono), chevron.
 - Status badge: Active = `#e0e7ff` bg / `#6366f1` text; Archived = `#f1f5f9` bg / `#475569` text.
@@ -76,6 +86,7 @@ Same structural pattern as Invoices:
 - **Empty state**: "No projects yet" / "Create your first project."
 
 ## Interactions & Behavior
+
 - Nav item click → navigates to that page (client-side routing in the real app; Parties/Settings are present but not built out in this design pass — leave their existing routes untouched).
 - Status filter chips → client-side (or query-param) filter of the underlying list; only one active at a time.
 - Table/card rows are links to invoice/project detail (existing detail routes).
@@ -83,6 +94,7 @@ Same structural pattern as Invoices:
 - Long lists: Priority Feed panel scrolls independently past `max-height: 520px` rather than growing the page indefinitely.
 
 ## State Management
+
 - Per-page: current status filter (Invoices, Projects) — simple local/URL state.
 - Dashboard needs three real data aggregations to replace the mock arrays:
   1. Stat counts + trailing-30-day deltas (active projects, drafts, sent/unpaid + $ total, overdue).
@@ -93,6 +105,7 @@ Same structural pattern as Invoices:
 ## Design Tokens
 
 **Colors**
+
 - Ink: `#0f172a` (headings, primary text, dark sidebar/topbar/tab-bar/table-header bg)
 - Body text: `#475569`
 - Muted text: `#94a3b8`
@@ -108,6 +121,7 @@ Same structural pattern as Invoices:
 - Gradient (alert banner): `linear-gradient(135deg, #1e1b4b, #312e81)`
 
 **Typography**
+
 - UI font: Inter (400/500/600/700/800)
 - Numeric/mono font: JetBrains Mono (500/600/700) — used for invoice numbers, currency amounts, stat values, currency codes, nav glyphs
 - Page title: 24px/800, `-0.02em` letter-spacing
@@ -117,16 +131,20 @@ Same structural pattern as Invoices:
 - Tag/badge text: 10px/700, uppercase, `0.04em` letter-spacing
 
 **Spacing / radii**
+
 - Card radius: 12px; pill/badge radius: 999px; small icon box radius: 6–8px; alert banner radius: 14px
 - Card padding: 16–20px; page padding: 40px desktop / 16–20px mobile
 - Grid gaps: 16px (stat cards), 20px (page sections), 8–10px (chip rows, mobile cards)
 
 **Breakpoint**
+
 - 1024px — matches the existing app's current sidebar collapse point.
 
 ## Assets
+
 No external image assets. All icons are single-letter/glyph mono-type marks or Unicode symbols (▲ ▼ – for trends, › for chevrons, ✓ for empty-state success) — no icon library dependency was introduced. If the app already uses an icon library (e.g. Lucide, which is common in shadcn/ui setups), swap these glyphs for real icons of equivalent meaning.
 
 ## Files
+
 - `Dashboard Redesign v2.dc.html` — the interactive HTML prototype (Concept B) covering Dashboard, Invoices, and Projects, with a top-right control panel to toggle page / desktop-mobile / normal-empty-long data states. Open it in a browser to click through every state described above.
 - `screenshots/` — static captures of desktop Dashboard/Invoices/Projects, mobile Dashboard, and Empty/Long data states, for quick reference alongside the live prototype.

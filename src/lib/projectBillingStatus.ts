@@ -57,12 +57,18 @@ export type CoveredPeriod = { start: Date; end: Date };
 export function buildLastCoveredPeriodByProjectId(
   allInvoices: InvoiceListItem[],
 ): Map<string, CoveredPeriod> {
-  const byProject = new Map<string, { issueDate: Date; period: CoveredPeriod }>();
+  const byProject = new Map<
+    string,
+    { issueDate: Date; period: CoveredPeriod }
+  >();
   for (const invoice of allInvoices) {
     if (invoice.status !== "SENT" && invoice.status !== "PAID") continue;
     if (!invoice.periodStart || !invoice.periodEnd) continue;
     const existing = byProject.get(invoice.projectId);
-    if (!existing || invoice.issueDate.getTime() > existing.issueDate.getTime()) {
+    if (
+      !existing ||
+      invoice.issueDate.getTime() > existing.issueDate.getTime()
+    ) {
       byProject.set(invoice.projectId, {
         issueDate: invoice.issueDate,
         period: { start: invoice.periodStart, end: invoice.periodEnd },
@@ -90,12 +96,7 @@ function billingLabelFor(project: ProjectWithRelations): string {
 }
 
 export type BillingStatusTone =
-  | "overdue"
-  | "prepare"
-  | "draft"
-  | "setupIncomplete"
-  | "upcoming"
-  | "positive";
+  "overdue" | "prepare" | "draft" | "setupIncomplete" | "upcoming" | "positive";
 
 /** Shared left-border accent classes for billing-status project cards (ProjectCardGrid, InvoiceProjectPicker). */
 export const BILLING_TONE_ACCENT: Record<BillingStatusTone, string> = {
@@ -134,10 +135,7 @@ export function resolveHealthCategory(tone: BillingStatusTone): HealthCategory {
  * number on the card and the rows shown after clicking it never disagree).
  */
 export type DashboardHealthFilter =
-  | "all"
-  | HealthCategory
-  | "dueSoon14Days"
-  | "openExposure";
+  "all" | HealthCategory | "dueSoon14Days" | "openExposure";
 
 const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
 
@@ -266,7 +264,10 @@ export function buildProjectBillingRows(input: {
       firedScheduleByProjectId.set(schedule.project.id, schedule);
     }
   }
-  const liveSchedulesByProjectId = new Map<string, AlertScheduleWithProject[]>();
+  const liveSchedulesByProjectId = new Map<
+    string,
+    AlertScheduleWithProject[]
+  >();
   for (const schedule of input.liveAlertSchedules ?? []) {
     if (!isSendInvoiceSchedule(schedule)) continue;
     const existing = liveSchedulesByProjectId.get(schedule.project.id);

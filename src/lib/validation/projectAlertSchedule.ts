@@ -16,4 +16,6 @@ export const projectAlertScheduleSchema = z.object({
   label: z.string().trim().optional().or(z.literal("")),
 });
 
-export type ProjectAlertScheduleInput = z.infer<typeof projectAlertScheduleSchema>;
+export type ProjectAlertScheduleInput = z.infer<
+  typeof projectAlertScheduleSchema
+>;

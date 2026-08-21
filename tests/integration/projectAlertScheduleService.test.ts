@@ -201,7 +201,8 @@ describe("projectAlertScheduleService", () => {
       baseInput({ dayOfMonth: todayDay, label: "[test] archived fired" }),
     );
 
-    const fired = await projectAlertScheduleService.listFiredAcrossActiveProjects();
+    const fired =
+      await projectAlertScheduleService.listFiredAcrossActiveProjects();
     const labels = fired.map((s) => s.label);
 
     expect(labels).toContain("[test] active fired");

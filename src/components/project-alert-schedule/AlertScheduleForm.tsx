@@ -64,7 +64,11 @@ export function AlertScheduleForm({
       const result =
         mode === "create"
           ? await createProjectAlertScheduleAction(projectId, values)
-          : await updateProjectAlertScheduleAction(scheduleId!, projectId, values);
+          : await updateProjectAlertScheduleAction(
+              scheduleId!,
+              projectId,
+              values,
+            );
 
       if (!result.success) {
         toast.error(result.error);
@@ -123,9 +127,9 @@ export function AlertScheduleForm({
           </label>
         </div>
         <p className="pl-6 text-[11px] text-muted-foreground">
-          When cleared, this alert reappears automatically on the same day
-          next month. Leave unchecked for a one-time reminder that never
-          reappears once cleared.
+          When cleared, this alert reappears automatically on the same day next
+          month. Leave unchecked for a one-time reminder that never reappears
+          once cleared.
         </p>
       </div>
 

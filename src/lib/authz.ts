@@ -3,8 +3,7 @@ import type { Role } from "@/generated/prisma/client";
 import type { Session } from "next-auth";
 
 type GuardResult =
-  | { ok: true; session: Session }
-  | { ok: false; error: string };
+  { ok: true; session: Session } | { ok: false; error: string };
 
 /**
  * M28 — the real enforcement boundary for Server Actions. Page/layout-level

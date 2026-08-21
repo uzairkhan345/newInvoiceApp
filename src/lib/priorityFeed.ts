@@ -132,8 +132,7 @@ export function buildPriorityFeed(input: {
           href: `/invoices/new/${schedule.project.id}`,
         },
       };
-    },
-  );
+    });
 
   const draft: PriorityFeedItem[] = input.staleDrafts.map((invoice) => ({
     id: `draft-${invoice.id}`,

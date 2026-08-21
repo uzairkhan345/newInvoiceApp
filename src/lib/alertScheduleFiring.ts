@@ -49,7 +49,9 @@ export type AlertFiringInput = {
  * Alert Schedules management list) intentionally do NOT filter — those are
  * about reminders in general, not specifically invoicing.
  */
-export function isSendInvoiceSchedule(input: { label: string | null }): boolean {
+export function isSendInvoiceSchedule(input: {
+  label: string | null;
+}): boolean {
   return input.label?.trim().toLowerCase() === "send invoice";
 }
 

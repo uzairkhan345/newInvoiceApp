@@ -18,7 +18,7 @@ A **single-tenant invoice tracking application** for freelancers and contractors
   <img src="Docs/screenshots/dashboard-mobile.png" alt="Mobile dashboard with bottom tab bar" width="320" />
 </p>
 
-*Screenshots show the bundled demo seed data.*
+_Screenshots show the bundled demo seed data._
 
 ## Features
 
@@ -28,7 +28,7 @@ A **single-tenant invoice tracking application** for freelancers and contractors
 - **Documents** — an on-screen A4 preview that is pixel-identical to the downloadable **PDF** (Puppeteer) and mirrored in the downloadable **Excel** workbook (ExcelJS). No files stored server-side; generated on demand.
 - **Currency** — a project denominates invoices entirely in one currency (`SINGLE` mode: USD/AUD/GBP/NZD/AED/PKR/SAR) or works USD-primary with a manually-entered converted total (`DUAL` mode). Dashboards never blend currencies.
 - **Dashboard** — stat cards with trend sparklines, an attention banner, and a merged priority feed (overdue → setup gaps → stale drafts → recent activity).
-- **AI-assisted data entry** *(optional)* — a chat panel on Party/Payment Method/Invoice forms that stages form fields from natural language; it never auto-submits. Bring your own API key (Google/Anthropic/Groq) via the in-app `/settings` page; without one, the app is fully usable by hand.
+- **AI-assisted data entry** _(optional)_ — a chat panel on Party/Payment Method/Invoice forms that stages form fields from natural language; it never auto-submits. Bring your own API key (Google/Anthropic/Groq) via the in-app `/settings` page; without one, the app is fully usable by hand.
 
 ## Tech stack
 
@@ -59,13 +59,13 @@ Open `/settings`, add an API key for Google, Anthropic, and/or Groq, and list th
 
 ## Scripts
 
-| Command | What it does |
-|---|---|
-| `pnpm dev` | Dev server on port 3001 |
-| `pnpm build` / `pnpm start` | Production build / serve |
-| `pnpm test` | Vitest suite (unit + integration — see warning below) |
-| `pnpm typecheck` | `tsc --noEmit` |
-| `pnpm lint` / `pnpm format` | ESLint / Prettier |
+| Command                     | What it does                                          |
+| --------------------------- | ----------------------------------------------------- |
+| `pnpm dev`                  | Dev server on port 3001                               |
+| `pnpm build` / `pnpm start` | Production build / serve                              |
+| `pnpm test`                 | Vitest suite (unit + integration — see warning below) |
+| `pnpm typecheck`            | `tsc --noEmit`                                        |
+| `pnpm lint` / `pnpm format` | ESLint / Prettier                                     |
 
 Integration tests run against a **dedicated test database** (`TEST_DATABASE_URL`, defaulting to `newinvoice_test` on the same Docker Postgres server) — created and migrated automatically before each run. They never touch the development database in `DATABASE_URL`.
 

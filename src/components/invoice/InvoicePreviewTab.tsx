@@ -29,10 +29,7 @@ export function InvoicePreviewTab({
             size="sm"
             nativeButton={false}
             render={
-              <Link
-                href={`/api/invoices/${invoiceId}/excel`}
-                target="_blank"
-              />
+              <Link href={`/api/invoices/${invoiceId}/excel`} target="_blank" />
             }
           >
             <Download className="h-3.5 w-3.5" />

@@ -152,8 +152,7 @@ export function ProjectBillingStatusTable({
                     {row.draftCount > 0 ? (
                       <span className="mt-1 block text-[10px] whitespace-nowrap text-muted-foreground">
                         {row.draftCount}{" "}
-                        {row.draftCount === 1 ? "invoice" : "invoices"} in
-                        draft
+                        {row.draftCount === 1 ? "invoice" : "invoices"} in draft
                       </span>
                     ) : null}
                   </td>

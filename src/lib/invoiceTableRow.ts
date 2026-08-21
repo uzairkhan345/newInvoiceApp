@@ -36,7 +36,10 @@ export function toInvoiceTableRow(invoice: InvoiceListItem): InvoiceTableRow {
     project: {
       id: invoice.project.id,
       name: invoice.project.name,
-      client: { id: invoice.project.client.id, name: invoice.project.client.name },
+      client: {
+        id: invoice.project.client.id,
+        name: invoice.project.client.name,
+      },
     },
   };
 }

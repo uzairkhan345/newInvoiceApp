@@ -84,7 +84,8 @@ function assembleInvoiceDocumentData(
     status: invoice.status,
     issueDate: invoice.issueDate,
     dueDate: invoice.dueDate,
-    serviceDescription: invoice.project.serviceDescription ?? invoice.project.name,
+    serviceDescription:
+      invoice.project.serviceDescription ?? invoice.project.name,
     contractor: invoice.fromPartySnapshot as unknown as PartySnapshotData,
     client: invoice.toPartySnapshot as unknown as PartySnapshotData,
     paymentDetails: paymentDetails.map((field) => ({

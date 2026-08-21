@@ -203,8 +203,7 @@ export function LineItemsEditor({
                   />
                 </FormField>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  Shown as a deduction on the invoice — enter a positive
-                  amount.
+                  Shown as a deduction on the invoice — enter a positive amount.
                 </p>
               </>
             ) : watchedItems?.[index]?.isFlatAmount ? (

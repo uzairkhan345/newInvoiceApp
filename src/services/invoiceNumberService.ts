@@ -50,7 +50,7 @@ function extractSequence(invoiceNumber: string, format: string): number | null {
 
 /**
  * Next sequence is max(existing sequence) + 1, never a row count — so a
- * deleted invoice's number is never reissued, per 
+ * deleted invoice's number is never reissued, per
  */
 export function nextSequence(
   existingInvoiceNumbers: string[],

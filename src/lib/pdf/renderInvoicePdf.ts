@@ -82,7 +82,12 @@ function hexColor(hex: string): RGB {
 }
 
 /** Greedy word wrap — pdf-lib has no built-in text layout. */
-function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
+function wrapText(
+  text: string,
+  font: PDFFont,
+  size: number,
+  maxWidth: number,
+): string[] {
   if (!text) return [""];
   const words = text.split(/\s+/).filter(Boolean);
   if (words.length === 0) return [""];
@@ -139,7 +144,8 @@ function drawLine(
   },
 ): void {
   const width = opts.font.widthOfTextAtSize(text, opts.size);
-  const x = opts.rightX !== undefined ? opts.rightX - width : (opts.x ?? MARGIN);
+  const x =
+    opts.rightX !== undefined ? opts.rightX - width : (opts.x ?? MARGIN);
   const topOfLine = MARGIN + writer.y;
   const baseline = PAGE_HEIGHT - topOfLine - opts.size * 0.8;
   writer.page.drawText(text, {
@@ -170,7 +176,13 @@ function drawWrapped(
   }
 }
 
-function drawRule(writer: Writer, x: number, width: number, height: number, color: RGB): void {
+function drawRule(
+  writer: Writer,
+  x: number,
+  width: number,
+  height: number,
+  color: RGB,
+): void {
   const topOfRule = MARGIN + writer.y;
   writer.page.drawRectangle({
     x,
@@ -184,7 +196,11 @@ function drawRule(writer: Writer, x: number, width: number, height: number, colo
 function drawTableHeader(writer: Writer, currency: string, fonts: Fonts): void {
   const size = 8.5;
   drawLine(writer, "ITEM", { x: COL_DESCRIPTION_X, size, font: fonts.bold });
-  drawLine(writer, "UNIT (HRS)", { rightX: COL_QTY_RIGHT, size, font: fonts.bold });
+  drawLine(writer, "UNIT (HRS)", {
+    rightX: COL_QTY_RIGHT,
+    size,
+    font: fonts.bold,
+  });
   drawLine(writer, "RATE", { rightX: COL_RATE_RIGHT, size, font: fonts.bold });
   drawLine(writer, `AMOUNT (${currency})`, {
     rightX: COL_AMOUNT_RIGHT,
@@ -194,7 +210,9 @@ function drawTableHeader(writer: Writer, currency: string, fonts: Fonts): void {
   writer.y += size * 1.2 + SPACE_2;
 }
 
-export async function renderInvoicePdf(data: InvoiceDocumentData): Promise<Uint8Array> {
+export async function renderInvoicePdf(
+  data: InvoiceDocumentData,
+): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const fonts: Fonts = {
     regular: await doc.embedFont(StandardFonts.Helvetica),
@@ -208,10 +226,15 @@ export async function renderInvoicePdf(data: InvoiceDocumentData): Promise<Uint8
   const senderLines = addressLines(data.contractor);
   const leftHeaderHeight =
     9.5 * 1.2 + SPACE_1 + senderLines.length * (8.5 * 1.25);
-  const rightHeaderHeight = 8 * 1.25 + SPACE_1 + 9 * 1.25 + SPACE_1 + 8.5 * 1.25;
+  const rightHeaderHeight =
+    8 * 1.25 + SPACE_1 + 9 * 1.25 + SPACE_1 + 8.5 * 1.25;
   const headerStartY = writer.y;
 
-  drawLine(writer, data.contractor.name, { x: MARGIN, size: 9.5, font: fonts.bold });
+  drawLine(writer, data.contractor.name, {
+    x: MARGIN,
+    size: 9.5,
+    font: fonts.bold,
+  });
   writer.y += 9.5 * 1.2 + SPACE_1;
   for (const line of senderLines) {
     drawLine(writer, line, { x: MARGIN, size: 8.5, font: fonts.regular });
@@ -219,9 +242,17 @@ export async function renderInvoicePdf(data: InvoiceDocumentData): Promise<Uint8
   }
 
   writer.y = headerStartY;
-  drawLine(writer, "INVOICE #", { rightX: TOTALS_RIGHT, size: 8, font: fonts.bold });
+  drawLine(writer, "INVOICE #", {
+    rightX: TOTALS_RIGHT,
+    size: 8,
+    font: fonts.bold,
+  });
   writer.y += 8 * 1.25 + SPACE_1;
-  drawLine(writer, data.invoiceNumber, { rightX: TOTALS_RIGHT, size: 9, font: fonts.bold });
+  drawLine(writer, data.invoiceNumber, {
+    rightX: TOTALS_RIGHT,
+    size: 9,
+    font: fonts.bold,
+  });
   writer.y += 9 * 1.25 + SPACE_1;
   drawLine(writer, `Issue date: ${formatDisplayDate(data.issueDate)}`, {
     rightX: TOTALS_RIGHT,
@@ -258,7 +289,11 @@ export async function renderInvoicePdf(data: InvoiceDocumentData): Promise<Uint8
   billToLines.push(...addressLines(data.client));
 
   const summaryStartY = writer.y;
-  drawLine(writer, "BILL TO", { x: SUMMARY_COL1_X, size: 8.5, font: fonts.bold });
+  drawLine(writer, "BILL TO", {
+    x: SUMMARY_COL1_X,
+    size: 8.5,
+    font: fonts.bold,
+  });
   let col1Y = writer.y + 8.5 * 1.2 + SPACE_1;
   for (const line of billToLines) {
     writer.y = col1Y;
@@ -267,7 +302,11 @@ export async function renderInvoicePdf(data: InvoiceDocumentData): Promise<Uint8
   }
 
   writer.y = summaryStartY;
-  drawLine(writer, "DETAILS", { x: SUMMARY_COL2_X, size: 8.5, font: fonts.bold });
+  drawLine(writer, "DETAILS", {
+    x: SUMMARY_COL2_X,
+    size: 8.5,
+    font: fonts.bold,
+  });
   let col2Y = writer.y + 8.5 * 1.2 + SPACE_1;
   for (const line of detailsLines) {
     writer.y = col2Y;
@@ -276,7 +315,11 @@ export async function renderInvoicePdf(data: InvoiceDocumentData): Promise<Uint8
   }
 
   writer.y = summaryStartY;
-  drawLine(writer, "PAYMENT", { x: SUMMARY_COL3_X, size: 8.5, font: fonts.bold });
+  drawLine(writer, "PAYMENT", {
+    x: SUMMARY_COL3_X,
+    size: 8.5,
+    font: fonts.bold,
+  });
   let col3Y = writer.y + 8.5 * 1.2 + SPACE_1;
   for (const line of paymentSummaryLines) {
     writer.y = col3Y;
@@ -284,13 +327,19 @@ export async function renderInvoicePdf(data: InvoiceDocumentData): Promise<Uint8
     col3Y += 9 * 1.3;
   }
 
-  writer.y = summaryStartY + Math.max(col1Y, col2Y, col3Y) - summaryStartY + SPACE_5;
+  writer.y =
+    summaryStartY + Math.max(col1Y, col2Y, col3Y) - summaryStartY + SPACE_5;
 
   // ── Item table ──
   drawTableHeader(writer, data.currency, fonts);
 
   for (const item of data.items) {
-    const descLines = wrapText(item.description, fonts.regular, 9, COL_DESCRIPTION_W);
+    const descLines = wrapText(
+      item.description,
+      fonts.regular,
+      9,
+      COL_DESCRIPTION_W,
+    );
     const rowHeight = descLines.length * (9 * 1.3) + 2 * SPACE_1;
 
     if (ensureSpace(writer, rowHeight)) {
@@ -344,7 +393,8 @@ export async function renderInvoicePdf(data: InvoiceDocumentData): Promise<Uint8
   writer.y += 1 + SPACE_2;
 
   // ── Footer block (totals + optional bottom note + payment section) — measured up front so it never splits across a page break ──
-  const hasConvertedTotal = data.convertedTotal !== null && data.convertedCurrency !== null;
+  const hasConvertedTotal =
+    data.convertedTotal !== null && data.convertedCurrency !== null;
   let totalsHeight = 9 * 1.25 + 10 * 1.25;
   if (hasConvertedTotal) {
     totalsHeight += SPACE_1 + 0.5 + SPACE_1 + 8.5 * 1.25;
@@ -352,7 +402,12 @@ export async function renderInvoicePdf(data: InvoiceDocumentData): Promise<Uint8
   totalsHeight += SPACE_3;
 
   const bottomNoteLines = data.bottomNote
-    ? wrapText(data.bottomNote, fonts.regular, 8.5, CONTENT_WIDTH - LABEL_MIN_WIDTH - SPACE_2)
+    ? wrapText(
+        data.bottomNote,
+        fonts.regular,
+        8.5,
+        CONTENT_WIDTH - LABEL_MIN_WIDTH - SPACE_2,
+      )
     : null;
   const bottomNoteHeight = bottomNoteLines
     ? Math.max(1, bottomNoteLines.length) * (8.5 * 1.3) + SPACE_3
@@ -363,7 +418,12 @@ export async function renderInvoicePdf(data: InvoiceDocumentData): Promise<Uint8
     data.paymentDetails.length > 0
       ? data.paymentDetails.map((field) => ({
           label: field.label,
-          valueLines: wrapText(field.value, fonts.regular, 8.5, paymentValueWidth),
+          valueLines: wrapText(
+            field.value,
+            fonts.regular,
+            8.5,
+            paymentValueWidth,
+          ),
         }))
       : [
           {
@@ -389,7 +449,11 @@ export async function renderInvoicePdf(data: InvoiceDocumentData): Promise<Uint8
   ensureSpace(writer, footerHeight);
 
   // ── Totals ──
-  drawLine(writer, "Subtotal", { x: TOTALS_LEFT, size: 9, font: fonts.regular });
+  drawLine(writer, "Subtotal", {
+    x: TOTALS_LEFT,
+    size: 9,
+    font: fonts.regular,
+  });
   drawLine(writer, formatCurrency(data.subtotal, data.currency), {
     rightX: TOTALS_RIGHT,
     size: 9,
@@ -415,12 +479,16 @@ export async function renderInvoicePdf(data: InvoiceDocumentData): Promise<Uint8
       font: fonts.regular,
       color: COLOR_SECONDARY,
     });
-    drawLine(writer, formatCurrency(data.convertedTotal!, data.convertedCurrency!), {
-      rightX: TOTALS_RIGHT,
-      size: 8.5,
-      font: fonts.regular,
-      color: COLOR_SECONDARY,
-    });
+    drawLine(
+      writer,
+      formatCurrency(data.convertedTotal!, data.convertedCurrency!),
+      {
+        rightX: TOTALS_RIGHT,
+        size: 8.5,
+        font: fonts.regular,
+        color: COLOR_SECONDARY,
+      },
+    );
     writer.y += 8.5 * 1.25;
   }
   writer.y += SPACE_3;
@@ -436,18 +504,27 @@ export async function renderInvoicePdf(data: InvoiceDocumentData): Promise<Uint8
       font: fonts.regular,
       lineHeight: 8.5 * 1.3,
     });
-    writer.y = rowTopY + Math.max(1, bottomNoteLines.length) * (8.5 * 1.3) + SPACE_3;
+    writer.y =
+      rowTopY + Math.max(1, bottomNoteLines.length) * (8.5 * 1.3) + SPACE_3;
   }
 
   // ── Payment details ──
-  drawLine(writer, "Payment to be made to:", { x: MARGIN, size: 8.5, font: fonts.bold });
+  drawLine(writer, "Payment to be made to:", {
+    x: MARGIN,
+    size: 8.5,
+    font: fonts.bold,
+  });
   writer.y += 8.5 * 1.2 + SPACE_2;
 
   paymentRows.forEach((row, index) => {
     if (index > 0) writer.y += SPACE_1;
     const rowTopY = writer.y;
     if (row.label) {
-      drawLine(writer, row.label, { x: MARGIN, size: 8.5, font: fonts.regular });
+      drawLine(writer, row.label, {
+        x: MARGIN,
+        size: 8.5,
+        font: fonts.regular,
+      });
     }
     writer.y = rowTopY;
     drawWrapped(writer, row.valueLines, {

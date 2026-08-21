@@ -21,9 +21,8 @@ config({ path: ".env.local" });
 async function main() {
   const { partyService } = await import("@/services/partyService");
   const { projectService } = await import("@/services/projectService");
-  const { paymentMethodService } = await import(
-    "@/services/paymentMethodService"
-  );
+  const { paymentMethodService } =
+    await import("@/services/paymentMethodService");
   const { invoiceService } = await import("@/services/invoiceService");
   const { documentService } = await import("@/services/documentService");
   const { renderInvoicePdf } = await import("@/lib/pdf/renderInvoicePdf");
@@ -65,7 +64,11 @@ async function main() {
         label: "Bank Address",
         value: "123 Sample Street, Springfield ST 00000",
       },
-      { key: "routing_number", label: "Routing Number (ABA)", value: "021000021" },
+      {
+        key: "routing_number",
+        label: "Routing Number (ABA)",
+        value: "021000021",
+      },
       { key: "account_number", label: "Account No.", value: "00012345" },
     ],
   });
@@ -132,8 +135,12 @@ async function main() {
     writeFileSync(new URL("pdf-lib.pdf", outputDir), pdfLibBytes);
     writeFileSync(new URL("browser.pdf", outputDir), browserBytes);
 
-    console.log(`[comparePdfRenderers] wrote scripts/output/pdf-lib.pdf (${pdfLibBytes.byteLength} bytes)`);
-    console.log(`[comparePdfRenderers] wrote scripts/output/browser.pdf (${browserBytes.byteLength} bytes)`);
+    console.log(
+      `[comparePdfRenderers] wrote scripts/output/pdf-lib.pdf (${pdfLibBytes.byteLength} bytes)`,
+    );
+    console.log(
+      `[comparePdfRenderers] wrote scripts/output/browser.pdf (${browserBytes.byteLength} bytes)`,
+    );
     console.log("[comparePdfRenderers] open both and compare manually.");
   } finally {
     await deleteTestUser(user.id);

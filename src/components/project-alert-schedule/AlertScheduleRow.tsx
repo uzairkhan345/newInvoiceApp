@@ -29,7 +29,8 @@ export function AlertScheduleRow({
         <div className="flex flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[13px] font-bold text-foreground">
-              {schedule.label || `Day ${DAY_LABELS[schedule.dayOfMonth]} reminder`}
+              {schedule.label ||
+                `Day ${DAY_LABELS[schedule.dayOfMonth]} reminder`}
             </span>
             <Badge variant="secondary" className="uppercase">
               {DAY_LABELS[schedule.dayOfMonth]} of the month

@@ -74,9 +74,9 @@ function toWriteInput(input: ProjectInput): ProjectWriteInput {
     contractorId: input.contractorId,
     preferredPaymentMethodId: nullIfEmpty(input.preferredPaymentMethodId),
     invoiceNumberFormat: input.invoiceNumberFormat,
-    invoicePeriodType: nullIfEmpty(input.invoicePeriodType) as
-      | InvoicePeriodType
-      | null,
+    invoicePeriodType: nullIfEmpty(
+      input.invoicePeriodType,
+    ) as InvoicePeriodType | null,
     currencyMode: input.currencyMode,
     displayCurrency: input.displayCurrency,
     referralCreditEnabled: input.referralCreditEnabled,
@@ -179,7 +179,11 @@ async function create(
     data.contractorId,
   );
   const maxSortOrder = await projectRepository.findMaxSortOrder();
-  return projectRepository.create(data, createdByUserId, (maxSortOrder ?? 0) + 1);
+  return projectRepository.create(
+    data,
+    createdByUserId,
+    (maxSortOrder ?? 0) + 1,
+  );
 }
 
 /**
