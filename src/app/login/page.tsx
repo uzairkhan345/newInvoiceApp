@@ -25,11 +25,27 @@ function GoogleIcon() {
 }
 
 /**
- * M28 — the one page reachable without a session (outside the `(app)`
- * route group, so it renders bare, no `AppShell`). No self-registration:
- * a rejected sign-in (email not in the `User` table) redirects back here
- * with `?error=`, shown as a generic message — never anything more
- * specific about who is or isn't authorized.
+ * Distinguishes the one expected auth failure (an email with no `User`
+ * row — most visitors who ever see this page) from every other Auth.js
+ * error code, which get one shared, non-specific message. Deliberately
+ * not a full per-code breakdown: the audience here is an unauthenticated
+ * visitor, who can't act on "OAuthCallback" vs "Configuration" anyway —
+ * the admin diagnoses those from the server logs, not this page.
+ */
+function resolveErrorMessage(error: string | undefined): string | null {
+  if (!error) return null;
+  if (error === "AccessDenied") {
+    return "This account isn't authorized to access this app.";
+  }
+  return "Something went wrong signing you in. Please try again — if this keeps happening, contact your admin.";
+}
+
+/**
+ * M28/issue #29 — the one page reachable without a session (outside the
+ * `(app)` route group, so it renders bare, no `AppShell`). No
+ * self-registration: every Auth.js failure mode redirects back here with
+ * `?error=` (see `src/lib/auth.ts`'s explicit `pages.error`), resolved to
+ * one of two messages by `resolveErrorMessage` above.
  */
 export default async function LoginPage({
   searchParams,
@@ -37,6 +53,7 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
+  const errorMessage = resolveErrorMessage(error);
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -79,9 +96,9 @@ export default async function LoginPage({
             Sign in with your authorized Google account.
           </p>
 
-          {error && (
+          {errorMessage && (
             <p className="mb-5 rounded-md bg-[var(--status-overdue-bg)] px-3 py-2.5 text-sm text-[var(--status-overdue-text)]">
-              This account isn&apos;t authorized to access this app.
+              {errorMessage}
             </p>
           )}
 
