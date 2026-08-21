@@ -2,10 +2,20 @@
 
 ## Scope and threat model
 
-Invoice App is a **local, single-tenant, single-user application with no authentication by design** — it is intended to run on the owner's own machine, not on a public URL. That posture is documented in `Docs/implementation_decisions.md` §8, along with the intended approach (simple credentials + signed cookie session) for anyone who does want to expose it.
+Invoice App is a **single-tenant application**, deployed to a real production
+URL with **Google OAuth authentication and no self-registration** — a
+sign-in only succeeds if the email already has a `User` row, added by an
+existing admin. Session/role enforcement, not network isolation, is the
+actual security boundary now. See `Docs/implementation_decisions.md` §8 for
+the full auth design.
 
-Within that model, the app still handles genuinely sensitive data, and the following are treated as security guarantees worth reporting violations of:
+The following are treated as security guarantees worth reporting violations of:
 
+- **Authentication/authorization**: the allowlist can't be bypassed (signing
+  in with an email that has no `User` row), sessions can't be forged or
+  hijacked, and role checks (`ADMIN`/`STANDARD`/`RESTRICTED`) can't be
+  escalated past what a Server Action's own guard permits — see
+  `src/lib/authz.ts`.
 - **Payment method field values and invoice payment-detail snapshots are AES-256-GCM encrypted at rest** (`SETTINGS_ENCRYPTION_KEY`), decrypted only at document render time.
 - **AI provider API keys are encrypted at rest and write-only** — never re-displayed to the client after saving.
 - Financial amounts are computed server-side (with the single documented flat-amount exception) — client-submitted totals are never trusted.
@@ -18,5 +28,7 @@ You should get an initial response within a week. Fixes will be committed to `ma
 
 ## Out of scope
 
-- Anything that requires the app to already be deployed on a public URL without an auth layer added — that deployment mode is explicitly unsupported.
-- Denial-of-service against your own local instance.
+- Attacks that require an attacker's email to already have a `User` row
+  (i.e. issues reachable only by someone the admin already granted access
+  to) — report those as a normal bug, not a vulnerability.
+- Denial-of-service against your own local or self-hosted instance.

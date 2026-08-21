@@ -31,7 +31,7 @@ A few project conventions worth knowing:
 
 ## Commit / PR style
 
-- Conventional-commit-style subjects (`feat:`, `fix:`, `docs:`, `chore:`, `test:`) are used throughout the history — please follow suit.
+- Plain, imperative-mood commit subjects (`Add sign-out to the nav shell`, `Fix invoice number wrapping on mobile`) — no required prefix convention.
 - Keep PRs focused; unrelated cleanups belong in their own PR.
 
 ## Reporting bugs

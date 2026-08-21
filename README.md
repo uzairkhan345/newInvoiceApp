@@ -2,8 +2,8 @@
 
 A **single-tenant invoice tracking application** for freelancers and contractors: manage parties, projects, and invoices with a locked snapshot lifecycle, generate pixel-identical Excel and PDF invoice documents, and get an operational dashboard that surfaces what actually needs attention.
 
-> [!WARNING]
-> **This app has no authentication — by design.** It is built for local, single-user use on your own machine. Every route (including `/settings`, which stores encrypted API keys) is open. **Do not deploy it to a public URL as-is.** Adding a simple credential gate is the documented pre-deployment requirement (`Docs/implementation_decisions.md` §8).
+> [!NOTE]
+> **Authentication is Google OAuth, allowlist-only — there's no self-registration.** Every route requires a signed-in session; a sign-in only succeeds if the email already has a `User` row (added by an existing admin, or by the bootstrap script for the very first one — see [Getting started](#getting-started)). See `Docs/implementation_decisions.md` §8.
 
 ![Dashboard](Docs/screenshots/dashboard.png)
 
@@ -29,6 +29,7 @@ _Screenshots show the bundled demo seed data._
 - **Currency** — a project denominates invoices entirely in one currency (`SINGLE` mode: USD/AUD/GBP/NZD/AED/PKR/SAR) or works USD-primary with a manually-entered converted total (`DUAL` mode). Dashboards never blend currencies.
 - **Dashboard** — stat cards with trend sparklines, an attention banner, and a merged priority feed (overdue → setup gaps → stale drafts → recent activity).
 - **AI-assisted data entry** _(optional)_ — a chat panel on Party/Payment Method/Invoice forms that stages form fields from natural language; it never auto-submits. Bring your own API key (Google/Anthropic/Groq) via the in-app `/settings` page; without one, the app is fully usable by hand.
+- **Authentication** — Google OAuth via Auth.js, no self-registration; database-backed sessions so revoking access takes effect immediately. Three roles (`ADMIN`/`STANDARD`/`RESTRICTED`), managed at `/settings/users`.
 
 ## Tech stack
 
@@ -44,12 +45,25 @@ cd newInvoiceApp
 pnpm install                       # also runs prisma generate
 
 docker compose up -d db            # local Postgres on :5432
-cp .env.local.example .env.local   # defaults work out of the box
+cp .env.local.example .env.local   # fill in the auth values below before continuing
 
 pnpm prisma migrate dev            # apply migrations
-pnpm prisma db seed                # optional: demo data
-pnpm dev                           # http://localhost:3001
+pnpm prisma db seed                # optional: demo data (parties/projects/invoices only)
 ```
+
+Every route requires a signed-in session — there's no self-registration, so
+sign-in only works once your own email has a `User` row. Before running
+`pnpm dev`, fill in `.env.local`'s auth section:
+
+1. Create a Google Cloud OAuth client (console.cloud.google.com) — consent
+   screen audience "External", authorized redirect URI
+   `http://localhost:3001/api/auth/callback/google`. Set `GOOGLE_CLIENT_ID`/
+   `GOOGLE_CLIENT_SECRET` from it.
+2. Set `AUTH_SECRET` (`openssl rand -base64 32` or `npx auth secret`).
+3. Bootstrap yourself as the first admin: `pnpm tsx scripts/bootstrapAdmin.ts you@example.com`
+   (matches whatever Google account you'll sign in with).
+
+Then `pnpm dev` → **http://localhost:3001**, sign in with Google.
 
 The app runs on **port 3001** by default (change `dev`/`start` in `package.json` and `NEXT_PUBLIC_APP_URL` in `.env.local` together if you need a different port).
 
