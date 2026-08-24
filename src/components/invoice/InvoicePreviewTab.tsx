@@ -20,7 +20,9 @@ export function InvoicePreviewTab({
             Invoice preview
           </p>
           <p className="text-[11px] text-muted-foreground">
-            Final locked version.
+            {data.status === "DRAFT"
+              ? "Still a draft — edit freely until it's marked Sent."
+              : "Final locked version."}
           </p>
         </div>
         <div className="flex items-center gap-2">

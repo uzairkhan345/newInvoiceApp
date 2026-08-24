@@ -11,9 +11,10 @@ const TABS: { value: InvoiceDetailTab; label: string }[] = [
 ];
 
 /**
- * Invoice detail tabs (ui_redesign_handoff_v3 screenshots/07-09) — non-DRAFT
- * invoices only (see InvoiceDetailPage). Same URL-driven `?tab=` idiom as
- * ProjectDetailTabs, not client-side tab state.
+ * Invoice detail tabs (ui_redesign_handoff_v3 screenshots/07-09) — the
+ * read-only preview view of an invoice at any status, including a DRAFT
+ * not currently being edited (see InvoiceDetailPage's `edit` param). Same
+ * URL-driven `?tab=` idiom as ProjectDetailTabs, not client-side tab state.
  */
 export function InvoiceDetailTabs({
   invoiceId,

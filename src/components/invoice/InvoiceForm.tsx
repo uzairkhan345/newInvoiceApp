@@ -25,6 +25,7 @@ import type { InvoiceAiContext } from "@/services/aiAssistService";
 import type { InvoiceAutofillData } from "@/services/invoiceService";
 import { computeDueDate } from "@/lib/invoicePeriod";
 import { formatDisplayDate } from "@/lib/dates";
+import { withReturnTo } from "@/lib/backNavigation";
 import type {
   DisplayCurrency,
   InvoicePeriodType,
@@ -165,6 +166,7 @@ export function InvoiceForm({
   defaultValues,
   aiConfig,
   autofillData,
+  returnTo,
 }: {
   mode: "create" | "edit";
   projectId: string;
@@ -174,6 +176,8 @@ export function InvoiceForm({
   aiConfig: AiAssistConfigSummary;
   /** M18 (Autofill) — the project's most recent invoice's items/notes, pre-fetched server-side; create mode only, null when the project has no prior invoice. */
   autofillData?: InvoiceAutofillData | null;
+  /** Carried through to the Cancel link and the post-save redirect so the eventual "Back" from the invoice preview still resolves to wherever the user actually came from (`src/lib/backNavigation.ts`). Edit mode only — the create route has no `returnTo` origin to preserve. */
+  returnTo?: string;
 }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -362,12 +366,26 @@ export function InvoiceForm({
       }
 
       toast.success(mode === "create" ? "Invoice created" : "Invoice updated");
-      router.push(`/invoices/${result.data.id}`);
+      router.push(
+        withReturnTo(`/invoices/${result.data.id}?tab=preview`, returnTo),
+      );
       router.refresh();
     } finally {
       setIsSubmitting(false);
     }
   });
+
+  /**
+   * Create mode has no `returnTo` origin (only ever reached from a
+   * project), so Cancel returns to that project directly. Edit mode
+   * cancels back to this same invoice's read-only preview — re-fetches
+   * from the server, discarding any unsaved changes — carrying `returnTo`
+   * through so the eventual "Back" link still resolves correctly.
+   */
+  const cancelHref =
+    mode === "create"
+      ? `/projects/${projectId}`
+      : withReturnTo(`/invoices/${invoiceId}`, returnTo);
 
   return (
     <>
@@ -540,13 +558,24 @@ export function InvoiceForm({
                 />
               </FormField>
 
-              <Button type="submit" disabled={isSubmitting} className="mt-2">
-                {isSubmitting
-                  ? "Saving…"
-                  : mode === "create"
-                    ? "Create Invoice"
-                    : "Save Changes"}
-              </Button>
+              <div className="mt-2 flex items-center gap-3">
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting
+                    ? "Saving…"
+                    : mode === "create"
+                      ? "Create Invoice"
+                      : "Save and Update"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isSubmitting}
+                  nativeButton={false}
+                  render={<Link href={cancelHref} />}
+                >
+                  Cancel
+                </Button>
+              </div>
               {mode === "create" ? (
                 <p className="mt-2 text-[11px] text-muted-foreground">
                   Saved as a draft immediately — edit freely until it&rsquo;s
