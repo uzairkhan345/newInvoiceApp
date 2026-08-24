@@ -12,14 +12,14 @@ import { InvoiceOverdueBanner } from "@/components/invoice/InvoiceOverdueBanner"
 import { InvoiceSummaryTab } from "@/components/invoice/InvoiceSummaryTab";
 import { InvoicePreviewTab } from "@/components/invoice/InvoicePreviewTab";
 import { InvoiceActivityTab } from "@/components/invoice/InvoiceActivityTab";
-import { Eye, Download, FileText } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { invoiceService } from "@/services/invoiceService";
 import { documentService } from "@/services/documentService";
 import { toDateInputValue, isOverdue } from "@/lib/dates";
 import { buildInvoiceActivity } from "@/lib/invoiceActivity";
 import { getAiAssistConfigSummary } from "@/lib/ai-providers/config";
-import { resolveBackTarget } from "@/lib/backNavigation";
+import { resolveBackTarget, withReturnTo } from "@/lib/backNavigation";
 
 function resolveTab(value: string | undefined): InvoiceDetailTab {
   if (value === "preview" || value === "activity") return value;
@@ -31,10 +31,10 @@ export default async function InvoiceDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string; returnTo?: string }>;
+  searchParams: Promise<{ tab?: string; returnTo?: string; edit?: string }>;
 }) {
   const { id } = await params;
-  const { tab: tabParam, returnTo } = await searchParams;
+  const { tab: tabParam, returnTo, edit } = await searchParams;
   const back = resolveBackTarget(returnTo, {
     href: "/invoices",
     label: "Back to Invoices",
@@ -44,11 +44,18 @@ export default async function InvoiceDetailPage({
     notFound();
   }
 
-  if (invoice.status !== "DRAFT") {
+  // A DRAFT is the only status that can ever be edited (locked permanently
+  // at DRAFT -> SENT, Docs/implementation_decisions.md) — `?edit=1` is only
+  // meaningful for it. Any other status always renders the read-only tabs
+  // below, same as this used to work for every non-DRAFT invoice.
+  const isEditingDraft = invoice.status === "DRAFT" && edit === "1";
+
+  if (!isEditingDraft) {
     const tab = resolveTab(tabParam);
     const data = documentService.assembleInvoiceDocumentData(invoice);
     const events = buildInvoiceActivity(invoice);
     const overdue = invoice.status === "SENT" && isOverdue(invoice.dueDate);
+    const isDraft = invoice.status === "DRAFT";
 
     return (
       <>
@@ -74,6 +81,23 @@ export default async function InvoiceDetailPage({
           action={
             <div className="flex items-center gap-3">
               <StatusBadge status={invoice.status} dueDate={invoice.dueDate} />
+              {isDraft ? (
+                <Button
+                  variant="outline"
+                  nativeButton={false}
+                  render={
+                    <Link
+                      href={withReturnTo(
+                        `/invoices/${invoice.id}?edit=1`,
+                        returnTo,
+                      )}
+                    />
+                  }
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </Button>
+              ) : null}
               <StatusActionBar
                 invoiceId={invoice.id}
                 status={invoice.status}
@@ -106,37 +130,10 @@ export default async function InvoiceDetailPage({
   }
 
   const aiConfig = await getAiAssistConfigSummary();
+  const previewHref = withReturnTo(`/invoices/${invoice.id}`, returnTo);
   const headerAction = (
     <div className="flex flex-wrap items-center gap-3">
       <StatusBadge status={invoice.status} dueDate={invoice.dueDate} />
-      <Button
-        variant="outline"
-        nativeButton={false}
-        render={<Link href={`/invoices/${invoice.id}/print`} target="_blank" />}
-      >
-        <Eye className="h-3.5 w-3.5" />
-        Preview
-      </Button>
-      <Button
-        variant="outline"
-        nativeButton={false}
-        render={
-          <Link href={`/api/invoices/${invoice.id}/excel`} target="_blank" />
-        }
-      >
-        <Download className="h-3.5 w-3.5" />
-        Excel
-      </Button>
-      <Button
-        variant="outline"
-        nativeButton={false}
-        render={
-          <Link href={`/api/invoices/${invoice.id}/pdf`} target="_blank" />
-        }
-      >
-        <FileText className="h-3.5 w-3.5" />
-        PDF
-      </Button>
       <StatusActionBar
         invoiceId={invoice.id}
         status={invoice.status}
@@ -151,7 +148,7 @@ export default async function InvoiceDetailPage({
         title={invoice.invoiceNumber}
         subtitle={
           <>
-            Draft invoice for{" "}
+            Editing draft invoice for{" "}
             <Link
               href={`/projects/${invoice.projectId}`}
               className="hover:text-brand hover:underline"
@@ -162,14 +159,15 @@ export default async function InvoiceDetailPage({
           </>
         }
         action={headerAction}
-        backHref={back.href}
-        backLabel={back.label}
+        backHref={previewHref}
+        backLabel="Back to preview"
       />
       <InvoiceForm
         mode="edit"
         invoiceId={invoice.id}
         projectId={invoice.projectId}
         aiConfig={aiConfig}
+        returnTo={returnTo}
         project={{
           name: invoice.project.name,
           contractorName: invoice.project.contractor.name,

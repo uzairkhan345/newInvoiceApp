@@ -69,11 +69,13 @@ export function InvoiceSummaryTab({
             <p className="text-[11px] text-muted-foreground">
               Billing and delivery information.
             </p>
-            <CardAction>
-              <span className="rounded-md bg-muted px-2 py-1 text-[10px] font-bold text-muted-foreground">
-                🔒 Locked
-              </span>
-            </CardAction>
+            {invoice.status !== "DRAFT" ? (
+              <CardAction>
+                <span className="rounded-md bg-muted px-2 py-1 text-[10px] font-bold text-muted-foreground">
+                  🔒 Locked
+                </span>
+              </CardAction>
+            ) : null}
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Fact label="Client" value={data.client.name} />
