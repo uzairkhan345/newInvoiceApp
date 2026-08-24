@@ -166,6 +166,7 @@ export function InvoiceForm({
   defaultValues,
   aiConfig,
   autofillData,
+  invoiceNumberConflict,
   returnTo,
 }: {
   mode: "create" | "edit";
@@ -176,6 +177,14 @@ export function InvoiceForm({
   aiConfig: AiAssistConfigSummary;
   /** M18 (Autofill) — the project's most recent invoice's items/notes, pre-fetched server-side; create mode only, null when the project has no prior invoice. */
   autofillData?: InvoiceAutofillData | null;
+  /**
+   * Set when the project's last SENT/PAID invoice number doesn't
+   * structurally fit the project's current `invoiceNumberFormat` (format
+   * changed, or that invoice was numbered by hand) — the suggested number
+   * pre-filled below couldn't continue its sequence as a result. Create
+   * mode only; `invoiceService.previewNextInvoiceNumber` computes it.
+   */
+  invoiceNumberConflict?: string | null;
   /** Carried through to the Cancel link and the post-save redirect so the eventual "Back" from the invoice preview still resolves to wherever the user actually came from (`src/lib/backNavigation.ts`). Edit mode only — the create route has no `returnTo` origin to preserve. */
   returnTo?: string;
 }) {
@@ -434,6 +443,13 @@ export function InvoiceForm({
                     Suggested automatically from the project&rsquo;s format —
                     freely editable, so you can continue a sequence from outside
                     this app.
+                  </p>
+                ) : null}
+                {mode === "create" && invoiceNumberConflict ? (
+                  <p className="text-[11px] font-semibold text-[var(--alert-warning-text)]">
+                    Doesn&rsquo;t continue the last sent number (
+                    {invoiceNumberConflict}) — its format doesn&rsquo;t match
+                    the project&rsquo;s current format. Adjust if needed.
                   </p>
                 ) : null}
               </FormField>

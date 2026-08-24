@@ -316,9 +316,8 @@ async function BillingSetupTab({
   returnTo?: string;
 }) {
   if (!isEditing) {
-    const nextInvoiceNumber = await invoiceService.previewNextInvoiceNumber(
-      project.id,
-    );
+    const { suggested: nextInvoiceNumber } =
+      await invoiceService.previewNextInvoiceNumber(project.id);
     return (
       <ProjectDetailCard
         project={project}
