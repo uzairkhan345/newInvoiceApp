@@ -18,7 +18,7 @@ export default async function NewInvoiceForProjectPage({
     notFound();
   }
 
-  const suggestedInvoiceNumber =
+  const { suggested: suggestedInvoiceNumber, conflictingLastInvoiceNumber } =
     await invoiceService.previewNextInvoiceNumber(projectId);
   const today = toDateInputValue(new Date());
   const initialDueDate = project.invoicePeriodType
@@ -44,6 +44,7 @@ export default async function NewInvoiceForProjectPage({
         projectId={project.id}
         aiConfig={aiConfig}
         autofillData={autofillData}
+        invoiceNumberConflict={conflictingLastInvoiceNumber}
         project={{
           name: project.name,
           contractorName: project.contractor.name,

@@ -317,16 +317,18 @@ function findMostRecentByProject(
 }
 
 /**
- * M39 — the create form's `periodStart` default chains off this: the
- * most recently issued SENT/PAID invoice for a project (DRAFT doesn't count,
- * nothing's final yet; VOID doesn't count, it was never really billed).
+ * M39 — the create form's `periodStart` default chains off `periodEnd`
+ * here; invoiceNumberService's format-mismatch warning chains off
+ * `invoiceNumber`. Most recently issued SENT/PAID invoice for a project
+ * (DRAFT doesn't count, nothing's final yet; VOID doesn't count, it was
+ * never really billed).
  */
 function findMostRecentSentOrPaidByProject(
   projectId: string,
-): Promise<Pick<Invoice, "periodEnd"> | null> {
+): Promise<Pick<Invoice, "periodEnd" | "invoiceNumber"> | null> {
   return prisma.invoice.findFirst({
     where: { projectId, status: { in: ["SENT", "PAID"] } },
-    select: { periodEnd: true },
+    select: { periodEnd: true, invoiceNumber: true },
     orderBy: { issueDate: "desc" },
   });
 }

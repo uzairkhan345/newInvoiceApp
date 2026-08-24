@@ -41,7 +41,16 @@ function buildSequenceExtractionRegex(format: string): RegExp {
   return new RegExp(`^${pattern}$`);
 }
 
-function extractSequence(invoiceNumber: string, format: string): number | null {
+/**
+ * Exported for invoiceService's create-form format-mismatch warning — a
+ * `null` result means `invoiceNumber` doesn't structurally fit `format` at
+ * all (e.g. the project's format changed since it was issued), the same
+ * condition that makes `nextSequence` unable to continue off of it below.
+ */
+export function extractSequence(
+  invoiceNumber: string,
+  format: string,
+): number | null {
   const match = invoiceNumber.match(buildSequenceExtractionRegex(format));
   if (!match || match[1] === undefined) return null;
   const parsed = Number.parseInt(match[1], 10);

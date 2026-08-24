@@ -625,7 +625,8 @@ describe("invoiceService.previewNextInvoiceNumber", () => {
   it("computes the next sequence number for a fresh project", async () => {
     const { project } = await createTestProject();
     const preview = await invoiceService.previewNextInvoiceNumber(project.id);
-    expect(preview).toBe("TP-01");
+    expect(preview.suggested).toBe("TP-01");
+    expect(preview.conflictingLastInvoiceNumber).toBeNull();
   });
 
   it("advances past existing invoice numbers, skipping any gap left by a deletion", async () => {
@@ -641,7 +642,56 @@ describe("invoiceService.previewNextInvoiceNumber", () => {
     createdInvoiceIds.push(first.id, second.id);
 
     const preview = await invoiceService.previewNextInvoiceNumber(project.id);
-    expect(preview).toBe("TP-06");
+    expect(preview.suggested).toBe("TP-06");
+    expect(preview.conflictingLastInvoiceNumber).toBeNull();
+  });
+
+  it("flags a conflict when the last SENT invoice's number doesn't fit the project's current format", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ invoiceNumber: "LEGACY-2026-INV" }),
+    );
+    createdInvoiceIds.push(invoice.id);
+    await prisma.invoice.update({
+      where: { id: invoice.id },
+      data: { status: "SENT" },
+    });
+
+    const preview = await invoiceService.previewNextInvoiceNumber(project.id);
+    // Restarts at 01 since "LEGACY-2026-INV" doesn't structurally match
+    // "{abbreviation}-{number}" — nothing to extract a sequence from.
+    expect(preview.suggested).toBe("TP-01");
+    expect(preview.conflictingLastInvoiceNumber).toBe("LEGACY-2026-INV");
+  });
+
+  it("does not flag a conflict when the last SENT invoice's number fits the current format", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ invoiceNumber: "TP-03" }),
+    );
+    createdInvoiceIds.push(invoice.id);
+    await prisma.invoice.update({
+      where: { id: invoice.id },
+      data: { status: "SENT" },
+    });
+
+    const preview = await invoiceService.previewNextInvoiceNumber(project.id);
+    expect(preview.suggested).toBe("TP-04");
+    expect(preview.conflictingLastInvoiceNumber).toBeNull();
+  });
+
+  it("does not flag a conflict off of a mismatched DRAFT invoice — only SENT/PAID count", async () => {
+    const { project } = await createTestProject();
+    const invoice = await invoiceService.createDraft(
+      project.id,
+      baseInvoiceInput({ invoiceNumber: "LEGACY-2026-INV" }),
+    );
+    createdInvoiceIds.push(invoice.id);
+
+    const preview = await invoiceService.previewNextInvoiceNumber(project.id);
+    expect(preview.conflictingLastInvoiceNumber).toBeNull();
   });
 });
 

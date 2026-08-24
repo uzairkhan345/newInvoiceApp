@@ -7,7 +7,10 @@ import type {
 } from "@/repositories/invoiceRepository";
 import { projectRepository } from "@/repositories/projectRepository";
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
-import { generateInvoiceNumber } from "@/services/invoiceNumberService";
+import {
+  generateInvoiceNumber,
+  extractSequence,
+} from "@/services/invoiceNumberService";
 import type { InvoiceInput } from "@/lib/validation/invoice";
 import { Prisma } from "@/generated/prisma/client";
 import type {
@@ -406,17 +409,34 @@ function getById(id: string): Promise<InvoiceWithItems | null> {
   return invoiceRepository.findById(id);
 }
 
+export type InvoiceNumberPreview = {
+  suggested: string;
+  /**
+   * The project's last SENT/PAID invoice number, but only when it doesn't
+   * structurally fit the project's *current* `invoiceNumberFormat` — e.g.
+   * the format was changed, or that invoice was numbered by hand outside
+   * this app. When set, `suggested` couldn't continue its sequence and
+   * restarted instead, which the create form surfaces as a warning. `null`
+   * when there's no such conflict (or no prior SENT/PAID invoice at all).
+   */
+  conflictingLastInvoiceNumber: string | null;
+};
+
 /**
  * Computes the suggested invoice number shown pre-filled on the create form
  * (Story 4.1). Generation happens once, here — not inside createDraft — since
  * the number must already be visible before the admin's first save, and is a
  * plain editable field from then on.
  */
-async function previewNextInvoiceNumber(projectId: string): Promise<string> {
+async function previewNextInvoiceNumber(
+  projectId: string,
+): Promise<InvoiceNumberPreview> {
   const project = await loadProjectOrThrow(projectId);
-  const existingInvoiceNumbers =
-    await invoiceRepository.findInvoiceNumbersForProject(projectId);
-  return generateInvoiceNumber({
+  const [existingInvoiceNumbers, lastSentOrPaidInvoice] = await Promise.all([
+    invoiceRepository.findInvoiceNumbersForProject(projectId),
+    invoiceRepository.findMostRecentSentOrPaidByProject(projectId),
+  ]);
+  const suggested = generateInvoiceNumber({
     project: {
       abbreviation: project.abbreviation,
       name: project.name,
@@ -424,6 +444,15 @@ async function previewNextInvoiceNumber(projectId: string): Promise<string> {
     },
     existingInvoiceNumbers,
   });
+  const conflictingLastInvoiceNumber =
+    lastSentOrPaidInvoice &&
+    extractSequence(
+      lastSentOrPaidInvoice.invoiceNumber,
+      project.invoiceNumberFormat,
+    ) === null
+      ? lastSentOrPaidInvoice.invoiceNumber
+      : null;
+  return { suggested, conflictingLastInvoiceNumber };
 }
 
 /**
