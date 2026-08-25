@@ -447,9 +447,9 @@ export function InvoiceForm({
                 ) : null}
                 {mode === "create" && invoiceNumberConflict ? (
                   <p className="text-[11px] font-semibold text-[var(--alert-warning-text)]">
-                    Doesn&rsquo;t continue the last sent number (
-                    {invoiceNumberConflict}) — its format doesn&rsquo;t match
-                    the project&rsquo;s current format. Adjust if needed.
+                    Doesn&rsquo;t continue last invoice{" "}
+                    <span className="font-mono">{invoiceNumberConflict}</span> —
+                    format mismatch.
                   </p>
                 ) : null}
               </FormField>
