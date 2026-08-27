@@ -14,7 +14,17 @@ import {
   type ProjectBillingRow,
 } from "@/lib/projectBillingStatus";
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
-import type { InvoiceListItem } from "@/repositories/invoiceRepository";
+
+export type ProjectWorkspaceInvoice = {
+  id: string;
+  projectId: string;
+  invoiceNumber: string;
+  issueDate: Date;
+  periodStart: Date | null;
+  periodEnd: Date | null;
+  total: string;
+  currency: string;
+};
 
 const PAGE_SIZE = 4;
 
@@ -24,7 +34,7 @@ export function ProjectWorkspace({
   billingRowByProjectId,
 }: {
   projects: ProjectWithRelations[];
-  invoices: InvoiceListItem[];
+  invoices: ProjectWorkspaceInvoice[];
   billingRowByProjectId: Record<string, ProjectBillingRow>;
 }) {
   const [page, setPage] = useState(0);
@@ -35,7 +45,7 @@ export function ProjectWorkspace({
     (currentPage + 1) * PAGE_SIZE,
   );
   const invoicesByProject = useMemo(() => {
-    const map = new Map<string, InvoiceListItem[]>();
+    const map = new Map<string, ProjectWorkspaceInvoice[]>();
     for (const invoice of invoices) {
       const list = map.get(invoice.projectId) ?? [];
       list.push(invoice);

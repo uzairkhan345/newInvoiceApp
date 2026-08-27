@@ -151,7 +151,16 @@ export default async function ProjectsPage({
           projects={projectsForFilter}
           firedProjectIds={firedProjectIds}
           billingRowByProjectId={Object.fromEntries(billingRowByProjectId)}
-          invoices={allInvoices}
+          invoices={allInvoices.map((invoice) => ({
+            id: invoice.id,
+            projectId: invoice.projectId,
+            invoiceNumber: invoice.invoiceNumber,
+            issueDate: invoice.issueDate,
+            periodStart: invoice.periodStart,
+            periodEnd: invoice.periodEnd,
+            total: invoice.total.toString(),
+            currency: invoice.currency,
+          }))}
           filterSlot={
             <ProjectStatusFilter
               active={filter}

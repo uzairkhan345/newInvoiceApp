@@ -8,9 +8,9 @@ import { useViewPreference } from "@/lib/useViewPreference";
 import { ProjectTable } from "@/components/project/ProjectTable";
 import { ProjectCardGrid } from "@/components/project/ProjectCardGrid";
 import { ProjectWorkspace } from "@/components/project/ProjectWorkspace";
+import type { ProjectWorkspaceInvoice } from "@/components/project/ProjectWorkspace";
 import { cn } from "@/lib/utils";
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
-import type { InvoiceListItem } from "@/repositories/invoiceRepository";
 import type { ProjectBillingRow } from "@/lib/projectBillingStatus";
 
 const VIEW_STORAGE_KEY = "projects-view";
@@ -33,7 +33,7 @@ export function ProjectsDirectory({
   projects: ProjectWithRelations[];
   firedProjectIds?: string[];
   billingRowByProjectId: Record<string, ProjectBillingRow>;
-  invoices: InvoiceListItem[];
+  invoices: ProjectWorkspaceInvoice[];
   filterSlot?: ReactNode;
 }) {
   const [query, setQuery] = useState("");

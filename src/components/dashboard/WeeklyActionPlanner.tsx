@@ -176,21 +176,29 @@ export function WeeklyActionPlanner({
                         {action.timing ?? "No date set"}
                       </p>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      nativeButton={false}
-                      render={
-                        <Link
-                          href={
-                            action.action.href ??
-                            `/projects/${action.projectId}`
-                          }
-                        />
-                      }
-                    >
-                      {action.action.label}
-                    </Button>
+                    {action.action.disabled ? (
+                      <span title={action.action.disabledReason}>
+                        <Button size="sm" variant="secondary" disabled>
+                          {action.action.label}
+                        </Button>
+                      </span>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        nativeButton={false}
+                        render={
+                          <Link
+                            href={
+                              action.action.href ??
+                              `/projects/${action.projectId}`
+                            }
+                          />
+                        }
+                      >
+                        {action.action.label}
+                      </Button>
+                    )}
                   </div>
                 ))}
               </section>
