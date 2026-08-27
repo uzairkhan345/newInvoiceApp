@@ -151,6 +151,7 @@ export default async function ProjectsPage({
           projects={projectsForFilter}
           firedProjectIds={firedProjectIds}
           billingRowByProjectId={Object.fromEntries(billingRowByProjectId)}
+          invoices={allInvoices}
           filterSlot={
             <ProjectStatusFilter
               active={filter}
