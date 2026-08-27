@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CalendarDays, CheckCircle2 } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -238,6 +238,57 @@ export function WeeklyActionPlanner({
           })
         )}
       </Card>
+      {filter === "all" && onTrackProjects.length > 0 ? (
+        <details className="group overflow-hidden rounded-xl border border-border bg-card">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
+            <span>
+              <span className="block text-[13px] font-bold">
+                No action required
+              </span>
+              <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                Healthy projects stay available without competing for attention.
+              </span>
+            </span>
+            <span className="flex shrink-0 items-center gap-2 text-[11px] font-bold text-[var(--status-paid-text)]">
+              {onTrackProjects.length}{" "}
+              {onTrackProjects.length === 1 ? "project" : "projects"}
+              <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+            </span>
+          </summary>
+          <div className="border-t border-border">
+            {onTrackProjects.map((project) => (
+              <div
+                key={project.projectId}
+                className="flex flex-col gap-3 border-b border-muted px-5 py-4 last:border-b-0 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div>
+                  <Link
+                    href={`/projects/${project.projectId}?returnTo=%2F`}
+                    className="text-[13px] font-bold hover:text-brand hover:underline"
+                  >
+                    {project.projectName}
+                  </Link>
+                  <p className="text-[11px] text-muted-foreground">
+                    {project.clientName} · No action required
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  nativeButton={false}
+                  render={
+                    <Link
+                      href={`/projects/${project.projectId}?returnTo=%2F`}
+                    />
+                  }
+                >
+                  Open project
+                </Button>
+              </div>
+            ))}
+          </div>
+        </details>
+      ) : null}
     </div>
   );
 }
