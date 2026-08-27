@@ -28,6 +28,55 @@ export type ProjectWorkspaceInvoice = {
 
 const PAGE_SIZE = 4;
 
+function WorkspacePager({
+  currentPage,
+  pageCount,
+  projectCount,
+  placement,
+  onPageChange,
+}: {
+  currentPage: number;
+  pageCount: number;
+  projectCount: number;
+  placement: "top" | "bottom";
+  onPageChange: (page: number) => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between",
+        placement === "top" ? "mb-4" : "mt-4",
+      )}
+    >
+      <span className="text-[11px] text-muted-foreground">
+        {currentPage * PAGE_SIZE + 1}–
+        {Math.min((currentPage + 1) * PAGE_SIZE, projectCount)} of{" "}
+        {projectCount}
+      </span>
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          aria-label={`Previous projects (${placement})`}
+          disabled={currentPage === 0}
+          onClick={() => onPageChange(currentPage - 1)}
+        >
+          <ChevronLeft className="h-3.5 w-3.5" /> Previous
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          aria-label={`Next projects (${placement})`}
+          disabled={currentPage + 1 >= pageCount}
+          onClick={() => onPageChange(currentPage + 1)}
+        >
+          Next <ChevronRight className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function ProjectWorkspace({
   projects,
   invoices,
@@ -57,6 +106,15 @@ export function ProjectWorkspace({
   }, [invoices]);
   return (
     <div>
+      {pageCount > 1 ? (
+        <WorkspacePager
+          currentPage={currentPage}
+          pageCount={pageCount}
+          projectCount={projects.length}
+          placement="top"
+          onPageChange={setPage}
+        />
+      ) : null}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {visible.map((project) => {
           const row = billingRowByProjectId[project.id];
@@ -188,31 +246,13 @@ export function ProjectWorkspace({
         })}
       </div>
       {pageCount > 1 ? (
-        <div className="mt-4 flex items-center justify-between">
-          <span className="text-[11px] text-muted-foreground">
-            {currentPage * PAGE_SIZE + 1}–
-            {Math.min((currentPage + 1) * PAGE_SIZE, projects.length)} of{" "}
-            {projects.length}
-          </span>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 0}
-              onClick={() => setPage(currentPage - 1)}
-            >
-              <ChevronLeft className="h-3.5 w-3.5" /> Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage + 1 >= pageCount}
-              onClick={() => setPage(currentPage + 1)}
-            >
-              Next <ChevronRight className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </div>
+        <WorkspacePager
+          currentPage={currentPage}
+          pageCount={pageCount}
+          projectCount={projects.length}
+          placement="bottom"
+          onPageChange={setPage}
+        />
       ) : null}
     </div>
   );

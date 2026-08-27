@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { ProjectAction, PlannerSection } from "@/lib/weeklyActionPlanner";
 import type { ProjectBillingRow } from "@/lib/projectBillingStatus";
+import type { PriorityFeedBarTone } from "@/lib/priorityFeed";
 
 const SECTIONS: { value: PlannerSection; label: string }[] = [
   { value: "overdue", label: "Overdue" },
@@ -16,6 +17,23 @@ const SECTIONS: { value: PlannerSection; label: string }[] = [
   { value: "later", label: "Later" },
   { value: "unscheduled", label: "Unscheduled" },
 ];
+
+const SECTION_HEADER_STYLES: Record<PlannerSection, string> = {
+  overdue: "bg-[var(--status-overdue-bg)] text-[var(--status-overdue-text)]",
+  today: "bg-[var(--status-upcoming-bg)] text-[var(--status-upcoming-text)]",
+  week: "bg-[var(--status-upcoming-bg)] text-[var(--status-upcoming-text)]",
+  later: "bg-[var(--status-draft-bg)] text-[var(--status-draft-text)]",
+  unscheduled: "bg-[var(--status-sent-bg)] text-[var(--status-sent-text)]",
+  onTrack: "bg-[var(--status-paid-bg)] text-[var(--status-paid-text)]",
+};
+
+const ACTION_ACCENT_STYLES: Record<PriorityFeedBarTone, string> = {
+  overdue: "bg-[var(--status-overdue-text)]",
+  prepare: "bg-[var(--status-sent-text)]",
+  draft: "bg-brand",
+  due: "bg-[var(--status-upcoming-text)]",
+  setup: "bg-[var(--status-sent-text)]",
+};
 
 export function WeeklyActionPlanner({
   actions,
@@ -49,8 +67,11 @@ export function WeeklyActionPlanner({
               className={cn(
                 "rounded-full border px-3 py-1.5 text-[11px] font-bold",
                 filter === section.value
-                  ? "border-brand bg-brand-light text-brand"
+                  ? SECTION_HEADER_STYLES[section.value]
                   : "border-border bg-card text-muted-foreground",
+                section.value === "overdue" &&
+                  filter === "all" &&
+                  "border-[var(--status-overdue-text)]/30 bg-[var(--status-overdue-bg)] text-[var(--status-overdue-text)]",
               )}
             >
               {section.label} ({count})
@@ -130,14 +151,25 @@ export function WeeklyActionPlanner({
             if (rows.length === 0) return null;
             return (
               <section key={section.value}>
-                <div className="border-b border-border bg-muted/40 px-5 py-2 text-[10px] font-extrabold tracking-wide text-muted-foreground uppercase">
+                <div
+                  className={cn(
+                    "border-b border-border px-5 py-2 text-[10px] font-extrabold tracking-wide uppercase",
+                    SECTION_HEADER_STYLES[section.value],
+                  )}
+                >
                   {section.label}
                 </div>
                 {rows.map((action) => (
                   <div
                     key={action.id}
-                    className="grid gap-3 border-b border-muted px-5 py-4 last:border-b-0 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.5fr)_auto_auto] lg:items-center"
+                    className="relative grid gap-3 border-b border-muted px-5 py-4 pl-6 last:border-b-0 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.5fr)_auto_auto] lg:items-center"
                   >
+                    <span
+                      className={cn(
+                        "absolute inset-y-0 left-0 w-[3px]",
+                        ACTION_ACCENT_STYLES[action.barTone],
+                      )}
+                    />
                     <div className="min-w-0">
                       <Link
                         href={`/projects/${action.projectId}?returnTo=%2F`}
