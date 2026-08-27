@@ -115,7 +115,7 @@ export function ProjectWorkspace({
           onPageChange={setPage}
         />
       ) : null}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:min-h-[700px] lg:grid-cols-2 lg:content-start">
         {visible.map((project) => {
           const row = billingRowByProjectId[project.id];
           const payment = paymentMethodSummary(project);
