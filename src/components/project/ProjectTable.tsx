@@ -53,6 +53,15 @@ export function ProjectTable({
   reorderable?: boolean;
 }) {
   const firedProjectIdSet = new Set(firedProjectIds);
+  // On the "All" tab, ARCHIVED rows are interleaved with ACTIVE ones in the
+  // same list — but the swap logic (findAdjacentActive) only ever moves a
+  // project relative to its nearest ACTIVE neighbor, skipping archived rows
+  // entirely. So disableUp/disableDown — and which rows even get arrows —
+  // must be computed from a project's position among ACTIVE rows only, not
+  // its raw position in the full (possibly-interleaved) list.
+  const activeIds = projects
+    .filter((project) => project.status === "ACTIVE")
+    .map((project) => project.id);
 
   return (
     <>
@@ -73,6 +82,7 @@ export function ProjectTable({
         </div>
         {projects.map((project, index) => {
           const paymentMethod = paymentMethodSummary(project);
+          const activeIndex = activeIds.indexOf(project.id);
           return (
             <div
               key={project.id}
@@ -83,11 +93,15 @@ export function ProjectTable({
             >
               {reorderable ? (
                 <div className="flex items-center justify-center border-r border-muted px-3">
-                  <ProjectReorderButtons
-                    projectId={project.id}
-                    disableUp={index === 0}
-                    disableDown={index === projects.length - 1}
-                  />
+                  {activeIndex !== -1 ? (
+                    <ProjectReorderButtons
+                      projectId={project.id}
+                      disableUp={activeIndex === 0}
+                      disableDown={activeIndex === activeIds.length - 1}
+                    />
+                  ) : (
+                    <div className="h-3.5 w-3.5" aria-hidden="true" />
+                  )}
                 </div>
               ) : null}
               <Link
@@ -130,8 +144,9 @@ export function ProjectTable({
 
       {/* Mobile stacked cards */}
       <div className="flex flex-col gap-3 lg:hidden">
-        {projects.map((project, index) => {
+        {projects.map((project) => {
           const paymentMethod = paymentMethodSummary(project);
+          const activeIndex = activeIds.indexOf(project.id);
           return (
             <div
               key={project.id}
@@ -139,11 +154,15 @@ export function ProjectTable({
             >
               {reorderable ? (
                 <div className="flex items-center justify-center border-r border-muted px-2">
-                  <ProjectReorderButtons
-                    projectId={project.id}
-                    disableUp={index === 0}
-                    disableDown={index === projects.length - 1}
-                  />
+                  {activeIndex !== -1 ? (
+                    <ProjectReorderButtons
+                      projectId={project.id}
+                      disableUp={activeIndex === 0}
+                      disableDown={activeIndex === activeIds.length - 1}
+                    />
+                  ) : (
+                    <div className="h-3.5 w-3.5" aria-hidden="true" />
+                  )}
                 </div>
               ) : null}
               <Link
