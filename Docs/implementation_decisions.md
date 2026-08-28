@@ -50,7 +50,7 @@ Key shape: **database-backed sessions**, not JWT, so removing or demoting a user
 
 ## 9. Invoice Numbering Decision
 
-Auto-generated from the project-level `invoiceNumberFormat`, editable while `DRAFT`. Supported placeholders `{abbreviation}`, `{number}`, `{date}`; date formats `MM-DD-YYYY` / `DD-MM-YYYY`.
+Auto-generated from the project-level `invoiceNumberFormat`, editable while `DRAFT`. Supported placeholders `{abbreviation}`, `{number}`, `{date}`; date formats `MM-DD-YYYY` / `DD-MM-YYYY` / `MM/DD/YYYY` / `DD/MM/YYYY`.
 
 **Uniqueness scope:** `InvoiceNumber` must be unique **within its project**, enforced as a composite unique constraint on `(ProjectId, InvoiceNumber)`. It is not required to be globally unique across projects — two different projects may coincidentally produce the same literal invoice number string.
 
