@@ -2,14 +2,30 @@ import { describe, expect, it } from "vitest";
 import { buildWeeklyActionPlanner } from "@/lib/weeklyActionPlanner";
 import type { PriorityFeedItem } from "@/lib/priorityFeed";
 import type { ProjectBillingRow } from "@/lib/projectBillingStatus";
+import type { InvoiceListItem } from "@/repositories/invoiceRepository";
+
+function invoice(
+  id: string,
+  projectId: string,
+  total: number,
+  currency = "USD",
+): InvoiceListItem {
+  return {
+    id,
+    projectId,
+    total,
+    currency,
+  } as unknown as InvoiceListItem;
+}
 
 function item(
   projectId: string,
   category: PriorityFeedItem["category"],
   actionDate: Date | null,
+  id?: string,
 ): PriorityFeedItem {
   return {
-    id: `${category}-${projectId}`,
+    id: id ?? `${category}-${projectId}`,
     category,
     tier: "High",
     barTone: category === "overdue" ? "overdue" : category,
@@ -84,6 +100,56 @@ describe("buildWeeklyActionPlanner", () => {
       ["week", "week"],
       ["later", "later"],
     ]);
+  });
+
+  it("folds multiple overdue invoices for the same project into one aggregate line", () => {
+    const result = buildWeeklyActionPlanner({
+      now,
+      billingRows: [],
+      allInvoices: [
+        invoice("inv-1", "lumen", 8000),
+        invoice("inv-2", "lumen", 9000),
+      ],
+      items: [
+        item("lumen", "overdue", new Date("2026-07-31T00:00:00Z"), "overdue-inv-1"),
+        item("lumen", "overdue", new Date("2026-08-05T00:00:00Z"), "overdue-inv-2"),
+      ],
+    });
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      projectId: "lumen",
+      issue: "2 invoices overdue",
+      amount: "$17,000.00",
+      secondaryLink: { href: "/projects/lumen?tab=invoices&returnTo=%2F" },
+    });
+  });
+
+  it("does not aggregate a single overdue invoice", () => {
+    const result = buildWeeklyActionPlanner({
+      now,
+      billingRows: [],
+      allInvoices: [invoice("inv-1", "lumen", 8000)],
+      items: [
+        item("lumen", "overdue", new Date("2026-07-31T00:00:00Z"), "overdue-inv-1"),
+      ],
+    });
+    expect(result[0].issue).toBe("overdue");
+  });
+
+  it("does not blend mismatched currencies when aggregating", () => {
+    const result = buildWeeklyActionPlanner({
+      now,
+      billingRows: [],
+      allInvoices: [
+        invoice("inv-1", "lumen", 8000, "USD"),
+        invoice("inv-2", "lumen", 9000, "AUD"),
+      ],
+      items: [
+        item("lumen", "overdue", new Date("2026-07-31T00:00:00Z"), "overdue-inv-1"),
+        item("lumen", "overdue", new Date("2026-08-05T00:00:00Z"), "overdue-inv-2"),
+      ],
+    });
+    expect(result[0].issue).toBe("overdue");
   });
 
   it("adds an open-project action for an otherwise healthy project scheduled within seven days", () => {
