@@ -65,3 +65,10 @@ next-env.d.ts
 
 # Pulled production database backups (pg_dump of real client data).
 /backups
+
+# GPT-only throwaway UI prototypes and review notes; never part of production.
+/GPT/
+
+# Ad hoc test-DB scenario seeding for manual dashboard comparisons; not a
+# permanent dev tool, kept local rather than tracked.
+/scripts/seedTestDbScenarios.ts
