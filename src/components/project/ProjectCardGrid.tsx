@@ -115,12 +115,16 @@ export function ProjectCardGrid({
                     ? formatShortDate(billingRow.nextInvoiceDate)
                     : "Not scheduled"}
                 </dd>
-                {billingRow && billingRow.exposureCount > 0 ? (
-                  <p className="mt-1 text-[10px] font-semibold text-muted-foreground">
-                    {billingRow.exposureCount} sent{" "}
-                    {billingRow.exposureCount === 1 ? "invoice" : "invoices"}
-                  </p>
-                ) : null}
+              </div>
+              <div className="col-span-2">
+                <dt className="font-bold tracking-wide text-muted-foreground uppercase">
+                  Outstanding invoices
+                </dt>
+                <dd className="mt-1 text-foreground">
+                  {billingRow && billingRow.exposureCount > 0
+                    ? `${billingRow.exposureCount} sent ${billingRow.exposureCount === 1 ? "invoice" : "invoices"}`
+                    : "—"}
+                </dd>
               </div>
               <div className="col-span-2">
                 <dt className="font-bold tracking-wide text-muted-foreground uppercase">
