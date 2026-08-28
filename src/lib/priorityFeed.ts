@@ -45,6 +45,8 @@ export type PriorityFeedItem = {
   amount?: string;
   timing?: string;
   timingDanger?: boolean;
+  /** UTC calendar date that makes the action relevant; null means configuration is required but unscheduled. */
+  actionDate: Date | null;
   secondaryLink?: { label: string; href: string };
   action: PriorityFeedAction;
 };
@@ -87,6 +89,7 @@ export function buildPriorityFeed(input: {
       amount: formatCurrency(invoice.total.toString(), invoice.currency),
       timing: `${days} ${days === 1 ? "day" : "days"} overdue`,
       timingDanger: true,
+      actionDate: invoice.dueDate,
       secondaryLink: {
         label: "View invoice →",
         href: `/invoices/${invoice.id}`,
@@ -123,6 +126,7 @@ export function buildPriorityFeed(input: {
           ? formatCurrency(lastInvoice.total, lastInvoice.currency)
           : undefined,
         timing: `Billing date was ${formatDisplayDate(scheduledDate)}`,
+        actionDate: scheduledDate,
         secondaryLink: {
           label: "View project →",
           href: `/projects/${schedule.project.id}`,
@@ -146,6 +150,7 @@ export function buildPriorityFeed(input: {
     note: `Created ${formatDisplayDate(invoice.createdAt)}`,
     amount: formatCurrency(invoice.total.toString(), invoice.currency),
     timing: `Draft for ${Math.max(1, daysBetween(now, invoice.createdAt))} ${daysBetween(now, invoice.createdAt) === 1 ? "day" : "days"}`,
+    actionDate: invoice.createdAt,
     action: { label: "Review & send", href: `/invoices/${invoice.id}` },
   }));
 
@@ -166,6 +171,7 @@ export function buildPriorityFeed(input: {
         days <= 0
           ? "Due today"
           : `Due in ${days} ${days === 1 ? "day" : "days"}`,
+      actionDate: invoice.dueDate,
       action: { label: "View invoice", href: `/invoices/${invoice.id}` },
     };
   });
@@ -180,6 +186,7 @@ export function buildPriorityFeed(input: {
       projectName: project.name,
       clientName: project.client.name,
       issue: "Missing preferred payment method",
+      actionDate: null,
       action: { label: "Complete setup", href: `/projects/${project.id}` },
     }),
   );

@@ -2,7 +2,7 @@
 
 import { useCallback, useSyncExternalStore } from "react";
 
-export type DirectoryView = "table" | "cards";
+export type DirectoryView = "workspace" | "table" | "cards";
 
 /**
  * Shared by every directory page with a Table/Cards toggle (Projects,
@@ -31,6 +31,7 @@ function listenersFor(key: string): Set<() => void> {
 
 export function useViewPreference(
   storageKey: string,
+  defaultView: DirectoryView = "table",
 ): [DirectoryView, (next: DirectoryView) => void] {
   const subscribe = useCallback(
     (callback: () => void) => {
@@ -42,12 +43,16 @@ export function useViewPreference(
   );
 
   const getSnapshot = useCallback((): DirectoryView => {
-    return window.localStorage.getItem(storageKey) === "cards"
-      ? "cards"
-      : "table";
-  }, [storageKey]);
+    const stored = window.localStorage.getItem(storageKey);
+    return stored === "cards" || stored === "table" || stored === "workspace"
+      ? stored
+      : defaultView;
+  }, [defaultView, storageKey]);
 
-  const getServerSnapshot = useCallback((): DirectoryView => "table", []);
+  const getServerSnapshot = useCallback(
+    (): DirectoryView => defaultView,
+    [defaultView],
+  );
 
   const view = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 

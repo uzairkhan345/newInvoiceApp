@@ -12,9 +12,9 @@ type NavItem = { href: string; label: string; icon: LucideIcon };
 
 const BASE_NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/parties", label: "Parties", icon: Users },
   { href: "/projects", label: "Projects", icon: Briefcase },
   { href: "/invoices", label: "Invoices", icon: FileText },
+  { href: "/parties", label: "Parties", icon: Users },
 ];
 
 const SETTINGS_NAV_ITEM: NavItem = {

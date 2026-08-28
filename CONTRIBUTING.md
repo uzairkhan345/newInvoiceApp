@@ -19,6 +19,10 @@ pnpm build
 
 `pnpm test` includes integration tests that create and delete real rows — they run against a **dedicated test database**, never your development one. The `pretest` hook creates and migrates it automatically (`TEST_DATABASE_URL`, defaulting to `newinvoice_test` on the same Docker Postgres server). If you override `TEST_DATABASE_URL`, it must differ from `DATABASE_URL` — the suite refuses to start otherwise.
 
+When running the isolated UI worktree alongside the main application, follow
+[the key operating checks](Docs/key_operating_checks.md) for its test-database,
+port, and OAuth configuration.
+
 The same four checks also run automatically in CI (GitHub Actions) on every PR and must pass before merging — running them locally first just gets you faster feedback.
 
 A few project conventions worth knowing:

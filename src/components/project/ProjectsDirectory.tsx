@@ -4,10 +4,12 @@ import { useState, type ReactNode } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { FiltersButton } from "@/components/shared/FiltersButton";
-import { ViewToggle } from "@/components/shared/ViewToggle";
 import { useViewPreference } from "@/lib/useViewPreference";
 import { ProjectTable } from "@/components/project/ProjectTable";
 import { ProjectCardGrid } from "@/components/project/ProjectCardGrid";
+import { ProjectWorkspace } from "@/components/project/ProjectWorkspace";
+import type { ProjectWorkspaceInvoice } from "@/components/project/ProjectWorkspace";
+import { cn } from "@/lib/utils";
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
 import type { ProjectBillingRow } from "@/lib/projectBillingStatus";
 
@@ -25,15 +27,17 @@ export function ProjectsDirectory({
   projects,
   firedProjectIds = [],
   billingRowByProjectId,
+  invoices,
   filterSlot,
 }: {
   projects: ProjectWithRelations[];
   firedProjectIds?: string[];
   billingRowByProjectId: Record<string, ProjectBillingRow>;
+  invoices: ProjectWorkspaceInvoice[];
   filterSlot?: ReactNode;
 }) {
   const [query, setQuery] = useState("");
-  const [view, setView] = useViewPreference(VIEW_STORAGE_KEY);
+  const [view, setView] = useViewPreference(VIEW_STORAGE_KEY, "workspace");
 
   const filtered = projects.filter((project) => {
     if (!query.trim()) return true;
@@ -57,7 +61,23 @@ export function ProjectsDirectory({
         </div>
         {filterSlot}
         <div className="ml-auto flex items-center gap-3">
-          <ViewToggle view={view} onChange={setView} />
+          <div className="flex rounded-lg border border-border bg-muted/40 p-0.5">
+            {(["workspace", "cards", "table"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setView(option)}
+                className={cn(
+                  "rounded-md px-2.5 py-1.5 text-[11px] font-semibold capitalize",
+                  view === option
+                    ? "bg-card text-brand shadow-sm"
+                    : "text-muted-foreground",
+                )}
+              >
+                {option === "table" ? "Rows" : option}
+              </button>
+            ))}
+          </div>
           <FiltersButton />
         </div>
       </div>
@@ -66,6 +86,13 @@ export function ProjectsDirectory({
         <div className="rounded-xl border border-border bg-card px-6 py-12 text-center text-[12px] text-muted-foreground">
           No projects match “{query}”.
         </div>
+      ) : view === "workspace" ? (
+        <ProjectWorkspace
+          key={query.trim().toLowerCase()}
+          projects={filtered}
+          invoices={invoices}
+          billingRowByProjectId={billingRowByProjectId}
+        />
       ) : view === "table" ? (
         <ProjectTable projects={filtered} firedProjectIds={firedProjectIds} />
       ) : (
