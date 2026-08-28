@@ -8,10 +8,13 @@ import { cn } from "@/lib/utils";
 import { moveProjectAction } from "@/actions/project.actions";
 
 /**
- * Dashboard "Project billing status" table's reorder arrows — only rendered
- * when the table is showing the full, unfiltered ACTIVE list (see
- * ProjectBillingStatusTable's `reorderable`), so the visible row above/below
- * always matches the ACTIVE neighbor the server action actually swaps with.
+ * Projects page Rows view's reorder arrows (ProjectTable.tsx) — only rendered
+ * when the list is the full, unfiltered ACTIVE sequence (the "Active" status
+ * tab with no search query — see ProjectsDirectory's `reorderable`), so the
+ * visible row above/below always matches the ACTIVE neighbor the server
+ * action actually swaps with. The resulting order is shared via
+ * `Project.sortOrder`, so Cards/Workspace views reflect it too even though
+ * they don't render arrows themselves.
  */
 export function ProjectReorderButtons({
   projectId,
