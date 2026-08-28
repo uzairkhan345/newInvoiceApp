@@ -67,8 +67,8 @@ export function ProjectCardGrid({
                 </p>
               </div>
             </div>
-            <div className="flex items-center justify-between border-y border-muted bg-muted/30 px-5 py-2.5">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-y-1 border-y border-muted bg-muted/30 px-5 py-2.5">
+              <div className="flex flex-wrap items-center gap-2">
                 <span
                   className={cn(
                     "rounded-md px-2 py-1 text-[10px] font-bold whitespace-nowrap uppercase",
@@ -79,6 +79,12 @@ export function ProjectCardGrid({
                 >
                   {billingRow ? billingRow.statusLabel : "Archived"}
                 </span>
+                {billingRow && billingRow.exposureCount > 0 ? (
+                  <span className="text-[10px] font-semibold whitespace-nowrap text-muted-foreground">
+                    {billingRow.exposureCount} sent{" "}
+                    {billingRow.exposureCount === 1 ? "invoice" : "invoices"}
+                  </span>
+                ) : null}
                 {billingRow && billingRow.overdueCount > 0 ? (
                   <span className="text-[10px] font-semibold whitespace-nowrap text-[var(--status-overdue-text)]">
                     {billingRow.overdueCount} overdue{" "}
