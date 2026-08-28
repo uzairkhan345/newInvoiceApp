@@ -56,7 +56,11 @@ export function InvoiceSummaryTab({
         <Metric
           label="Issued"
           value={formatDisplayDate(invoice.issueDate)}
-          note="Sent to client on issue date"
+          note={
+            invoice.status === "DRAFT"
+              ? `Created ${formatDisplayDate(invoice.createdAt)}`
+              : "Sent to client on issue date"
+          }
         />
       </div>
 
