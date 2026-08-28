@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { withReturnTo } from "@/lib/backNavigation";
 import { formatCurrency } from "@/lib/currency";
 import { formatShortDate } from "@/lib/dates";
 import { paymentMethodSummary } from "@/components/project/ProjectTable";
@@ -81,10 +82,12 @@ export function ProjectWorkspace({
   projects,
   invoices,
   billingRowByProjectId,
+  returnTo,
 }: {
   projects: ProjectWithRelations[];
   invoices: ProjectWorkspaceInvoice[];
   billingRowByProjectId: Record<string, ProjectBillingRow>;
+  returnTo?: string;
 }) {
   const [page, setPage] = useState(0);
   const pageCount = Math.max(1, Math.ceil(projects.length / PAGE_SIZE));
@@ -206,7 +209,7 @@ export function ProjectWorkspace({
                   recent.map((invoice) => (
                     <Link
                       key={invoice.id}
-                      href={`/invoices/${invoice.id}?returnTo=%2Fprojects`}
+                      href={withReturnTo(`/invoices/${invoice.id}`, returnTo)}
                       className="grid grid-cols-[1fr_auto_auto] gap-3 border-t border-muted py-2 text-[11px] first:border-t-0"
                     >
                       <span className="font-mono font-semibold">

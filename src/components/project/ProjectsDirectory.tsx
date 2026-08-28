@@ -9,6 +9,7 @@ import { ProjectTable } from "@/components/project/ProjectTable";
 import { ProjectCardGrid } from "@/components/project/ProjectCardGrid";
 import { ProjectWorkspace } from "@/components/project/ProjectWorkspace";
 import type { ProjectWorkspaceInvoice } from "@/components/project/ProjectWorkspace";
+import type { ProjectStatusFilterValue } from "@/components/project/ProjectStatusFilter";
 import { cn } from "@/lib/utils";
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
 import type { ProjectBillingRow } from "@/lib/projectBillingStatus";
@@ -29,15 +30,25 @@ export function ProjectsDirectory({
   billingRowByProjectId,
   invoices,
   filterSlot,
+  returnTo,
+  statusFilter,
 }: {
   projects: ProjectWithRelations[];
   firedProjectIds?: string[];
   billingRowByProjectId: Record<string, ProjectBillingRow>;
   invoices: ProjectWorkspaceInvoice[];
   filterSlot?: ReactNode;
+  returnTo?: string;
+  statusFilter?: ProjectStatusFilterValue;
 }) {
   const [query, setQuery] = useState("");
   const [view, setView] = useViewPreference(VIEW_STORAGE_KEY, "workspace");
+  // Reordering swaps against the true global ACTIVE sortOrder sequence, so
+  // it's only safe to expose when the rendered list IS that exact sequence —
+  // the unfiltered "active" tab with no search narrowing it further. On any
+  // other tab/search the row drawn next to a given project on screen may not
+  // be the ACTIVE neighbor the server will actually swap it with.
+  const reorderable = statusFilter === "active" && query.trim() === "";
 
   const filtered = projects.filter((project) => {
     if (!query.trim()) return true;
@@ -92,9 +103,14 @@ export function ProjectsDirectory({
           projects={filtered}
           invoices={invoices}
           billingRowByProjectId={billingRowByProjectId}
+          returnTo={returnTo}
         />
       ) : view === "table" ? (
-        <ProjectTable projects={filtered} firedProjectIds={firedProjectIds} />
+        <ProjectTable
+          projects={filtered}
+          firedProjectIds={firedProjectIds}
+          reorderable={reorderable}
+        />
       ) : (
         <ProjectCardGrid
           projects={filtered}
