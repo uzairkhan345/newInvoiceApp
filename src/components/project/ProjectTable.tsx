@@ -3,6 +3,7 @@ import { ChevronRight, BellDot } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PAYMENT_METHOD_TYPE_LABELS } from "@/lib/paymentMethodLabels";
 import { ProjectStatusPill } from "@/components/project/ProjectStatusPill";
+import { ProjectReorderButtons } from "@/components/project/ProjectReorderButtons";
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
 
 /**
@@ -45,9 +46,11 @@ function AlertDot() {
 export function ProjectTable({
   projects,
   firedProjectIds = [],
+  reorderable = false,
 }: {
   projects: ProjectWithRelations[];
   firedProjectIds?: string[];
+  reorderable?: boolean;
 }) {
   const firedProjectIdSet = new Set(firedProjectIds);
 
@@ -71,56 +74,29 @@ export function ProjectTable({
         {projects.map((project, index) => {
           const paymentMethod = paymentMethodSummary(project);
           return (
-            <Link
+            <div
               key={project.id}
-              href={`/projects/${project.id}`}
               className={cn(
-                "grid items-center gap-3 px-5 py-3.5 hover:bg-muted/40",
-                DESKTOP_GRID,
+                "flex items-stretch",
                 index > 0 && "border-t border-muted",
               )}
             >
-              <span className="flex min-w-0 items-center gap-2.5">
-                <ProjectAvatar abbreviation={project.abbreviation} />
-                <span className="truncate text-[13px] font-semibold text-foreground">
-                  {project.name}
-                </span>
-                {firedProjectIdSet.has(project.id) ? <AlertDot /> : null}
-              </span>
-              <span className="truncate text-[13px] text-foreground">
-                {project.client.name}
-              </span>
-              <ProjectStatusPill status={project.status} />
-              <span
+              {reorderable ? (
+                <div className="flex items-center justify-center border-r border-muted px-3">
+                  <ProjectReorderButtons
+                    projectId={project.id}
+                    disableUp={index === 0}
+                    disableDown={index === projects.length - 1}
+                  />
+                </div>
+              ) : null}
+              <Link
+                href={`/projects/${project.id}`}
                 className={cn(
-                  "truncate text-[12px]",
-                  paymentMethod.missing
-                    ? "font-semibold text-[var(--alert-warning-text)]"
-                    : "text-[var(--text-secondary)]",
+                  "grid flex-1 items-center gap-3 px-5 py-3.5 hover:bg-muted/40",
+                  DESKTOP_GRID,
                 )}
               >
-                {paymentMethod.text}
-              </span>
-              <span className="truncate font-mono text-[13px] text-foreground">
-                {project.displayCurrency}
-              </span>
-              <ChevronRight className="h-4 w-4 shrink-0 text-[var(--border-heavy)]" />
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Mobile stacked cards */}
-      <div className="flex flex-col gap-3 lg:hidden">
-        {projects.map((project) => {
-          const paymentMethod = paymentMethodSummary(project);
-          return (
-            <Link
-              key={project.id}
-              href={`/projects/${project.id}`}
-              className="flex flex-col gap-1.5 rounded-xl border border-border bg-card p-4"
-            >
-              <div className="flex items-center justify-between gap-2">
                 <span className="flex min-w-0 items-center gap-2.5">
                   <ProjectAvatar abbreviation={project.abbreviation} />
                   <span className="truncate text-[13px] font-semibold text-foreground">
@@ -128,12 +104,10 @@ export function ProjectTable({
                   </span>
                   {firedProjectIdSet.has(project.id) ? <AlertDot /> : null}
                 </span>
+                <span className="truncate text-[13px] text-foreground">
+                  {project.client.name}
+                </span>
                 <ProjectStatusPill status={project.status} />
-              </div>
-              <span className="text-[13px] text-muted-foreground">
-                {project.client.name}
-              </span>
-              <div className="mt-1 flex items-center justify-between gap-2 border-t border-muted pt-2">
                 <span
                   className={cn(
                     "truncate text-[12px]",
@@ -144,11 +118,68 @@ export function ProjectTable({
                 >
                   {paymentMethod.text}
                 </span>
-                <span className="font-mono text-[12px] text-foreground">
+                <span className="truncate font-mono text-[13px] text-foreground">
                   {project.displayCurrency}
                 </span>
-              </div>
-            </Link>
+                <ChevronRight className="h-4 w-4 shrink-0 text-[var(--border-heavy)]" />
+              </Link>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Mobile stacked cards */}
+      <div className="flex flex-col gap-3 lg:hidden">
+        {projects.map((project, index) => {
+          const paymentMethod = paymentMethodSummary(project);
+          return (
+            <div
+              key={project.id}
+              className="flex items-stretch gap-2 rounded-xl border border-border bg-card"
+            >
+              {reorderable ? (
+                <div className="flex items-center justify-center border-r border-muted px-2">
+                  <ProjectReorderButtons
+                    projectId={project.id}
+                    disableUp={index === 0}
+                    disableDown={index === projects.length - 1}
+                  />
+                </div>
+              ) : null}
+              <Link
+                href={`/projects/${project.id}`}
+                className="flex flex-1 flex-col gap-1.5 p-4"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex min-w-0 items-center gap-2.5">
+                    <ProjectAvatar abbreviation={project.abbreviation} />
+                    <span className="truncate text-[13px] font-semibold text-foreground">
+                      {project.name}
+                    </span>
+                    {firedProjectIdSet.has(project.id) ? <AlertDot /> : null}
+                  </span>
+                  <ProjectStatusPill status={project.status} />
+                </div>
+                <span className="text-[13px] text-muted-foreground">
+                  {project.client.name}
+                </span>
+                <div className="mt-1 flex items-center justify-between gap-2 border-t border-muted pt-2">
+                  <span
+                    className={cn(
+                      "truncate text-[12px]",
+                      paymentMethod.missing
+                        ? "font-semibold text-[var(--alert-warning-text)]"
+                        : "text-[var(--text-secondary)]",
+                    )}
+                  >
+                    {paymentMethod.text}
+                  </span>
+                  <span className="font-mono text-[12px] text-foreground">
+                    {project.displayCurrency}
+                  </span>
+                </div>
+              </Link>
+            </div>
           );
         })}
       </div>

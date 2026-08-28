@@ -110,6 +110,15 @@ export default async function ProjectsPage({
 
   const emptyCopy = EMPTY_STATE_COPY[filter];
 
+  // Mirrors ProjectStatusFilter's own hrefFor — so embedded links (e.g. the
+  // Workspace view's invoice rows) can carry this page's real current state
+  // back through `returnTo`, not a fixed fallback.
+  const ownPathParams = new URLSearchParams();
+  if (filter !== "all") ownPathParams.set("status", filter);
+  if (cameFromDashboard) ownPathParams.set("from", "dashboard");
+  const ownPathQuery = ownPathParams.toString();
+  const ownPath = ownPathQuery ? `/projects?${ownPathQuery}` : "/projects";
+
   return (
     <>
       <PageHeader
@@ -151,6 +160,8 @@ export default async function ProjectsPage({
           projects={projectsForFilter}
           firedProjectIds={firedProjectIds}
           billingRowByProjectId={Object.fromEntries(billingRowByProjectId)}
+          returnTo={ownPath}
+          statusFilter={filter}
           invoices={allInvoices.map((invoice) => ({
             id: invoice.id,
             projectId: invoice.projectId,
