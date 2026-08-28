@@ -23,9 +23,8 @@ vi.mock("@/repositories/userRepository", () => ({
   },
 }));
 
-const { userService, LastAdminError, wouldRemoveLastAdmin } = await import(
-  "@/services/userService"
-);
+const { userService, LastAdminError, wouldRemoveLastAdmin } =
+  await import("@/services/userService");
 
 afterEach(() => {
   findById.mockReset();
