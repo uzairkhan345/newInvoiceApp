@@ -200,7 +200,10 @@ export function ProjectWorkspace({
                     <span>No invoices yet</span>
                     <Link
                       className="font-bold text-brand"
-                      href={`/invoices/new/${project.id}`}
+                      href={withReturnTo(
+                        `/invoices/new/${project.id}`,
+                        returnTo,
+                      )}
                     >
                       Create invoice →
                     </Link>
@@ -239,7 +242,7 @@ export function ProjectWorkspace({
                 </Link>
                 <Link
                   className="text-[11px] font-bold text-brand"
-                  href={`/invoices/new/${project.id}`}
+                  href={withReturnTo(`/invoices/new/${project.id}`, returnTo)}
                 >
                   New invoice
                 </Link>

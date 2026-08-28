@@ -25,7 +25,7 @@ import type { InvoiceAiContext } from "@/services/aiAssistService";
 import type { InvoiceAutofillData } from "@/services/invoiceService";
 import { computeDueDate } from "@/lib/invoicePeriod";
 import { formatDisplayDate } from "@/lib/dates";
-import { withReturnTo } from "@/lib/backNavigation";
+import { withReturnTo, resolveBackTarget } from "@/lib/backNavigation";
 import type {
   DisplayCurrency,
   InvoicePeriodType,
@@ -185,7 +185,7 @@ export function InvoiceForm({
    * mode only; `invoiceService.previewNextInvoiceNumber` computes it.
    */
   invoiceNumberConflict?: string | null;
-  /** Carried through to the Cancel link and the post-save redirect so the eventual "Back" from the invoice preview still resolves to wherever the user actually came from (`src/lib/backNavigation.ts`). Edit mode only — the create route has no `returnTo` origin to preserve. */
+  /** Carried through to the Cancel link and the post-save redirect so the eventual "Back" from the invoice preview still resolves to wherever the user actually came from (`src/lib/backNavigation.ts`). Populated for both modes — every entry point into create mode now forwards its own current page as `returnTo` too. */
   returnTo?: string;
 }) {
   const router = useRouter();
@@ -385,15 +385,18 @@ export function InvoiceForm({
   });
 
   /**
-   * Create mode has no `returnTo` origin (only ever reached from a
-   * project), so Cancel returns to that project directly. Edit mode
-   * cancels back to this same invoice's read-only preview — re-fetches
-   * from the server, discarding any unsaved changes — carrying `returnTo`
-   * through so the eventual "Back" link still resolves correctly.
+   * Create mode cancels to wherever the create page's own `returnTo` points
+   * (falling back to the project directly if the entry point didn't supply
+   * one). Edit mode cancels back to this same invoice's read-only preview —
+   * re-fetches from the server, discarding any unsaved changes — carrying
+   * `returnTo` through so the eventual "Back" link still resolves correctly.
    */
   const cancelHref =
     mode === "create"
-      ? `/projects/${projectId}`
+      ? resolveBackTarget(returnTo, {
+          href: `/projects/${projectId}`,
+          label: "",
+        }).href
       : withReturnTo(`/invoices/${invoiceId}`, returnTo);
 
   return (
