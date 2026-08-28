@@ -17,6 +17,14 @@ import { Button } from "@/components/ui/button";
  * When `disabled`, renders a plain disabled button with a native title
  * tooltip instead of a dialog trigger — satisfies the "delete button
  * (disabled + tooltip if blocked)" pattern in one place.
+ *
+ * `open`/`onOpenChange` make it a controlled component when the caller needs
+ * to open it from somewhere other than its own trigger button (e.g. a
+ * dropdown menu item, which can't safely nest a Dialog trigger inside a
+ * Menu's own item without the two overlay systems fighting over focus/close
+ * timing) — pass `hideTrigger` alongside them to skip rendering the trigger
+ * altogether. Uncontrolled (no `open` passed) preserves the original
+ * self-contained behavior every existing caller relies on.
  */
 export function ConfirmDialog({
   triggerLabel,
@@ -27,8 +35,11 @@ export function ConfirmDialog({
   description,
   confirmLabel = "Confirm",
   onConfirm,
+  open: openProp,
+  onOpenChange: onOpenChangeProp,
+  hideTrigger = false,
 }: {
-  triggerLabel: ReactNode;
+  triggerLabel?: ReactNode;
   triggerVariant?: React.ComponentProps<typeof Button>["variant"];
   disabled?: boolean;
   disabledReason?: string;
@@ -36,8 +47,13 @@ export function ConfirmDialog({
   description?: string;
   confirmLabel?: string;
   onConfirm: () => Promise<void>;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = openProp ?? uncontrolledOpen;
+  const setOpen = onOpenChangeProp ?? setUncontrolledOpen;
   const [isPending, setIsPending] = useState(false);
 
   if (disabled) {
@@ -55,9 +71,11 @@ export function ConfirmDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant={triggerVariant} />}>
-        {triggerLabel}
-      </DialogTrigger>
+      {hideTrigger ? null : (
+        <DialogTrigger render={<Button variant={triggerVariant} />}>
+          {triggerLabel}
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

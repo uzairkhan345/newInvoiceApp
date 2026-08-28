@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { StatusBadge } from "@/components/invoice/StatusBadge";
+import { InvoiceRowActionsMenu } from "@/components/invoice/InvoiceRowActionsMenu";
 import { formatCurrency } from "@/lib/currency";
 import { formatDisplayDate, formatShortDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
@@ -15,9 +16,9 @@ import type { InvoiceTableRow } from "@/lib/invoiceTableRow";
  * PartyTable.tsx (milestone 6) now follows the same convention.
  */
 const DESKTOP_GRID_WITH_PROJECT =
-  "grid-cols-[1.1fr_1.3fr_1.3fr_0.9fr_0.9fr_0.9fr_120px]";
+  "grid-cols-[1.1fr_1.3fr_1.3fr_0.9fr_0.9fr_0.9fr_120px_36px]";
 const DESKTOP_GRID_WITHOUT_PROJECT =
-  "grid-cols-[1.1fr_1.3fr_0.9fr_0.9fr_0.9fr_120px]";
+  "grid-cols-[1.1fr_1.3fr_0.9fr_0.9fr_0.9fr_120px_36px]";
 
 /** The stretched click target that opens the invoice — shared by the desktop row and mobile card. */
 function RowOpenLink({ href, ariaLabel }: { href: string; ariaLabel: string }) {
@@ -75,6 +76,7 @@ export function InvoiceTable({
           <span>Due</span>
           <span>Status</span>
           <span />
+          <span />
         </div>
         {invoices.map((invoice, index) => (
           <div
@@ -128,6 +130,10 @@ export function InvoiceTable({
               Open invoice
               <ArrowRight className="h-3 w-3" />
             </span>
+            <InvoiceRowActionsMenu
+              invoiceId={invoice.id}
+              status={invoice.status}
+            />
           </div>
         ))}
       </div>
@@ -147,7 +153,16 @@ export function InvoiceTable({
               <span className="font-mono text-[13px] font-bold text-foreground">
                 {invoice.invoiceNumber}
               </span>
-              <StatusBadge status={invoice.status} dueDate={invoice.dueDate} />
+              <div className="flex items-center gap-2">
+                <StatusBadge
+                  status={invoice.status}
+                  dueDate={invoice.dueDate}
+                />
+                <InvoiceRowActionsMenu
+                  invoiceId={invoice.id}
+                  status={invoice.status}
+                />
+              </div>
             </div>
             <Link
               href={`/parties/${invoice.project.client.id}`}

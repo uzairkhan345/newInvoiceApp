@@ -10,7 +10,7 @@ import {
 import type { InvoiceStatus } from "@/generated/prisma/client";
 
 /** Docs/implementation_decisions.md §10 — only ever renders valid-transition buttons for the current status. */
-const TRANSITIONS: Record<
+export const TRANSITIONS: Record<
   InvoiceStatus,
   {
     target: InvoiceStatus;
