@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { prisma } from "@/lib/prisma";
+import { userService, LastAdminError } from "@/services/userService";
 import {
   createTestUserWithSession,
   deleteTestUser,
@@ -97,11 +98,29 @@ describe("user.actions (M28.7 — real requireRole gate, not an assumed-open rou
     const { user, sessionToken } = await createTestUserWithSession("ADMIN");
     trackAndSetSession(user.id, sessionToken);
 
+    // The real last-admin *count* logic is covered deterministically in
+    // tests/unit/userService.test.ts (mocked repository) — it can't be
+    // exercised safely here against a real DB, since the global admin count
+    // isn't something this suite can guarantee is exactly one (a real
+    // account bootstrapped for manual browser testing may legitimately
+    // coexist). This test only verifies the action layer correctly maps a
+    // LastAdminError into a { success: false } result, not that the error
+    // itself is triggered by real ambient state.
+    const updateRoleSpy = vi
+      .spyOn(userService, "updateRole")
+      .mockRejectedValueOnce(new LastAdminError());
+    const deleteSpy = vi
+      .spyOn(userService, "delete")
+      .mockRejectedValueOnce(new LastAdminError());
+
     const demote = await updateUserRoleAction(user.id, "STANDARD");
     expect(demote.success).toBe(false);
 
     const remove = await deleteUserAction(user.id);
     expect(remove.success).toBe(false);
+
+    updateRoleSpy.mockRestore();
+    deleteSpy.mockRestore();
 
     await expect(
       prisma.user.findUniqueOrThrow({ where: { id: user.id } }),

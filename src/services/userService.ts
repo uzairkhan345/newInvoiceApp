@@ -36,11 +36,23 @@ async function create(input: UserWriteInput): Promise<User> {
   return userRepository.create(input);
 }
 
+/**
+ * Pure boundary check, split out from `assertNotLastAdmin` so it's directly
+ * unit-testable without needing the real DB to hold exactly one admin
+ * globally — see tests/unit/userService.test.ts for why that matters.
+ */
+export function wouldRemoveLastAdmin(
+  isCurrentlyAdmin: boolean,
+  adminCount: number,
+): boolean {
+  return isCurrentlyAdmin && adminCount <= 1;
+}
+
 async function assertNotLastAdmin(id: string): Promise<void> {
   const target = await userRepository.findById(id);
   if (target?.role !== "ADMIN") return;
   const adminCount = await userRepository.countByRole("ADMIN");
-  if (adminCount <= 1) {
+  if (wouldRemoveLastAdmin(true, adminCount)) {
     throw new LastAdminError();
   }
 }
