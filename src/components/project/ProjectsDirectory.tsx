@@ -43,12 +43,18 @@ export function ProjectsDirectory({
 }) {
   const [query, setQuery] = useState("");
   const [view, setView] = useViewPreference(VIEW_STORAGE_KEY, "workspace");
-  // Reordering swaps against the true global ACTIVE sortOrder sequence, so
-  // it's only safe to expose when the rendered list IS that exact sequence —
-  // the unfiltered "active" tab with no search narrowing it further. On any
-  // other tab/search the row drawn next to a given project on screen may not
-  // be the ACTIVE neighbor the server will actually swap it with.
-  const reorderable = statusFilter === "active" && query.trim() === "";
+  // Reordering swaps against the true global ACTIVE sortOrder sequence.
+  // "active" and "all" both show every ACTIVE project in that exact
+  // sequence (just with ARCHIVED ones interleaved on "all" — ProjectTable
+  // itself only renders arrows on ACTIVE rows and computes disable state
+  // from their position among ACTIVE rows only, skipping archived ones, so
+  // the interleaving doesn't cause a mismatched swap). "needs-attention"
+  // and "archived" are further-filtered subsets where the row drawn next to
+  // a project on screen may not be its real ACTIVE neighbor — arrows stay
+  // hidden there, same as with an active search query.
+  const reorderable =
+    (statusFilter === "active" || statusFilter === "all") &&
+    query.trim() === "";
 
   const filtered = projects.filter((project) => {
     if (!query.trim()) return true;
