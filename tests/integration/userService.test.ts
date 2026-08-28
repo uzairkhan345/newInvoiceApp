@@ -1,10 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it } from "vitest";
-import {
-  userService,
-  DuplicateUserEmailError,
-  LastAdminError,
-} from "@/services/userService";
+import { userService, DuplicateUserEmailError } from "@/services/userService";
 import { deleteTestUser } from "../helpers/authFixtures";
 
 const createdUserIds: string[] = [];
@@ -40,13 +36,15 @@ describe("userService (M28.3 business logic, first covered by M28.7)", () => {
     ).rejects.toBeInstanceOf(DuplicateUserEmailError);
   });
 
-  it("blocks demoting the only admin", async () => {
-    const admin = await createUser("test-only-admin@example.com", "ADMIN");
-
-    await expect(
-      userService.updateRole(admin.id, "STANDARD"),
-    ).rejects.toBeInstanceOf(LastAdminError);
-  });
+  // "Blocks demoting/deleting the only admin" is NOT tested here: that
+  // scenario requires the whole DB to hold exactly one admin globally
+  // (assertNotLastAdmin counts admins with no scoping), which this suite
+  // can't safely guarantee — real accounts (e.g. an admin bootstrapped for
+  // manual browser testing against this same DB) may legitimately exist
+  // alongside these fixtures. That boundary condition is fully covered,
+  // deterministically, in tests/unit/userService.test.ts instead, via a
+  // mocked repository. This file only covers the DB-wiring/"allowed" paths,
+  // which don't depend on the ambient admin count being exactly zero.
 
   it("allows demoting an admin when another admin remains", async () => {
     const admin1 = await createUser("test-admin-one@example.com", "ADMIN");
@@ -55,14 +53,6 @@ describe("userService (M28.3 business logic, first covered by M28.7)", () => {
     const demoted = await userService.updateRole(admin1.id, "STANDARD");
 
     expect(demoted.role).toBe("STANDARD");
-  });
-
-  it("blocks deleting the only admin", async () => {
-    const admin = await createUser("test-only-admin-del@example.com", "ADMIN");
-
-    await expect(userService.delete(admin.id)).rejects.toBeInstanceOf(
-      LastAdminError,
-    );
   });
 
   it("allows deleting a non-admin freely", async () => {

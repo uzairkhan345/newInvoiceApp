@@ -5,18 +5,14 @@
  * run repeatedly; the only statement it ever issues outside the test
  * database is CREATE DATABASE.
  *
- * Also clears User/Session every run: userService.test.ts's "only admin"
- * tests assume zero pre-existing admins (unlike business-data tests, which
- * tolerate ambient rows via a captured "before" baseline — see
- * tests/integration's pattern). A stray admin left behind by
- * scripts/createTestSession.ts (used for authenticated manual browser
- * verification against this same DB) silently broke those tests once
- * already; this guarantees a clean auth baseline regardless. Business data
- * (Party/Project/Invoice/etc.) is untouched, so manually-seeded scenario
- * data survives across test runs as intended.
- *
- * Note: don't run `pnpm test` while relying on a live createTestSession.ts
- * cookie in a browser against this DB — this deletes that Session row too.
+ * Does NOT touch User/Session (a previous version of this file wiped them
+ * on every run, to work around userService.test.ts's "only admin" tests
+ * assuming zero pre-existing admins — but that made it impossible for a
+ * real account bootstrapped for manual browser testing against this same DB
+ * to ever persist across a test run. Fixed at the source instead: that
+ * boundary condition now lives in tests/unit/userService.test.ts against a
+ * mocked repository, so the integration suite no longer needs a pristine
+ * auth baseline. See userService.ts's wouldRemoveLastAdmin).
  */
 import { execSync } from "node:child_process";
 import { config } from "dotenv";
@@ -48,28 +44,12 @@ async function ensureTestDatabaseExists() {
   }
 }
 
-async function resetAuthTables() {
-  const test = new PrismaClient({ datasources: { db: { url: testUrl } } });
-  try {
-    const { count: sessions } = await test.session.deleteMany();
-    const { count: users } = await test.user.deleteMany();
-    if (sessions || users) {
-      console.log(
-        `[prepareTestDb] cleared ${users} user(s) and ${sessions} session(s) left over from manual testing`,
-      );
-    }
-  } finally {
-    await test.$disconnect();
-  }
-}
-
 async function main() {
   await ensureTestDatabaseExists();
   execSync("pnpm prisma migrate deploy", {
     stdio: "inherit",
     env: { ...process.env, DATABASE_URL: testUrl },
   });
-  await resetAuthTables();
   console.log(`[prepareTestDb] test database "${testDbName}" is ready`);
 }
 
