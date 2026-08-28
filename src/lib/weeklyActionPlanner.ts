@@ -2,6 +2,7 @@ import type { PriorityFeedItem } from "@/lib/priorityFeed";
 import type { ProjectBillingRow } from "@/lib/projectBillingStatus";
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
 import type { InvoiceListItem } from "@/repositories/invoiceRepository";
+import { formatCurrency } from "@/lib/currency";
 
 type ExpectedPeriod = { start: Date; end: Date };
 
@@ -55,6 +56,60 @@ function utcDay(date: Date): number {
   return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 }
 
+const AGGREGATE_LABEL: Partial<Record<PriorityFeedItem["category"], string>> = {
+  overdue: "invoices overdue",
+  draft: "draft invoices awaiting review",
+  due: "invoices due soon",
+};
+
+/**
+ * The planner keeps only the single most urgent item per project/category
+ * (see the precedence loop below), which understates a project's real
+ * exposure when it has more than one invoice in the same state — e.g. two
+ * overdue invoices would otherwise show only the older one's amount. When
+ * siblings exist, fold them into one line showing the combined total and a
+ * count, matching how the pre-planner Health view surfaced this (see
+ * feedback_backlog.md's dashboard-multi-invoice-exposure fix) — bail out
+ * rather than guess if their currencies don't match, since this app never
+ * blends currencies in a single figure.
+ */
+function withAggregateIfNeeded(
+  item: PriorityFeedItem,
+  itemsByProjectCategory: Map<string, PriorityFeedItem[]>,
+  invoicesByProject: Map<string, InvoiceListItem[]>,
+): PriorityFeedItem {
+  const label = AGGREGATE_LABEL[item.category];
+  if (!label) return item;
+  const siblings =
+    itemsByProjectCategory.get(`${item.projectId}|${item.category}`) ?? [];
+  if (siblings.length < 2) return item;
+
+  const prefix = `${item.category}-`;
+  const projectInvoices = invoicesByProject.get(item.projectId) ?? [];
+  const invoices = siblings
+    .map((sibling) =>
+      sibling.id.startsWith(prefix)
+        ? projectInvoices.find((inv) => inv.id === sibling.id.slice(prefix.length))
+        : undefined,
+    )
+    .filter((invoice): invoice is InvoiceListItem => invoice != null);
+  if (invoices.length < 2) return item;
+
+  const currency = invoices[0].currency;
+  if (!invoices.every((invoice) => invoice.currency === currency)) return item;
+
+  const total = invoices.reduce((sum, invoice) => sum + Number(invoice.total), 0);
+  return {
+    ...item,
+    issue: `${invoices.length} ${label}`,
+    amount: formatCurrency(total, currency),
+    secondaryLink: {
+      label: "View invoices →",
+      href: `/projects/${item.projectId}?tab=invoices&returnTo=%2F`,
+    },
+  };
+}
+
 function sectionFor(date: Date | null, now: Date): PlannerSection {
   if (!date) return "unscheduled";
   const delta = Math.round((utcDay(date) - utcDay(now)) / 86_400_000);
@@ -85,6 +140,14 @@ export function buildWeeklyActionPlanner(input: {
     list.push(invoice);
     invoicesByProject.set(invoice.projectId, list);
   }
+  const itemsByProjectCategory = new Map<string, PriorityFeedItem[]>();
+  for (const item of input.items) {
+    const key = `${item.projectId}|${item.category}`;
+    const list = itemsByProjectCategory.get(key);
+    if (list) list.push(item);
+    else itemsByProjectCategory.set(key, [item]);
+  }
+
   const selected = new Map<string, PriorityFeedItem>();
   for (const item of input.items) {
     const expected = expectedByProject.get(item.projectId);
@@ -139,6 +202,9 @@ export function buildWeeklyActionPlanner(input: {
   }
 
   return Array.from(selected.values())
+    .map((item) =>
+      withAggregateIfNeeded(item, itemsByProjectCategory, invoicesByProject),
+    )
     .map((item) => ({ ...item, section: sectionFor(item.actionDate, now) }))
     .sort(
       (a, b) =>
