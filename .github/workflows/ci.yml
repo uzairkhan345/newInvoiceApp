@@ -84,3 +84,25 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      # A main-branch build is packaged once and later promoted unchanged to
+      # production. PR runs still compile the application, but do not retain a
+      # deployable artifact.
+      - name: Assemble deployment artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          cp -r .next/static .next/standalone/.next/static
+          cp -r public .next/standalone/public
+          tar -czf "deploy-${GITHUB_SHA}.tar.gz" -C .next/standalone .
+          sha256sum "deploy-${GITHUB_SHA}.tar.gz" > "deploy-${GITHUB_SHA}.tar.gz.sha256"
+
+      - name: Upload deployment artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-${{ github.sha }}
+          path: |
+            deploy-${{ github.sha }}.tar.gz
+            deploy-${{ github.sha }}.tar.gz.sha256
+          if-no-files-found: error
+          retention-days: 30

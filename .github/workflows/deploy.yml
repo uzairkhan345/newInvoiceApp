@@ -2,23 +2,73 @@ name: Deploy
 
 on:
   workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit SHA on main to deploy (must have a passing CI run that uploaded a deployment artifact)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: production
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
-    env:
-      DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
-      NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
-      PDF_ADAPTER: pdf-lib
-      # Build-time only, matches ci.yml's placeholder — the real key used to
-      # decrypt production data lives solely in the droplet's own .env, never
-      # in CI, since nothing at build time needs to decrypt anything real.
-      SETTINGS_ENCRYPTION_KEY: ci-placeholder-key-not-used-in-production
+    environment: production
 
     steps:
+      # ci.yml names the artifact after the full 40-char github.sha; a
+      # short/abbreviated SHA (e.g. copied from `git log`) would otherwise
+      # silently fail the exact-match lookups below.
+      - name: Resolve full commit SHA
+        id: resolve_sha
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          FULL_SHA=$(gh api "repos/${{ github.repository }}/commits/${{ inputs.sha }}" --jq '.sha')
+          echo "Resolved ${{ inputs.sha }} -> $FULL_SHA"
+          echo "full_sha=$FULL_SHA" >> "$GITHUB_OUTPUT"
+
+      # Gate: only a SHA with its own successful CI push-to-main run (the
+      # only run shape that ever uploads a deploy-<sha> artifact, per
+      # ci.yml) is allowed through — this proves both "came from main" and
+      # "passed CI" in one check, since CI only builds pushes to main.
+      - name: Resolve CI run for commit
+        id: ci_run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA="${{ steps.resolve_sha.outputs.full_sha }}"
+          RUN_ID=$(gh api "repos/${{ github.repository }}/actions/workflows/ci.yml/runs?head_sha=${SHA}&event=push&branch=main&status=success" --jq '.workflow_runs[0].id // empty')
+          if [ -z "$RUN_ID" ]; then
+            echo "::error::No successful CI run found for commit $SHA on main — refusing to deploy an unverified SHA."
+            exit 1
+          fi
+          echo "Found CI run $RUN_ID for $SHA"
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Download deployment artifact from CI run
+        uses: actions/download-artifact@v4
+        with:
+          name: deploy-${{ steps.resolve_sha.outputs.full_sha }}
+          run-id: ${{ steps.ci_run.outputs.run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Verify artifact checksum
+        run: sha256sum -c "deploy-${{ steps.resolve_sha.outputs.full_sha }}.tar.gz.sha256"
+
+      # Only needed so `pnpm prisma migrate deploy` below has the schema and
+      # migration files for this exact commit — the artifact itself is never
+      # rebuilt from this checkout.
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.resolve_sha.outputs.full_sha }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -35,19 +85,12 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # Applied directly against production Neon — never run on the droplet.
+      # Scoped to this one step so the production DB URL isn't sitting in
+      # every step's environment.
       - name: Apply migrations
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
         run: pnpm prisma migrate deploy
-
-      - name: Build
-        run: pnpm build
-
-      # `output: "standalone"` doesn't include .next/static or public/ —
-      # both need to be copied alongside server.js by hand.
-      - name: Assemble standalone artifact
-        run: |
-          cp -r .next/static .next/standalone/.next/static
-          cp -r public .next/standalone/public
-          tar -czf deploy.tar.gz -C .next/standalone .
 
       - name: Configure SSH
         run: |
@@ -63,7 +106,7 @@ jobs:
       # one line rewritten in place below.
       - name: Deploy artifact
         run: |
-          scp -i ~/.ssh/deploy_key deploy.tar.gz \
+          scp -i ~/.ssh/deploy_key "deploy-${{ steps.resolve_sha.outputs.full_sha }}.tar.gz" \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/opt/newinvoice/deploy.tar.gz
           ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} '
             set -e
