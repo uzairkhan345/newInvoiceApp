@@ -42,7 +42,6 @@ function sameUtcDate(a: Date | null, b: Date): boolean {
 
 export type PlannerSection =
   | "overdue"
-  | "action"
   | "today"
   | "week"
   | "later"
@@ -124,9 +123,9 @@ function withAggregateIfNeeded(
 /**
  * "Overdue" is reserved for an actual overdue invoice awaiting payment —
  * a past-dated "prepare" (unsent recurring reminder) or "draft" item is a
- * different situation (nothing has even been sent yet) and lands in
- * "action" instead, so its softer accent styling isn't shown under a
- * heading that visually promises a real overdue invoice.
+ * different situation (nothing has even been sent yet) and folds into
+ * "Today" instead, alongside anything else needing action right now,
+ * rather than visually implying a real overdue invoice.
  */
 function sectionFor(
   category: PriorityFeedItem["category"],
@@ -135,7 +134,7 @@ function sectionFor(
 ): PlannerSection {
   if (!date) return "unscheduled";
   const delta = Math.round((utcDay(date) - utcDay(now)) / 86_400_000);
-  if (delta < 0) return category === "overdue" ? "overdue" : "action";
+  if (delta < 0) return category === "overdue" ? "overdue" : "today";
   if (delta === 0) return "today";
   if (delta <= 7) return "week";
   return "later";

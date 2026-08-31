@@ -12,7 +12,6 @@ import type { PriorityFeedBarTone } from "@/lib/priorityFeed";
 
 const SECTIONS: { value: PlannerSection; label: string }[] = [
   { value: "overdue", label: "Overdue" },
-  { value: "action", label: "Action items" },
   { value: "today", label: "Today" },
   { value: "week", label: "Next 7 days" },
   { value: "later", label: "Later" },
@@ -21,7 +20,6 @@ const SECTIONS: { value: PlannerSection; label: string }[] = [
 
 const SECTION_HEADER_STYLES: Record<PlannerSection, string> = {
   overdue: "bg-[var(--status-overdue-bg)] text-[var(--status-overdue-text)]",
-  action: "bg-[var(--status-sent-bg)] text-[var(--status-sent-text)]",
   today: "bg-[var(--status-upcoming-bg)] text-[var(--status-upcoming-text)]",
   week: "bg-[var(--status-upcoming-bg)] text-[var(--status-upcoming-text)]",
   later: "bg-[var(--status-draft-bg)] text-[var(--status-draft-text)]",
@@ -58,11 +56,7 @@ export function WeeklyActionPlanner({
           const count = actions.filter(
             (action) => action.section === section.value,
           ).length;
-          if (
-            (section.value === "today" || section.value === "action") &&
-            count === 0
-          )
-            return null;
+          if (section.value === "today" && count === 0) return null;
           return (
             <button
               key={section.value}

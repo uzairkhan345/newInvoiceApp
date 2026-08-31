@@ -102,7 +102,7 @@ describe("buildWeeklyActionPlanner", () => {
     ]);
   });
 
-  it("buckets a past-dated prepare/draft item into 'action', not 'overdue' — that heading is reserved for an actual overdue invoice", () => {
+  it("folds a past-dated prepare/draft item into 'today', not 'overdue' — that heading is reserved for an actual overdue invoice", () => {
     const result = buildWeeklyActionPlanner({
       now,
       billingRows: [],
@@ -115,8 +115,8 @@ describe("buildWeeklyActionPlanner", () => {
     expect(
       result.map(({ projectId, section }) => [projectId, section]),
     ).toEqual([
-      ["recurring", "action"],
-      ["stale-draft", "action"],
+      ["recurring", "today"],
+      ["stale-draft", "today"],
       ["real-overdue", "overdue"],
     ]);
   });
