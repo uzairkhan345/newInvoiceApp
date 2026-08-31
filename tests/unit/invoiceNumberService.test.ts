@@ -116,6 +116,34 @@ describe("invoiceNumberService.generateInvoiceNumber", () => {
     expect(result).toBe("05-01-2026");
   });
 
+  it("honors an explicit {date:MM/DD/YYYY} qualifier", () => {
+    const result = generateInvoiceNumber({
+      project: {
+        abbreviation: "TQ",
+        name: "Torque",
+        invoiceNumberFormat: "{date:MM/DD/YYYY}",
+      },
+      existingInvoiceNumbers: [],
+      now: new Date(2026, 0, 5), // Jan 5, 2026
+    });
+
+    expect(result).toBe("01/05/2026");
+  });
+
+  it("honors an explicit {date:DD/MM/YYYY} qualifier", () => {
+    const result = generateInvoiceNumber({
+      project: {
+        abbreviation: "TQ",
+        name: "Torque",
+        invoiceNumberFormat: "{date:DD/MM/YYYY}",
+      },
+      existingInvoiceNumbers: [],
+      now: new Date(2026, 0, 5), // Jan 5, 2026
+    });
+
+    expect(result).toBe("05/01/2026");
+  });
+
   it("zero-pads the sequence number to 2 digits by default", () => {
     const result = generateInvoiceNumber({
       project: {

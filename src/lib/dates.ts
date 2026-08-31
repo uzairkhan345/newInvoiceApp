@@ -1,11 +1,13 @@
 /**
- * The two supported {date} token formats for
- * invoice numbers. There is no separate Project.dateFormat schema column
- * — instead, the format is chosen inline in
- * the invoiceNumberFormat string itself via `{date:MM-DD-YYYY}` /
- * `{date:DD-MM-YYYY}`, defaulting to MM-DD-YYYY for a bare `{date}`.
+ * The four supported {date} token formats for invoice numbers — two field
+ * orderings, each with a hyphen or slash separator. There is no separate
+ * Project.dateFormat schema column — instead, the format is chosen inline
+ * in the invoiceNumberFormat string itself via `{date:MM-DD-YYYY}` /
+ * `{date:DD-MM-YYYY}` / `{date:MM/DD/YYYY}` / `{date:DD/MM/YYYY}`,
+ * defaulting to MM-DD-YYYY for a bare `{date}`.
  */
-export type InvoiceDateFormat = "MM-DD-YYYY" | "DD-MM-YYYY";
+export type InvoiceDateFormat =
+  "MM-DD-YYYY" | "DD-MM-YYYY" | "MM/DD/YYYY" | "DD/MM/YYYY";
 
 export function formatDateToken(
   date: Date,
@@ -14,9 +16,9 @@ export function formatDateToken(
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");
   const yyyy = String(date.getFullYear());
-  return format === "DD-MM-YYYY"
-    ? `${dd}-${mm}-${yyyy}`
-    : `${mm}-${dd}-${yyyy}`;
+  const separator = format.includes("/") ? "/" : "-";
+  const parts = format.startsWith("DD") ? [dd, mm, yyyy] : [mm, dd, yyyy];
+  return parts.join(separator);
 }
 
 /** `<input type="date">` value (yyyy-mm-dd) for a stored `@db.Date` value. */
