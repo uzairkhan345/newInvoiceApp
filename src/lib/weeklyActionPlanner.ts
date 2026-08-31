@@ -89,7 +89,9 @@ function withAggregateIfNeeded(
   const invoices = siblings
     .map((sibling) =>
       sibling.id.startsWith(prefix)
-        ? projectInvoices.find((inv) => inv.id === sibling.id.slice(prefix.length))
+        ? projectInvoices.find(
+            (inv) => inv.id === sibling.id.slice(prefix.length),
+          )
         : undefined,
     )
     .filter((invoice): invoice is InvoiceListItem => invoice != null);
@@ -98,7 +100,10 @@ function withAggregateIfNeeded(
   const currency = invoices[0].currency;
   if (!invoices.every((invoice) => invoice.currency === currency)) return item;
 
-  const total = invoices.reduce((sum, invoice) => sum + Number(invoice.total), 0);
+  const total = invoices.reduce(
+    (sum, invoice) => sum + Number(invoice.total),
+    0,
+  );
   return {
     ...item,
     issue: `${invoices.length} ${label}`,

@@ -111,8 +111,18 @@ describe("buildWeeklyActionPlanner", () => {
         invoice("inv-2", "lumen", 9000),
       ],
       items: [
-        item("lumen", "overdue", new Date("2026-07-31T00:00:00Z"), "overdue-inv-1"),
-        item("lumen", "overdue", new Date("2026-08-05T00:00:00Z"), "overdue-inv-2"),
+        item(
+          "lumen",
+          "overdue",
+          new Date("2026-07-31T00:00:00Z"),
+          "overdue-inv-1",
+        ),
+        item(
+          "lumen",
+          "overdue",
+          new Date("2026-08-05T00:00:00Z"),
+          "overdue-inv-2",
+        ),
       ],
     });
     expect(result).toHaveLength(1);
@@ -130,7 +140,12 @@ describe("buildWeeklyActionPlanner", () => {
       billingRows: [],
       allInvoices: [invoice("inv-1", "lumen", 8000)],
       items: [
-        item("lumen", "overdue", new Date("2026-07-31T00:00:00Z"), "overdue-inv-1"),
+        item(
+          "lumen",
+          "overdue",
+          new Date("2026-07-31T00:00:00Z"),
+          "overdue-inv-1",
+        ),
       ],
     });
     expect(result[0].issue).toBe("overdue");
@@ -145,8 +160,18 @@ describe("buildWeeklyActionPlanner", () => {
         invoice("inv-2", "lumen", 9000, "AUD"),
       ],
       items: [
-        item("lumen", "overdue", new Date("2026-07-31T00:00:00Z"), "overdue-inv-1"),
-        item("lumen", "overdue", new Date("2026-08-05T00:00:00Z"), "overdue-inv-2"),
+        item(
+          "lumen",
+          "overdue",
+          new Date("2026-07-31T00:00:00Z"),
+          "overdue-inv-1",
+        ),
+        item(
+          "lumen",
+          "overdue",
+          new Date("2026-08-05T00:00:00Z"),
+          "overdue-inv-2",
+        ),
       ],
     });
     expect(result[0].issue).toBe("overdue");
