@@ -1,0 +1,29 @@
+name: Verify production DB secret
+
+# Throwaway connectivity check — confirms PRODUCTION_DATABASE_URL in the
+# Production environment is a working connection string, without ever
+# printing it. Delete this file once verified.
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    environment: Production
+
+    steps:
+      - name: Connect to production Neon DB
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::PRODUCTION_DATABASE_URL is empty in this environment"
+            exit 1
+          fi
+          RESULT=$(psql "$DATABASE_URL" -tAc "select 1;" 2>&1)
+          if [ "$RESULT" = "1" ]; then
+            echo "Connected successfully — query returned 1."
+          else
+            echo "::error::Connection or query failed."
+            exit 1
+          fi
