@@ -9,10 +9,13 @@ import { getAiAssistConfigSummary } from "@/lib/ai-providers/config";
 
 export default async function NewInvoiceForProjectPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ projectId: string }>;
+  searchParams: Promise<{ returnTo?: string }>;
 }) {
   const { projectId } = await params;
+  const { returnTo } = await searchParams;
   const project = await projectService.getById(projectId);
   if (!project) {
     notFound();
@@ -45,6 +48,7 @@ export default async function NewInvoiceForProjectPage({
         aiConfig={aiConfig}
         autofillData={autofillData}
         invoiceNumberConflict={conflictingLastInvoiceNumber}
+        returnTo={returnTo}
         project={{
           name: project.name,
           contractorName: project.contractor.name,

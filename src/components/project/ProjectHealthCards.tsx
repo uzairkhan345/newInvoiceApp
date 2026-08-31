@@ -2,6 +2,7 @@ import Link from "next/link";
 import { formatCurrency } from "@/lib/currency";
 import { formatDisplayDate, formatShortDate } from "@/lib/dates";
 import { resolveNextOccurrence } from "@/lib/alertScheduleFiring";
+import { withReturnTo } from "@/lib/backNavigation";
 import { cn } from "@/lib/utils";
 import type { ProjectBillingRow } from "@/lib/projectBillingStatus";
 import type { ProjectAlertScheduleWithFiringState } from "@/services/projectAlertScheduleService";
@@ -42,10 +43,12 @@ export function ProjectHealthCards({
   projectId,
   billingRow,
   alertSchedules,
+  returnTo,
 }: {
   projectId: string;
   billingRow: ProjectBillingRow;
   alertSchedules: ProjectAlertScheduleWithFiringState[];
+  returnTo?: string;
 }) {
   const nextAlert = nextOccurrenceOf(alertSchedules);
 
@@ -60,7 +63,10 @@ export function ProjectHealthCards({
         }
         subtext={`${billingRow.billingLabel}${billingRow.lastInvoiceTotal ? ` · ${formatCurrency(billingRow.lastInvoiceTotal, billingRow.lastInvoiceCurrency!)} expected` : ""}`}
         actionLabel="Prepare invoice →"
-        actionHref={`/invoices/new/${projectId}`}
+        actionHref={withReturnTo(
+          `/invoices/new/${projectId}`,
+          withReturnTo(`/projects/${projectId}`, returnTo),
+        )}
         highlight
       />
       <HealthCard

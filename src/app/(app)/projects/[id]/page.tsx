@@ -55,6 +55,15 @@ export default async function ProjectDetailPage({
   const tab = resolveTab(tabParam);
   const isEditingSetup = tab === "setup" && edit === "1";
   const sort = resolveSort(sortParam);
+  // This page's own current path (tab-aware) — used as the `returnTo` for
+  // links that navigate away and should come straight back here, e.g.
+  // "Create invoice", rather than falling back to a generic default.
+  const currentPath =
+    tab === "invoices"
+      ? `/projects/${id}?tab=invoices&sort=${sort}`
+      : tab === "setup"
+        ? `/projects/${id}?tab=setup`
+        : `/projects/${id}`;
   const back = resolveBackTarget(returnTo, {
     href: "/projects",
     label: "Back to Projects",
@@ -102,7 +111,14 @@ export default async function ProjectDetailPage({
             </Button>
             <Button
               nativeButton={false}
-              render={<Link href={`/invoices/new/${project.id}`} />}
+              render={
+                <Link
+                  href={withReturnTo(
+                    `/invoices/new/${project.id}`,
+                    withReturnTo(currentPath, returnTo),
+                  )}
+                />
+              }
             >
               <FileText className="h-3.5 w-3.5" />
               Create invoice
@@ -123,7 +139,11 @@ export default async function ProjectDetailPage({
       />
 
       {tab === "overview" ? (
-        <OverviewTab projectId={project.id} project={project} />
+        <OverviewTab
+          projectId={project.id}
+          project={project}
+          returnTo={returnTo}
+        />
       ) : tab === "invoices" ? (
         <InvoicesAndAlertsTab
           project={project}
@@ -146,9 +166,11 @@ export default async function ProjectDetailPage({
 async function OverviewTab({
   projectId,
   project,
+  returnTo,
 }: {
   projectId: string;
   project: NonNullable<Awaited<ReturnType<typeof projectService.getById>>>;
+  returnTo?: string;
 }) {
   const [recentActivity, alertSchedules] = await Promise.all([
     invoiceService.listRecentActivity(5, projectId),
@@ -202,6 +224,7 @@ async function OverviewTab({
         projectId={projectId}
         billingRow={row}
         alertSchedules={alertSchedules}
+        returnTo={returnTo}
       />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.25fr_0.75fr]">
         <ProjectSummary project={project} />
@@ -226,6 +249,10 @@ function InvoicesAndAlertsTab({
   sort: "asc" | "desc";
   returnTo?: string;
 }) {
+  const createInvoiceHref = withReturnTo(
+    `/invoices/new/${project.id}`,
+    withReturnTo(`/projects/${project.id}?tab=invoices&sort=${sort}`, returnTo),
+  );
   return (
     <>
       <div className="mb-3 flex items-center justify-between">
@@ -248,7 +275,7 @@ function InvoicesAndAlertsTab({
               variant="outline"
               className="h-8 px-3 text-[12px]"
               nativeButton={false}
-              render={<Link href={`/invoices/new/${project.id}`} />}
+              render={<Link href={createInvoiceHref} />}
             >
               <FileText className="h-3.5 w-3.5" />
               Create Invoice
@@ -263,7 +290,7 @@ function InvoicesAndAlertsTab({
           action={
             <Button
               nativeButton={false}
-              render={<Link href={`/invoices/new/${project.id}`} />}
+              render={<Link href={createInvoiceHref} />}
             >
               Create Invoice
             </Button>
