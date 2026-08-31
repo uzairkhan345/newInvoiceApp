@@ -9,7 +9,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
   actions: read
 
 concurrency:
@@ -146,3 +146,23 @@ jobs:
           ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
             'sudo systemctl status newinvoice.service'
           curl -sf -o /dev/null -w "HTTP %{http_code}\n" "${{ secrets.NEXT_PUBLIC_APP_URL }}"
+
+      # A permanent, human-readable "what was live when" marker that
+      # outlives the artifact's 30-day retention window — only created
+      # once the health check above has passed. Not a version scheme
+      # (no external consumer cares about version numbers here), just a
+      # cheap `git tag` lookup for "what shipped on <date>" instead of
+      # digging through Actions run history.
+      - name: Tag this deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA="${{ steps.resolve_sha.outputs.full_sha }}"
+          TAG="deployed/$(date -u +%Y-%m-%d)-${SHA:0:7}"
+          if gh api "repos/${{ github.repository }}/git/refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists — same commit already deployed today, skipping."
+          else
+            gh api --method POST "repos/${{ github.repository }}/git/refs" \
+              -f ref="refs/tags/$TAG" -f sha="$SHA"
+            echo "Created tag $TAG"
+          fi
