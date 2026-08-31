@@ -162,7 +162,7 @@ export function WeeklyActionPlanner({
                 {rows.map((action) => (
                   <div
                     key={action.id}
-                    className="relative grid gap-3 border-b border-muted px-5 py-4 pl-6 last:border-b-0 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.5fr)_auto_auto] lg:items-center"
+                    className="relative grid gap-3 border-b border-muted px-5 py-4 pl-6 last:border-b-0 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.5fr)_minmax(0,0.65fr)_minmax(0,0.55fr)] lg:items-center"
                   >
                     <span
                       className={cn(
