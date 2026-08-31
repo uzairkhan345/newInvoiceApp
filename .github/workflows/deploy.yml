@@ -52,6 +52,16 @@ jobs:
           echo "Found CI run $RUN_ID for $SHA"
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
 
+      # Only needed so `pnpm prisma migrate deploy` below has the schema and
+      # migration files for this exact commit — the artifact itself is never
+      # rebuilt from this checkout. Must run before downloading the
+      # artifact: actions/checkout defaults to `clean: true` (git clean
+      # -ffdx), which would otherwise delete the just-downloaded tarball.
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.resolve_sha.outputs.full_sha }}
+
       - name: Download deployment artifact from CI run
         uses: actions/download-artifact@v4
         with:
@@ -61,14 +71,6 @@ jobs:
 
       - name: Verify artifact checksum
         run: sha256sum -c "deploy-${{ steps.resolve_sha.outputs.full_sha }}.tar.gz.sha256"
-
-      # Only needed so `pnpm prisma migrate deploy` below has the schema and
-      # migration files for this exact commit — the artifact itself is never
-      # rebuilt from this checkout.
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ steps.resolve_sha.outputs.full_sha }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
