@@ -65,7 +65,7 @@ The bridge between a contractor and a client, and the home for per-engagement co
 | `ReferralCreditEnabled` | Boolean, default `false` | Whether the invoice form shows an "Add Referral Credit" button for this project — see §1.5's `IsReferralCredit`. |
 | `ReferralCreditLabel` | Text, Optional | Overrides the referral-credit line item's default description ("Referral Credit (Thank you!)"). Only meaningful when `ReferralCreditEnabled` is true; freely editable per-invoice afterward, same fallback shape as `ServiceDescription`. |
 | `Status` | Text | `ACTIVE` or `ARCHIVED`. |
-| `SortOrder` | Integer | Manual global display order for the Projects page and the dashboard's "Project billing status" table — the same field drives both. Reordered via up/down arrows on the dashboard (`ACTIVE` projects only), which swap `SortOrder` with the adjacent `ACTIVE` project rather than renumbering the whole list. A new project appends to the end. Global, not per-user. |
+| `SortOrder` | Integer | Manual global display order for the Projects page's card/table views. Reordered via up/down arrows on the Projects page's Rows view (unfiltered Active and All status tabs only), which swap `SortOrder` with the nearest `ACTIVE` project rather than renumbering the whole list. A new project appends to the end. Global, not per-user. |
 | `CreatedByUserId` | Identifier, Foreign Key, Optional → `User.Id` | Which user created this project — set once at creation, never updated. `null` for projects created before M28 (auth). Removing that `User` sets this to `null` too (`SetNull`), never blocked or cascaded. |
 
 **Deletion**: a `Project` may be deleted only if it has zero `Invoice` rows (see §7).
