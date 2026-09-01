@@ -45,7 +45,7 @@ export function InvoiceNumberFormatHelp({
       >
         <CircleHelp className="h-3.5 w-3.5" />
       </PopoverTrigger>
-      <PopoverContent className="w-80">
+      <PopoverContent className="w-96">
         <p className="mb-2 text-[12px] font-bold text-foreground">
           Format tokens
         </p>
@@ -55,9 +55,9 @@ export function InvoiceNumberFormatHelp({
               key={entry.token}
               type="button"
               onClick={() => onInsertToken(entry.token)}
-              className="flex items-baseline gap-2 rounded-md px-1.5 py-1 text-left hover:bg-muted/60"
+              className="flex items-start gap-2 rounded-md px-1.5 py-1 text-left hover:bg-muted/60"
             >
-              <code className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-foreground">
+              <code className="w-36 shrink-0 whitespace-nowrap rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-foreground">
                 {entry.token}
               </code>
               <span className="text-[11px] text-muted-foreground">
