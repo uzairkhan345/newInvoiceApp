@@ -36,6 +36,13 @@ export function PaymentMethodList({
   returnTo?: string;
 }) {
   const router = useRouter();
+  // Nested once here so every link below (this tab's own path plus the
+  // party page's own incoming returnTo) chains correctly, whether it goes
+  // to a payment-method page or — for the "used by" tags — a project.
+  const pmReturnTo = withReturnTo(
+    `/parties/${partyId}?tab=payment-methods`,
+    returnTo,
+  );
 
   if (paymentMethods.length === 0) {
     return (
@@ -45,7 +52,14 @@ export function PaymentMethodList({
         action={
           <Button
             nativeButton={false}
-            render={<Link href={`/parties/${partyId}/payment-methods/new`} />}
+            render={
+              <Link
+                href={withReturnTo(
+                  `/parties/${partyId}/payment-methods/new`,
+                  pmReturnTo,
+                )}
+              />
+            }
           >
             Add Payment Method
           </Button>
@@ -91,10 +105,7 @@ export function PaymentMethodList({
                           <Link
                             href={withReturnTo(
                               `/projects/${project.id}`,
-                              withReturnTo(
-                                `/parties/${partyId}?tab=payment-methods`,
-                                returnTo,
-                              ),
+                              pmReturnTo,
                             )}
                           />
                         }
@@ -112,7 +123,10 @@ export function PaymentMethodList({
                   nativeButton={false}
                   render={
                     <Link
-                      href={`/parties/${partyId}/payment-methods/${method.id}`}
+                      href={withReturnTo(
+                        `/parties/${partyId}/payment-methods/${method.id}`,
+                        pmReturnTo,
+                      )}
                     />
                   }
                 >

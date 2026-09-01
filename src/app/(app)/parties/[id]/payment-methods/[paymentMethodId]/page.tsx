@@ -8,10 +8,13 @@ import type { PaymentMethodField } from "@/repositories/paymentMethodRepository"
 
 export default async function EditPaymentMethodPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string; paymentMethodId: string }>;
+  searchParams: Promise<{ returnTo?: string }>;
 }) {
   const { id, paymentMethodId } = await params;
+  const { returnTo } = await searchParams;
   const [party, paymentMethod] = await Promise.all([
     partyService.getById(id),
     paymentMethodService.getById(paymentMethodId),
@@ -31,6 +34,7 @@ export default async function EditPaymentMethodPage({
         partyId={party.id}
         paymentMethodId={paymentMethod.id}
         aiConfig={aiConfig}
+        returnTo={returnTo}
         defaultValues={{
           type: paymentMethod.type,
           label: paymentMethod.label,

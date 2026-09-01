@@ -13,6 +13,7 @@ import { invoiceService } from "@/services/invoiceService";
 import { toInvoiceTableRow } from "@/lib/invoiceTableRow";
 import { formatCurrency } from "@/lib/currency";
 import { DUE_SOON_WITHIN_DAYS } from "@/lib/dashboardTrend";
+import { withReturnTo } from "@/lib/backNavigation";
 
 function pluralize(count: number, singular: string, plural = `${singular}s`) {
   return count === 1 ? singular : plural;
@@ -129,7 +130,10 @@ export default async function InvoicesPage({
         backHref={cameFromDashboard ? "/" : undefined}
         backLabel="Back to Dashboard"
         action={
-          <Button nativeButton={false} render={<Link href="/invoices/new" />}>
+          <Button
+            nativeButton={false}
+            render={<Link href={withReturnTo("/invoices/new", ownPath)} />}
+          >
             + New Invoice
           </Button>
         }
@@ -166,7 +170,9 @@ export default async function InvoicesPage({
               filter === "all" ? (
                 <Button
                   nativeButton={false}
-                  render={<Link href="/invoices/new" />}
+                  render={
+                    <Link href={withReturnTo("/invoices/new", ownPath)} />
+                  }
                 >
                   Create your first invoice
                 </Button>

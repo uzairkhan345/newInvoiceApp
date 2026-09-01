@@ -170,7 +170,17 @@ async function PaymentMethodsTab({
             variant="outline"
             className="h-8 px-3 text-[12px]"
             nativeButton={false}
-            render={<Link href={`/parties/${party.id}/payment-methods/new`} />}
+            render={
+              <Link
+                href={withReturnTo(
+                  `/parties/${party.id}/payment-methods/new`,
+                  withReturnTo(
+                    `/parties/${party.id}?tab=payment-methods`,
+                    returnTo,
+                  ),
+                )}
+              />
+            }
           >
             Add Payment Method
           </Button>
