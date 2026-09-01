@@ -1,5 +1,8 @@
 import { deriveAbbreviation } from "@/services/projectService";
-import { formatDateToken, type InvoiceDateFormat } from "@/lib/dates";
+import {
+  INVOICE_NUMBER_TOKEN_PATTERN as TOKEN_PATTERN,
+  applyInvoiceNumberTokens,
+} from "@/lib/invoiceNumberFormat";
 
 /**
  * Invoice number generation. Supported tokens:
@@ -14,10 +17,10 @@ import { formatDateToken, type InvoiceDateFormat } from "@/lib/dates";
  * `{month}` (current month, zero-padded 2 digits), and `{day}` (current
  * day-of-month, zero-padded 2 digits) — the latter three exist so a format
  * can build its own date-like shape token-by-token without pulling in
- * `{date}`'s fixed ordering/separator.
+ * `{date}`'s fixed ordering/separator. The token grammar and substitution
+ * logic live in `src/lib/invoiceNumberFormat.ts`, shared with the format
+ * field's discoverability popover so the two can't drift apart.
  */
-const TOKEN_PATTERN =
-  /\{abbreviation\}|\{number\}|\{year_short\}|\{year\}|\{month\}|\{day\}|\{date(?::(MM-DD-YYYY|DD-MM-YYYY|MM\/DD\/YYYY|DD\/MM\/YYYY))?\}/g;
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -100,18 +103,9 @@ export function generateInvoiceNumber({
     nextSequence(existingInvoiceNumbers, project.invoiceNumberFormat),
   );
 
-  return project.invoiceNumberFormat.replace(
-    TOKEN_PATTERN,
-    (fullMatch, dateFormatGroup: InvoiceDateFormat | undefined) => {
-      if (fullMatch.startsWith("{abbreviation}")) return abbreviation;
-      if (fullMatch.startsWith("{number}")) return paddedNumber;
-      if (fullMatch === "{year_short}")
-        return String(now.getFullYear()).slice(-2);
-      if (fullMatch === "{year}") return String(now.getFullYear());
-      if (fullMatch === "{month}")
-        return String(now.getMonth() + 1).padStart(2, "0");
-      if (fullMatch === "{day}") return String(now.getDate()).padStart(2, "0");
-      return formatDateToken(now, dateFormatGroup ?? "MM-DD-YYYY");
-    },
-  );
+  return applyInvoiceNumberTokens(project.invoiceNumberFormat, {
+    abbreviation,
+    number: paddedNumber,
+    now,
+  });
 }

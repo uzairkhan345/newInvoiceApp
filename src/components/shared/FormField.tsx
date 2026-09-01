@@ -13,6 +13,7 @@ export function FormField({
   required,
   error,
   highlighted,
+  labelSuffix,
   children,
   className,
 }: {
@@ -22,6 +23,8 @@ export function FormField({
   error?: string;
   /** Docs/ui_design_guide.md §14 — brief brand-light flash after AI Assist populates this field. */
   highlighted?: boolean;
+  /** Inline element rendered right after the label text (e.g. a help-popover trigger) — see ProjectForm.tsx's invoiceNumberFormat field. */
+  labelSuffix?: ReactNode;
   children: ReactNode;
   className?: string;
 }) {
@@ -33,13 +36,18 @@ export function FormField({
         className,
       )}
     >
-      <label
-        htmlFor={htmlFor}
-        className="text-[11px] font-bold tracking-[0.05em] text-muted-foreground uppercase"
-      >
-        {label}
-        {required ? <span className="ml-0.5 text-destructive">*</span> : null}
-      </label>
+      <div className="flex items-center gap-1.5">
+        <label
+          htmlFor={htmlFor}
+          className="text-[11px] font-bold tracking-[0.05em] text-muted-foreground uppercase"
+        >
+          {label}
+          {required ? (
+            <span className="ml-0.5 text-destructive">*</span>
+          ) : null}
+        </label>
+        {labelSuffix}
+      </div>
       {children}
       {error ? <p className="text-[11px] text-destructive">{error}</p> : null}
     </div>
