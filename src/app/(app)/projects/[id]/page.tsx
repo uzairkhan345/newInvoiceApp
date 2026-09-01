@@ -176,6 +176,11 @@ async function OverviewTab({
     invoiceService.listRecentActivity(5, projectId),
     projectAlertScheduleService.listForProjectWithFiringState(projectId),
   ]);
+  // Recent activity links to a genuinely different page (an invoice), so
+  // its returnTo needs to point back to this project specifically — unlike
+  // ProjectSummary's "Edit details", which jumps to another tab of this
+  // same page and re-attaches `returnTo` unchanged.
+  const invoiceReturnTo = withReturnTo(`/projects/${projectId}`, returnTo);
 
   if (project.status !== "ACTIVE") {
     return (
@@ -185,8 +190,11 @@ async function OverviewTab({
           archived projects.
         </div>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.25fr_0.75fr]">
-          <ProjectSummary project={project} />
-          <ProjectRecentActivity invoices={recentActivity} />
+          <ProjectSummary project={project} returnTo={returnTo} />
+          <ProjectRecentActivity
+            invoices={recentActivity}
+            returnTo={invoiceReturnTo}
+          />
         </div>
       </div>
     );
@@ -227,8 +235,11 @@ async function OverviewTab({
         returnTo={returnTo}
       />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.25fr_0.75fr]">
-        <ProjectSummary project={project} />
-        <ProjectRecentActivity invoices={recentActivity} />
+        <ProjectSummary project={project} returnTo={returnTo} />
+        <ProjectRecentActivity
+          invoices={recentActivity}
+          returnTo={invoiceReturnTo}
+        />
       </div>
     </div>
   );

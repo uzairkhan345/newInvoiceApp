@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { paymentMethodSummary } from "@/components/project/ProjectTable";
 import { formatCurrency } from "@/lib/currency";
 import { formatShortDate } from "@/lib/dates";
+import { withReturnTo } from "@/lib/backNavigation";
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
 import {
   BILLING_TONE_ACCENT,
@@ -21,10 +22,13 @@ export function ProjectCardGrid({
   projects,
   firedProjectIds = [],
   billingRowByProjectId,
+  returnTo,
 }: {
   projects: ProjectWithRelations[];
   firedProjectIds?: string[];
   billingRowByProjectId: Record<string, ProjectBillingRow>;
+  /** The list page's own current path — carried through so back-navigation from a project's detail page returns here. */
+  returnTo?: string;
 }) {
   const firedProjectIdSet = new Set(firedProjectIds);
 
@@ -40,7 +44,7 @@ export function ProjectCardGrid({
         return (
           <Link
             key={project.id}
-            href={`/projects/${project.id}`}
+            href={withReturnTo(`/projects/${project.id}`, returnTo)}
             className="relative flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:-translate-y-0.5 hover:shadow-md"
           >
             <span

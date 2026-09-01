@@ -48,7 +48,7 @@ export function InvoiceTable({
   invoices: InvoiceTableRow[];
   /** M19.3a — the Project column/line is redundant when this table is already scoped to one project. */
   hideProjectColumn?: boolean;
-  /** The embedding page's own path (e.g. `/projects/{id}?tab=invoices`) — carried through each row's link so the invoice detail page's back button returns here instead of defaulting to the top-level Invoices list. Omitted at the top-level `/invoices` list itself, where that default is already correct. */
+  /** The embedding page's own path (e.g. `/projects/{id}?tab=invoices`, or the top-level Invoices list's own `?status=`/`?from=dashboard` state) — carried through each row's link so the invoice detail page's back button returns exactly here, not just a generic default. */
   returnTo?: string;
 }) {
   const gridCols = hideProjectColumn

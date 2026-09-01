@@ -48,10 +48,11 @@ const EMPTY_STATE_COPY: Record<
 export default async function PartiesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string }>;
+  searchParams: Promise<{ type?: string; from?: string }>;
 }) {
-  const { type } = await searchParams;
+  const { type, from } = await searchParams;
   const filter = resolveFilter(type);
+  const cameFromDashboard = from === "dashboard";
 
   const [parties, allProjects, allInvoices] = await Promise.all([
     partyService.list(),
@@ -105,12 +106,22 @@ export default async function PartiesPage({
 
   const emptyCopy = EMPTY_STATE_COPY[filter];
 
+  // Mirrors ProjectStatusFilter's own hrefFor — so embedded links can carry
+  // this page's real current state back through `returnTo`.
+  const ownPathParams = new URLSearchParams();
+  if (filter !== "all") ownPathParams.set("type", filter);
+  if (cameFromDashboard) ownPathParams.set("from", "dashboard");
+  const ownPathQuery = ownPathParams.toString();
+  const ownPath = ownPathQuery ? `/parties?${ownPathQuery}` : "/parties";
+
   return (
     <>
       <PageHeader
         eyebrow="Invoice operations"
         title="Parties"
         subtitle="Clients and contractors, with their billing relationship at a glance."
+        backHref={cameFromDashboard ? "/" : undefined}
+        backLabel="Back to Dashboard"
         action={
           <Button nativeButton={false} render={<Link href="/parties/new" />}>
             Create Party
@@ -142,7 +153,10 @@ export default async function PartiesPage({
       />
       {partiesForFilter.length === 0 ? (
         <>
-          <PartyRelationshipFilter active={filter} />
+          <PartyRelationshipFilter
+            active={filter}
+            fromDashboard={cameFromDashboard}
+          />
           <EmptyState
             icon={Users}
             title={emptyCopy.title}
@@ -163,7 +177,13 @@ export default async function PartiesPage({
         <PartiesDirectory
           parties={partiesForFilter}
           billingRowByPartyId={billingRowByPartyId}
-          filterSlot={<PartyRelationshipFilter active={filter} />}
+          filterSlot={
+            <PartyRelationshipFilter
+              active={filter}
+              fromDashboard={cameFromDashboard}
+            />
+          }
+          returnTo={ownPath}
         />
       )}
     </>

@@ -26,10 +26,13 @@ export function PartiesDirectory({
   parties,
   billingRowByPartyId,
   filterSlot,
+  returnTo,
 }: {
   parties: Party[];
   billingRowByPartyId: Record<string, PartyBillingRow>;
   filterSlot?: ReactNode;
+  /** This list page's own current path — carried through so back-navigation from a party's detail page returns here. */
+  returnTo?: string;
 }) {
   const [query, setQuery] = useState("");
   const [view, setView] = useViewPreference(VIEW_STORAGE_KEY);
@@ -67,11 +70,13 @@ export function PartiesDirectory({
         <PartyTable
           parties={filtered}
           billingRowByPartyId={billingRowByPartyId}
+          returnTo={returnTo}
         />
       ) : (
         <PartyCardGrid
           parties={filtered}
           billingRowByPartyId={billingRowByPartyId}
+          returnTo={returnTo}
         />
       )}
     </div>

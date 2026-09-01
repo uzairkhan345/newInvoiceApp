@@ -112,6 +112,14 @@ export default async function InvoicesPage({
 
   const emptyCopy = EMPTY_STATE_COPY[filter];
 
+  // Mirrors ProjectStatusFilter's own hrefFor — so embedded links (invoice
+  // rows) can carry this page's real current state back through `returnTo`.
+  const ownPathParams = new URLSearchParams();
+  if (filter !== "all") ownPathParams.set("status", filter);
+  if (cameFromDashboard) ownPathParams.set("from", "dashboard");
+  const ownPathQuery = ownPathParams.toString();
+  const ownPath = ownPathQuery ? `/invoices?${ownPathQuery}` : "/invoices";
+
   return (
     <>
       <PageHeader
@@ -175,6 +183,7 @@ export default async function InvoicesPage({
               fromDashboard={cameFromDashboard}
             />
           }
+          returnTo={ownPath}
         />
       )}
     </>
