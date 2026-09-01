@@ -6,6 +6,7 @@ import { invoiceService } from "@/services/invoiceService";
 import { toDateInputValue } from "@/lib/dates";
 import { computeDueDate } from "@/lib/invoicePeriod";
 import { getAiAssistConfigSummary } from "@/lib/ai-providers/config";
+import { resolveBackTarget } from "@/lib/backNavigation";
 
 export default async function NewInvoiceForProjectPage({
   params,
@@ -33,11 +34,21 @@ export default async function NewInvoiceForProjectPage({
   const initialPeriodStart =
     await invoiceService.previewNextPeriodStart(projectId);
 
+  // Every real entry point into this page forwards its own `returnTo`
+  // (project page, dashboard, etc.) — that takes priority over the
+  // generic "Change project" affordance, which only makes sense when
+  // this page was reached with no such context (directly via the
+  // project-picker at /invoices/new).
+  const back = resolveBackTarget(returnTo, {
+    href: "/invoices/new",
+    label: "Change project",
+  });
+
   return (
     <>
       <PageHeader
-        backHref="/invoices/new"
-        backLabel="Change project"
+        backHref={back.href}
+        backLabel={back.label}
         eyebrow="New draft invoice"
         title="Create invoice"
         subtitle={`For ${project.name} · ${project.client.name}`}
