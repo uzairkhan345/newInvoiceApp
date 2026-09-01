@@ -116,12 +116,14 @@ export function ProjectsDirectory({
           projects={filtered}
           firedProjectIds={firedProjectIds}
           reorderable={reorderable}
+          returnTo={returnTo}
         />
       ) : (
         <ProjectCardGrid
           projects={filtered}
           firedProjectIds={firedProjectIds}
           billingRowByProjectId={billingRowByProjectId}
+          returnTo={returnTo}
         />
       )}
     </div>

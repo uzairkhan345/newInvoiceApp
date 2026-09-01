@@ -137,7 +137,7 @@ export function ProjectWorkspace({
               <div className="flex items-start justify-between gap-3 px-5 py-4 pl-6">
                 <div className="min-w-0">
                   <Link
-                    href={`/projects/${project.id}`}
+                    href={withReturnTo(`/projects/${project.id}`, returnTo)}
                     className="text-[14px] font-bold hover:text-brand hover:underline"
                   >
                     {project.name}
@@ -236,7 +236,7 @@ export function ProjectWorkspace({
               <div className="flex items-center justify-between border-t border-muted px-5 py-3 pl-6">
                 <Link
                   className="text-[11px] font-bold text-brand"
-                  href={`/projects/${project.id}`}
+                  href={withReturnTo(`/projects/${project.id}`, returnTo)}
                 >
                   Open workspace →
                 </Link>

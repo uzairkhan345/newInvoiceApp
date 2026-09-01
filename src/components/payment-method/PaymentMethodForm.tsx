@@ -15,6 +15,7 @@ import {
   updatePaymentMethodAction,
 } from "@/actions/paymentMethod.actions";
 import { paymentMethodTemplates } from "@/components/payment-method/paymentMethodTemplates";
+import { resolveBackTarget } from "@/lib/backNavigation";
 import { cn } from "@/lib/utils";
 import { FormField } from "@/components/shared/FormField";
 import { Input } from "@/components/ui/input";
@@ -73,6 +74,7 @@ export function PaymentMethodForm({
   aiConfig,
   onCreated,
   embedded = false,
+  returnTo,
 }: {
   mode: "create" | "edit";
   partyId: string;
@@ -92,6 +94,8 @@ export function PaymentMethodForm({
    * is unused/unnecessary in this mode.
    */
   embedded?: boolean;
+  /** Where to land after saving — defaults to this party's Payment Methods tab when unset (never used in `embedded` mode, which never navigates at all). */
+  returnTo?: string;
 }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -151,7 +155,12 @@ export function PaymentMethodForm({
         return;
       }
 
-      router.push(`/parties/${partyId}`);
+      router.push(
+        resolveBackTarget(returnTo, {
+          href: `/parties/${partyId}?tab=payment-methods`,
+          label: "",
+        }).href,
+      );
       router.refresh();
     } finally {
       setIsSubmitting(false);

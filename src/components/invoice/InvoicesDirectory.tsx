@@ -19,10 +19,13 @@ export function InvoicesDirectory({
   invoices,
   hideProjectColumn,
   filterSlot,
+  returnTo,
 }: {
   invoices: InvoiceTableRow[];
   hideProjectColumn?: boolean;
   filterSlot?: ReactNode;
+  /** This list page's own current path — carried through so back-navigation from an invoice's detail page returns here. */
+  returnTo?: string;
 }) {
   const [query, setQuery] = useState("");
 
@@ -57,6 +60,7 @@ export function InvoicesDirectory({
         <InvoiceTable
           invoices={filtered}
           hideProjectColumn={hideProjectColumn}
+          returnTo={returnTo}
         />
       )}
     </div>

@@ -7,6 +7,7 @@ import { projectService } from "@/services/projectService";
 import { invoiceService } from "@/services/invoiceService";
 import { projectAlertScheduleService } from "@/services/projectAlertScheduleService";
 import { buildProjectBillingRows } from "@/lib/projectBillingStatus";
+import { resolveBackTarget } from "@/lib/backNavigation";
 
 /**
  * Docs/implementation_decisions.md §20 — the mandatory project-picker gate.
@@ -18,7 +19,16 @@ import { buildProjectBillingRows } from "@/lib/projectBillingStatus";
  * gap the mockup made obvious rather than reversing a deliberate decision
  * (nothing previously depended on archived projects being invoiceable).
  */
-export default async function NewInvoiceProjectPickerPage() {
+export default async function NewInvoiceProjectPickerPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ returnTo?: string }>;
+}) {
+  const { returnTo } = await searchParams;
+  const back = resolveBackTarget(returnTo, {
+    href: "/invoices",
+    label: "Back to Invoices",
+  });
   const [
     activeProjects,
     allInvoices,
@@ -49,8 +59,8 @@ export default async function NewInvoiceProjectPickerPage() {
   return (
     <>
       <PageHeader
-        backHref="/invoices"
-        backLabel="Back to Invoices"
+        backHref={back.href}
+        backLabel={back.label}
         eyebrow="New draft invoice"
         title="Choose a project"
         subtitle="Project settings provide the client, contractor, payment method, currency and invoice numbering."

@@ -102,6 +102,25 @@ describe("buildWeeklyActionPlanner", () => {
     ]);
   });
 
+  it("folds a past-dated prepare/draft item into 'today', not 'overdue' — that heading is reserved for an actual overdue invoice", () => {
+    const result = buildWeeklyActionPlanner({
+      now,
+      billingRows: [],
+      items: [
+        item("recurring", "prepare", new Date("2026-08-20T00:00:00Z")),
+        item("stale-draft", "draft", new Date("2026-08-20T00:00:00Z")),
+        item("real-overdue", "overdue", new Date("2026-08-20T00:00:00Z")),
+      ],
+    });
+    expect(
+      result.map(({ projectId, section }) => [projectId, section]),
+    ).toEqual([
+      ["recurring", "today"],
+      ["stale-draft", "today"],
+      ["real-overdue", "overdue"],
+    ]);
+  });
+
   it("folds multiple overdue invoices for the same project into one aggregate line", () => {
     const result = buildWeeklyActionPlanner({
       now,

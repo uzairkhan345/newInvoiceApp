@@ -13,6 +13,7 @@ import { invoiceService } from "@/services/invoiceService";
 import { toInvoiceTableRow } from "@/lib/invoiceTableRow";
 import { formatCurrency } from "@/lib/currency";
 import { DUE_SOON_WITHIN_DAYS } from "@/lib/dashboardTrend";
+import { withReturnTo } from "@/lib/backNavigation";
 
 function pluralize(count: number, singular: string, plural = `${singular}s`) {
   return count === 1 ? singular : plural;
@@ -112,6 +113,14 @@ export default async function InvoicesPage({
 
   const emptyCopy = EMPTY_STATE_COPY[filter];
 
+  // Mirrors ProjectStatusFilter's own hrefFor — so embedded links (invoice
+  // rows) can carry this page's real current state back through `returnTo`.
+  const ownPathParams = new URLSearchParams();
+  if (filter !== "all") ownPathParams.set("status", filter);
+  if (cameFromDashboard) ownPathParams.set("from", "dashboard");
+  const ownPathQuery = ownPathParams.toString();
+  const ownPath = ownPathQuery ? `/invoices?${ownPathQuery}` : "/invoices";
+
   return (
     <>
       <PageHeader
@@ -121,7 +130,10 @@ export default async function InvoicesPage({
         backHref={cameFromDashboard ? "/" : undefined}
         backLabel="Back to Dashboard"
         action={
-          <Button nativeButton={false} render={<Link href="/invoices/new" />}>
+          <Button
+            nativeButton={false}
+            render={<Link href={withReturnTo("/invoices/new", ownPath)} />}
+          >
             + New Invoice
           </Button>
         }
@@ -158,7 +170,9 @@ export default async function InvoicesPage({
               filter === "all" ? (
                 <Button
                   nativeButton={false}
-                  render={<Link href="/invoices/new" />}
+                  render={
+                    <Link href={withReturnTo("/invoices/new", ownPath)} />
+                  }
                 >
                   Create your first invoice
                 </Button>
@@ -175,6 +189,7 @@ export default async function InvoicesPage({
               fromDashboard={cameFromDashboard}
             />
           }
+          returnTo={ownPath}
         />
       )}
     </>

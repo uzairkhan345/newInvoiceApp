@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
 import { formatShortDate } from "@/lib/dates";
+import { withReturnTo } from "@/lib/backNavigation";
 import type { InvoiceListItem } from "@/repositories/invoiceRepository";
 
 const VERB: Partial<Record<string, string>> = {
@@ -26,8 +27,11 @@ const DOT_TONE: Partial<Record<string, string>> = {
  */
 export function ProjectRecentActivity({
   invoices,
+  returnTo,
 }: {
   invoices: InvoiceListItem[];
+  /** Pre-resolved to this project's own page (see the project detail page's OverviewTab) so back-navigation from an invoice returns to the project, not wherever the project itself came from. */
+  returnTo?: string;
 }) {
   return (
     <Card>
@@ -55,7 +59,7 @@ export function ProjectRecentActivity({
                   />
                 ) : null}
                 <Link
-                  href={`/invoices/${invoice.id}`}
+                  href={withReturnTo(`/invoices/${invoice.id}`, returnTo)}
                   className="flex items-start gap-2.5 hover:opacity-80"
                 >
                   <span

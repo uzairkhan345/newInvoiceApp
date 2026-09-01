@@ -7,6 +7,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { DetailField } from "@/components/shared/DetailField";
+import { withReturnTo } from "@/lib/backNavigation";
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
 
 const CURRENCY_MODE_LABELS: Record<
@@ -23,7 +24,13 @@ const CURRENCY_MODE_LABELS: Record<
  * ProjectDetailCard's full field list (invoice numbering/period live in the
  * Billing setup tab's actual editable form instead, not duplicated here).
  */
-export function ProjectSummary({ project }: { project: ProjectWithRelations }) {
+export function ProjectSummary({
+  project,
+  returnTo,
+}: {
+  project: ProjectWithRelations;
+  returnTo?: string;
+}) {
   return (
     <Card>
       <CardHeader>
@@ -35,7 +42,7 @@ export function ProjectSummary({ project }: { project: ProjectWithRelations }) {
         </p>
         <CardAction>
           <Link
-            href={`/projects/${project.id}?tab=setup`}
+            href={withReturnTo(`/projects/${project.id}?tab=setup`, returnTo)}
             className="text-[11px] font-bold text-brand hover:underline"
           >
             Edit details

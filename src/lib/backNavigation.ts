@@ -25,8 +25,14 @@ export function isSafeReturnPath(value: string | undefined): value is string {
 function labelForReturnPath(path: string): string {
   if (path === "/" || path.startsWith("/?")) return "Back to Dashboard";
   if (path.startsWith("/projects/")) return "Back to Project";
+  if (path === "/projects" || path.startsWith("/projects?"))
+    return "Back to Projects";
   if (path.startsWith("/parties/")) return "Back to Party";
+  if (path === "/parties" || path.startsWith("/parties?"))
+    return "Back to Parties";
   if (path.startsWith("/invoices/")) return "Back to Invoice";
+  if (path === "/invoices" || path.startsWith("/invoices?"))
+    return "Back to Invoices";
   return "Back";
 }
 

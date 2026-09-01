@@ -116,7 +116,11 @@ export default async function InvoiceDetailPage({
           returnTo={returnTo}
         />
         {tab === "summary" ? (
-          <InvoiceSummaryTab invoice={invoice} data={data} />
+          <InvoiceSummaryTab
+            invoice={invoice}
+            data={data}
+            returnTo={returnTo}
+          />
         ) : tab === "preview" ? (
           <InvoicePreviewTab invoiceId={invoice.id} data={data} />
         ) : (

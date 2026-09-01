@@ -6,6 +6,7 @@ import {
   RelationshipTag,
   formatOutstanding,
 } from "@/components/party/PartyTable";
+import { withReturnTo } from "@/lib/backNavigation";
 import type { Party } from "@/generated/prisma/client";
 import type {
   PartyBillingRow,
@@ -36,9 +37,12 @@ const TONE_PILL: Record<PartyHealthTone, string> = {
 export function PartyCardGrid({
   parties,
   billingRowByPartyId,
+  returnTo,
 }: {
   parties: Party[];
   billingRowByPartyId: Record<string, PartyBillingRow>;
+  /** The list page's own current path — carried through so back-navigation from a party's detail page returns here. */
+  returnTo?: string;
 }) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -51,7 +55,7 @@ export function PartyCardGrid({
         return (
           <Link
             key={party.id}
-            href={`/parties/${party.id}`}
+            href={withReturnTo(`/parties/${party.id}`, returnTo)}
             className="relative flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:-translate-y-0.5 hover:shadow-md"
           >
             <span

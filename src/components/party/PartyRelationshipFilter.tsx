@@ -17,16 +17,22 @@ export type PartyRelationshipFilterValue = (typeof FILTERS)[number]["value"];
  */
 export function PartyRelationshipFilter({
   active,
+  fromDashboard = false,
 }: {
   active: PartyRelationshipFilterValue;
+  fromDashboard?: boolean;
 }) {
   return (
     <FilterChips
       options={FILTERS}
       active={active}
-      hrefFor={(value) =>
-        value === "all" ? "/parties" : `/parties?type=${value}`
-      }
+      hrefFor={(value) => {
+        const params = new URLSearchParams();
+        if (value !== "all") params.set("type", value);
+        if (fromDashboard) params.set("from", "dashboard");
+        const query = params.toString();
+        return query ? `/parties?${query}` : "/parties";
+      }}
     />
   );
 }

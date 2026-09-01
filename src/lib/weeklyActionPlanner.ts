@@ -41,7 +41,12 @@ function sameUtcDate(a: Date | null, b: Date): boolean {
 }
 
 export type PlannerSection =
-  "overdue" | "today" | "week" | "later" | "unscheduled" | "onTrack";
+  | "overdue"
+  | "today"
+  | "week"
+  | "later"
+  | "unscheduled"
+  | "onTrack";
 export type ProjectAction = PriorityFeedItem & { section: PlannerSection };
 
 const PRECEDENCE: Record<PriorityFeedItem["category"], number> = {
@@ -115,10 +120,21 @@ function withAggregateIfNeeded(
   };
 }
 
-function sectionFor(date: Date | null, now: Date): PlannerSection {
+/**
+ * "Overdue" is reserved for an actual overdue invoice awaiting payment —
+ * a past-dated "prepare" (unsent recurring reminder) or "draft" item is a
+ * different situation (nothing has even been sent yet) and folds into
+ * "Today" instead, alongside anything else needing action right now,
+ * rather than visually implying a real overdue invoice.
+ */
+function sectionFor(
+  category: PriorityFeedItem["category"],
+  date: Date | null,
+  now: Date,
+): PlannerSection {
   if (!date) return "unscheduled";
   const delta = Math.round((utcDay(date) - utcDay(now)) / 86_400_000);
-  if (delta < 0) return "overdue";
+  if (delta < 0) return category === "overdue" ? "overdue" : "today";
   if (delta === 0) return "today";
   if (delta <= 7) return "week";
   return "later";
@@ -210,7 +226,10 @@ export function buildWeeklyActionPlanner(input: {
     .map((item) =>
       withAggregateIfNeeded(item, itemsByProjectCategory, invoicesByProject),
     )
-    .map((item) => ({ ...item, section: sectionFor(item.actionDate, now) }))
+    .map((item) => ({
+      ...item,
+      section: sectionFor(item.category, item.actionDate, now),
+    }))
     .sort(
       (a, b) =>
         (a.actionDate?.getTime() ?? Infinity) -

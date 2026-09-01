@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { PAYMENT_METHOD_TYPE_LABELS } from "@/lib/paymentMethodLabels";
 import { ProjectStatusPill } from "@/components/project/ProjectStatusPill";
 import { ProjectReorderButtons } from "@/components/project/ProjectReorderButtons";
+import { withReturnTo } from "@/lib/backNavigation";
 import type { ProjectWithRelations } from "@/repositories/projectRepository";
 
 /**
@@ -47,10 +48,13 @@ export function ProjectTable({
   projects,
   firedProjectIds = [],
   reorderable = false,
+  returnTo,
 }: {
   projects: ProjectWithRelations[];
   firedProjectIds?: string[];
   reorderable?: boolean;
+  /** The list page's own current path — carried through so back-navigation from a project's detail page returns here. */
+  returnTo?: string;
 }) {
   const firedProjectIdSet = new Set(firedProjectIds);
   // On the "All" tab, ARCHIVED rows are interleaved with ACTIVE ones in the
@@ -105,7 +109,7 @@ export function ProjectTable({
                 </div>
               ) : null}
               <Link
-                href={`/projects/${project.id}`}
+                href={withReturnTo(`/projects/${project.id}`, returnTo)}
                 className={cn(
                   "grid flex-1 items-center gap-3 px-5 py-3.5 hover:bg-muted/40",
                   DESKTOP_GRID,
@@ -166,7 +170,7 @@ export function ProjectTable({
                 </div>
               ) : null}
               <Link
-                href={`/projects/${project.id}`}
+                href={withReturnTo(`/projects/${project.id}`, returnTo)}
                 className="flex flex-1 flex-col gap-1.5 p-4"
               >
                 <div className="flex items-center justify-between gap-2">
