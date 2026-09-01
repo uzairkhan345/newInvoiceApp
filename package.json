@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/uzairkhan345/newInvoiceApp.git"
+    "url": "https://github.com/dr-uzairkhan/newInvoiceApp.git"
   },
   "engines": {
     "node": ">=24"
