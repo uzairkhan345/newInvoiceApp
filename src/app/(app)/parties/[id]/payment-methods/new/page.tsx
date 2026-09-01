@@ -6,10 +6,13 @@ import { getAiAssistConfigSummary } from "@/lib/ai-providers/config";
 
 export default async function NewPaymentMethodPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ returnTo?: string }>;
 }) {
   const { id } = await params;
+  const { returnTo } = await searchParams;
   const party = await partyService.getById(id);
   if (!party) {
     notFound();
@@ -19,7 +22,12 @@ export default async function NewPaymentMethodPage({
   return (
     <>
       <PageHeader title="Add Payment Method" subtitle={`For ${party.name}.`} />
-      <PaymentMethodForm mode="create" partyId={party.id} aiConfig={aiConfig} />
+      <PaymentMethodForm
+        mode="create"
+        partyId={party.id}
+        aiConfig={aiConfig}
+        returnTo={returnTo}
+      />
     </>
   );
 }

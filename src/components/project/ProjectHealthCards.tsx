@@ -87,7 +87,7 @@ export function ProjectHealthCards({
         actionLabel={
           billingRow.exposureCount > 0 ? "View invoice →" : undefined
         }
-        actionHref={`/projects/${projectId}?tab=invoices`}
+        actionHref={withReturnTo(`/projects/${projectId}?tab=invoices`, returnTo)}
       />
       <HealthCard
         label="Billing health"
@@ -99,7 +99,7 @@ export function ProjectHealthCards({
             : "No billed period recorded."
         }
         actionLabel="View history →"
-        actionHref={`/projects/${projectId}?tab=invoices`}
+        actionHref={withReturnTo(`/projects/${projectId}?tab=invoices`, returnTo)}
       />
       <HealthCard
         label="Next alert"
@@ -115,7 +115,7 @@ export function ProjectHealthCards({
             : "Add a day-of-month reminder"
         }
         actionLabel="Manage alerts →"
-        actionHref={`/projects/${projectId}?tab=invoices`}
+        actionHref={withReturnTo(`/projects/${projectId}?tab=invoices`, returnTo)}
       />
     </div>
   );

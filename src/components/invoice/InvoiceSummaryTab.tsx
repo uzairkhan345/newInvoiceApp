@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/currency";
 import { formatDisplayDate } from "@/lib/dates";
 import { deriveDisplayStatus } from "@/lib/invoiceStatus";
+import { withReturnTo } from "@/lib/backNavigation";
 import type { InvoiceWithItems } from "@/repositories/invoiceRepository";
 import type { InvoiceDocumentData } from "@/services/documentService";
 
@@ -24,9 +25,11 @@ import type { InvoiceDocumentData } from "@/services/documentService";
 export function InvoiceSummaryTab({
   invoice,
   data,
+  returnTo,
 }: {
   invoice: InvoiceWithItems;
   data: InvoiceDocumentData;
+  returnTo?: string;
 }) {
   const displayStatus = deriveDisplayStatus(invoice.status, invoice.dueDate);
   const dateMetric =
@@ -184,7 +187,7 @@ export function InvoiceSummaryTab({
             PDF
           </Button>
           <Link
-            href={`/invoices/${invoice.id}?tab=preview`}
+            href={withReturnTo(`/invoices/${invoice.id}?tab=preview`, returnTo)}
             className="flex items-center gap-1 text-[11px] font-bold text-brand hover:underline"
           >
             Preview invoice

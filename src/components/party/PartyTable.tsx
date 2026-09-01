@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
+import { withReturnTo } from "@/lib/backNavigation";
 import type { Party } from "@/generated/prisma/client";
 import type {
   PartyBillingRow,
@@ -95,9 +96,12 @@ export function RelationshipTag({ row }: { row: PartyBillingRow }) {
 export function PartyTable({
   parties,
   billingRowByPartyId,
+  returnTo,
 }: {
   parties: Party[];
   billingRowByPartyId: Record<string, PartyBillingRow>;
+  /** The list page's own current path — carried through so back-navigation from a party's detail page returns here. */
+  returnTo?: string;
 }) {
   return (
     <>
@@ -125,7 +129,7 @@ export function PartyTable({
           return (
             <Link
               key={party.id}
-              href={`/parties/${party.id}`}
+              href={withReturnTo(`/parties/${party.id}`, returnTo)}
               className={cn(
                 "grid items-center gap-3 px-5 py-3.5 hover:bg-muted/40",
                 DESKTOP_GRID,
@@ -169,7 +173,7 @@ export function PartyTable({
           return (
             <Link
               key={party.id}
-              href={`/parties/${party.id}`}
+              href={withReturnTo(`/parties/${party.id}`, returnTo)}
               className="flex flex-col gap-1.5 rounded-xl border border-border bg-card p-4"
             >
               <div className="flex items-center justify-between gap-2">

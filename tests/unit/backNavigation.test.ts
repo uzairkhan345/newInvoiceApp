@@ -59,6 +59,33 @@ describe("resolveBackTarget", () => {
       label: "Back to Dashboard",
     });
   });
+
+  it("labels a projects LIST return path distinctly from a single project", () => {
+    expect(
+      resolveBackTarget("/projects?status=active&from=dashboard", FALLBACK),
+    ).toEqual({
+      href: "/projects?status=active&from=dashboard",
+      label: "Back to Projects",
+    });
+    expect(resolveBackTarget("/projects", FALLBACK)).toEqual({
+      href: "/projects",
+      label: "Back to Projects",
+    });
+  });
+
+  it("labels a parties LIST return path distinctly from a single party", () => {
+    expect(resolveBackTarget("/parties?type=client", FALLBACK)).toEqual({
+      href: "/parties?type=client",
+      label: "Back to Parties",
+    });
+  });
+
+  it("labels an invoices LIST return path distinctly from a single invoice", () => {
+    expect(resolveBackTarget("/invoices?status=sent", FALLBACK)).toEqual({
+      href: "/invoices?status=sent",
+      label: "Back to Invoices",
+    });
+  });
 });
 
 describe("withReturnTo", () => {
