@@ -11,6 +11,7 @@ import {
   updateProjectAction,
 } from "@/actions/project.actions";
 import { PartyPickerWithCreateEscape } from "@/components/project/PartyPickerWithCreateEscape";
+import { InvoiceNumberFormatHelp } from "@/components/project/InvoiceNumberFormatHelp";
 import { CreatePaymentMethodDialog } from "@/components/payment-method/CreatePaymentMethodDialog";
 import { FormField } from "@/components/shared/FormField";
 import { Input } from "@/components/ui/input";
@@ -120,6 +121,8 @@ export function ProjectForm({
 
   const contractorId = watch("contractorId");
   const availablePaymentMethods = paymentMethodsByPartyId[contractorId] ?? [];
+  const abbreviation = watch("abbreviation");
+  const invoiceNumberFormat = watch("invoiceNumberFormat");
   const currencyMode = watch("currencyMode");
   const referralCreditEnabled = watch("referralCreditEnabled");
 
@@ -317,6 +320,19 @@ export function ProjectForm({
             htmlFor="invoiceNumberFormat"
             required
             error={errors.invoiceNumberFormat?.message}
+            labelSuffix={
+              <InvoiceNumberFormatHelp
+                value={invoiceNumberFormat}
+                abbreviation={abbreviation ?? ""}
+                onInsertToken={(token) =>
+                  setValue(
+                    "invoiceNumberFormat",
+                    `${getValues("invoiceNumberFormat")}${token}`,
+                    { shouldValidate: true, shouldDirty: true },
+                  )
+                }
+              />
+            }
           >
             <Input
               id="invoiceNumberFormat"
