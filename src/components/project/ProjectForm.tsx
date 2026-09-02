@@ -323,7 +323,7 @@ export function ProjectForm({
             labelSuffix={
               <InvoiceNumberFormatHelp
                 value={invoiceNumberFormat}
-                abbreviation={abbreviation}
+                abbreviation={abbreviation ?? ""}
                 onInsertToken={(token) =>
                   setValue(
                     "invoiceNumberFormat",
